@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "M03.F01 5 子项补完：I02 列表查询 (Table data-fn)、I06 表单校验 (Dialog data-fn)、I07 角色权限绑定 (RolePermissionsDialog + /api/roles/[id]/permissions GET/PUT)、I08 store 接口 (@entry)、I10 permissionStore (@entry)。L0..L5 全绿、355 tests pass、164 功能条目、18 软告警。",
+  "current_task": "schema.ts:279 auditLogs.timestamp SQL 表达式修复 + scripts/seed.ts 扩到 11 表完整 seed + dashboard M05 I03 卡片 /orgs 回链 /audit-logs。L0..L5 全绿、355 tests pass、164 功能条目、18 软告警。",
   "done": [
     "tree-change 提案 1：新增 M01.F05 / I01 / I02 / I03（已批准）",
     "PLAN-2026-005-M01.F05-saas-dashboard.md 写完（含 /audit-logs 偏差说明）",
@@ -71,15 +71,22 @@
     "  - I08: src/lib/role-store.ts 顶部加 // @entry M03.F01.I08 / M03.F02.I05 / M03.F03.I05",
     "  - I10: src/lib/permissions-store.ts 顶部加 // @entry M03.F01.I10 / M03.F01.I09",
     "tests/features/roles-list: 13→16 (+3 I07 tests: 权限按钮 + GET 拉权限 + PUT 提交权限)",
+    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、355 tests pass、164 功能条目、18 软告警",
+    "schema.ts auditLogs.timestamp (与其它 9 处 created_at/updated_at) 改成 sql`(datetime('now'))` 模板：",
+    "  - 旧：.default(\"(datetime('now'))\")  → Drizzle 把它当字符串字面量，schema migration 写 DEFAULT 字面",
+    "  - 新：.default(sql`(datetime('now'))`) → Drizzle 把它当 SQL 表达式，migration 写 DEFAULT (datetime('now'))",
+    "drizzle/0007_fix_datetime_sql_default.sql：drizzle-kit generate 自动产出，所有 11 张表 + 4 张关联表重建（INSERT INTO __new_xxx SELECT ... FROM xxx 模式）",
+    "npm run db:migrate + db:seed 一次跑通，验证：临时 INSERT audit_logs 不指定 timestamp，DB 拿 (datetime('now')) 真填当前时间",
+    "scripts/seed.ts 扩到 11 表完整 seed：tenants/users/orgs/positions/roles/role_permissions/user_groups/apps/app_menus/api_keys/audit_logs/platform_settings/tenant_users + sso_states。FK-safe 顺序：children 先删，parents 先插；role_permissions/app_menus/api_keys 用 code 反查 id 再插",
+    "M05 I03 dashboard 卡片回链：home-client.tsx 登录卡 href /orgs → /audit-logs（PLAN-2026-005 偏差声明消除）",
+    "tests/components/home-client: 更新测试名 + 断言（/orgs → /audit-logs）",
     "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、355 tests pass、164 功能条目、18 软告警"
   ],
   "next": [
-    "刷新浏览器 GET /roles 点任一行的「权限」按钮确认 Dialog 弹出 + 勾选 + 保存",
-    "git commit 当前 M03.F01 5 项补完 + roles/permissions-store/role-store 修改 + roles-list 3 测试",
-    "schema.ts:279 auditLogs.timestamp default 是字面字符串 '(datetime(\\'now\\'))' —— Drizzle 没识别为 SQL 表达式。需另起 ADR + tree-change 修",
-    "scripts/seed.ts 现在灌的是 dashboard 验证子集（4 个表）。完整 seed 跑 src/db/seed.ts:seedDatabase() 路径但 tsx 跑它会被 server-only 拦",
-    "M05 上线后回链：I03 第三张卡从 /orgs 改回 /audit-logs（另起 tree-change '变更'）",
-    "考虑抽通用 ResourceDialog 组件（title + children + onSubmit + submitting）以减少 ~60% 重复代码，但 9 模块已经跑顺模式，权衡之后先按现在模式做"
+    "刷新浏览器 GET /、/audit-logs，确认 dashboard 登录卡跳到 /audit-logs（之前跳 /orgs）",
+    "git commit 当前 schema fix + seed 扩 + dashboard 卡片回链",
+    "考虑抽通用 ResourceDialog 组件（title + children + onSubmit + submitting）以减少 ~60% 重复代码，但 9 模块已经跑顺模式，权衡之后先按现在模式做",
+    "saas-identity-platform-react / saas-identity-platform-vue 同源 REF 也可走同样 schema 修复（同步走起其它项目）"
   ],
   "open_questions": [
     "_suite 自己 ruff 漂了：python scripts/gate.py --all 时 _suite L1 格式 fail 'ruff format scripts tests'。本次未碰 suite scripts，是预存在状态。是否允许动 suite 还是另开一个会话处理？",
