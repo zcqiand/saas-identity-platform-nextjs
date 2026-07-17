@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,6 +65,8 @@ export function RolesClient({ initialRoles }: RolesClientProps) {
     }
   }
 
+  const [permissionsFor, setPermissionsFor] = useState<RoleRow | null>(null);
+
   return (
     <div
       data-testid="roles-page"
@@ -83,7 +85,7 @@ export function RolesClient({ initialRoles }: RolesClientProps) {
           </Button>
         </CardHeader>
         <CardContent>
-          <Table>
+          <Table data-fn="M03.F01.I02">
             <TableHeader>
               <TableRow>
                 <TableHead>Code</TableHead>
@@ -107,6 +109,15 @@ export function RolesClient({ initialRoles }: RolesClientProps) {
                       onClick={() => setEditing(r)}
                     >
                       编辑
+                    </Button>
+                    <Button
+                      data-testid="role-permissions-btn"
+                      data-fn="M03.F01.I07"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setPermissionsFor(r)}
+                    >
+                      权限
                     </Button>
                     <Button
                       data-testid="delete-role-btn"
@@ -142,6 +153,13 @@ export function RolesClient({ initialRoles }: RolesClientProps) {
           onUpdated={(r) =>
             setRoles((prev) => prev.map((x) => (x.id === r.id ? r : x)))
           }
+        />
+      ) : null}
+
+      {permissionsFor ? (
+        <RolePermissionsDialog
+          role={permissionsFor}
+          onOpenChange={(o) => !o && setPermissionsFor(null)}
         />
       ) : null}
 
@@ -230,7 +248,7 @@ function NewRoleDialog({
         <DialogHeader>
           <DialogTitle>新建角色</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-4" data-fn="M03.F01.I06">
           <Field label="Code" required htmlFor="new-role-code">
             <Input
               id="new-role-code"
@@ -347,7 +365,7 @@ function EditRoleDialog({
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent data-testid="edit-role-dialog">
+      <DialogContent data-testid="edit-role-dialog" data-fn="M03.F01.I06">
         <DialogHeader>
           <DialogTitle>编辑角色</DialogTitle>
         </DialogHeader>
@@ -400,6 +418,128 @@ function EditRoleDialog({
             data-testid="edit-role-submit"
             onClick={handleSubmit}
             disabled={submitting}
+          >
+            {submitting ? "保存中..." : "保存"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* 角色权限绑定对话框 (M03.F01.I07)                                             */
+/* -------------------------------------------------------------------------- */
+
+interface RolePermissionsDialogProps {
+  role: RoleRow;
+  onOpenChange: (open: boolean) => void;
+}
+
+// D11 决策：权限码字符串（"user:read" 等），不在独立表。这里内置常用权限码。
+const PRESET_PERMISSIONS = [
+  "user:read",
+  "user:write",
+  "role:read",
+  "role:write",
+  "tenant:read",
+  "tenant:write",
+  "audit:read",
+  "platform:admin",
+];
+
+function RolePermissionsDialog({ role, onOpenChange }: RolePermissionsDialogProps) {
+  const [perms, setPerms] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(`/api/roles/${role.id}/permissions`);
+        if (res.ok) {
+          const data = (await res.json()) as { permissions: string[] };
+          if (!cancelled) setPerms(new Set(data.permissions));
+        }
+      } catch {
+        // ignore
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [role.id]);
+
+  function toggle(p: string) {
+    setPerms((prev) => {
+      const next = new Set(prev);
+      if (next.has(p)) next.delete(p);
+      else next.add(p);
+      return next;
+    });
+  }
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/roles/${role.id}/permissions`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ permissions: [...perms] }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        toast.error(err.error ?? `保存失败 (${res.status})`);
+        return;
+      }
+      toast.success(`角色 ${role.code} 权限已更新`);
+      onOpenChange(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "网络错误");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent data-testid="role-permissions-dialog">
+        <DialogHeader>
+          <DialogTitle>角色「{role.code}」权限绑定</DialogTitle>
+        </DialogHeader>
+        {loading ? (
+          <p className="text-muted-foreground text-sm">加载中…</p>
+        ) : (
+          <div className="space-y-2">
+            {PRESET_PERMISSIONS.map((p) => (
+              <label key={p} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  data-testid={`role-permission-${p.replace(/[^a-z0-9]/gi, "-")}`}
+                  checked={perms.has(p)}
+                  onChange={() => toggle(p)}
+                  className="size-4"
+                />
+                <code className="font-mono">{p}</code>
+              </label>
+            ))}
+          </div>
+        )}
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={submitting}
+          >
+            取消
+          </Button>
+          <Button
+            data-testid="role-permissions-submit"
+            onClick={handleSubmit}
+            disabled={submitting || loading}
           >
             {submitting ? "保存中..." : "保存"}
           </Button>

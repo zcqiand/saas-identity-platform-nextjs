@@ -231,6 +231,63 @@ describe("M03.F01 roles list page", () => {
     expect(queryByTestId("edit-role-dialog")).toBeTruthy();
   });
 
+  fnTest(["M03.F01.I07"], "I07 行内「权限」按钮挂 data-fn M03.F01.I07", () => {
+    const { getAllByTestId } = render(<RolesClient initialRoles={initialRoles} />);
+    expect(getAllByTestId("role-permissions-btn")[0]!.getAttribute("data-fn")).toBe(
+      "M03.F01.I07",
+    );
+  });
+
+  fnTest(["M03.F01.I07"], "I07 点权限按钮打开 RolePermissionsDialog (调 GET /api/roles/[id]/permissions)", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ roleId: 1, permissions: ["user:read"] }), {
+        status: 200,
+      }),
+    );
+    const { getAllByTestId, getByTestId } = render(
+      <RolesClient initialRoles={initialRoles} />,
+    );
+    fireEvent.click(getAllByTestId("role-permissions-btn")[0]!);
+    await waitFor(() => expect(getByTestId("role-permissions-dialog")).toBeTruthy());
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    const [url] = fetchSpy.mock.calls[0] as [string];
+    expect(url).toBe("/api/roles/1/permissions");
+  });
+
+  fnTest(["M03.F01.I07"], "I07 提交 RolePermissionsDialog 调 PUT /api/roles/[id]/permissions", async () => {
+    const fetchSpy = vi
+      .spyOn(global, "fetch")
+      .mockImplementation(async (_input, init) => {
+        if ((init?.method ?? "GET") === "GET") {
+          return new Response(
+            JSON.stringify({ roleId: 1, permissions: [] }),
+            { status: 200 },
+          );
+        }
+        return new Response(
+          JSON.stringify({ roleId: 1, permissions: ["user:read", "user:write"] }),
+          { status: 200 },
+        );
+      });
+    const { getAllByTestId, getByTestId } = render(
+      <RolesClient initialRoles={initialRoles} />,
+    );
+    fireEvent.click(getAllByTestId("role-permissions-btn")[0]!);
+    await waitFor(() => expect(getByTestId("role-permissions-dialog")).toBeTruthy());
+    await waitFor(() => expect(getByTestId("role-permissions-submit")).toBeTruthy());
+    fireEvent.click(getByTestId("role-permission-user-read"));
+    fireEvent.click(getByTestId("role-permission-user-write"));
+    fireEvent.click(getByTestId("role-permissions-submit"));
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2));
+    const putCall = fetchSpy.mock.calls.find(
+      (call) => (call[1] as RequestInit | undefined)?.method === "PUT",
+    ) as [string, RequestInit] | undefined;
+    expect(putCall).toBeTruthy();
+    expect(putCall![0]).toBe("/api/roles/1/permissions");
+    const body = JSON.parse(putCall![1].body as string);
+    expect(body.permissions).toEqual(expect.arrayContaining(["user:read", "user:write"]));
+  });
+
   fnTest(["M03.F01.I05"], "删除角色按钮点击触发 fetch DELETE（点 confirm 后）", async () => {
     const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ deleted: true }), { status: 200 }),

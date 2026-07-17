@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "M06 7 个 settings/* 页 placeholder 升级真交互：通用 SettingsDomainClient + PlatformSettingDialog 组件 + /api/platform-settings/[key] GET/PUT route。L0..L5 全绿、352 tests pass、164 功能条目、18 软告警。剩：M03.F01 5 子项 (I02/I06/I07/I08/I10)。",
+  "current_task": "M03.F01 5 子项补完：I02 列表查询 (Table data-fn)、I06 表单校验 (Dialog data-fn)、I07 角色权限绑定 (RolePermissionsDialog + /api/roles/[id]/permissions GET/PUT)、I08 store 接口 (@entry)、I10 permissionStore (@entry)。L0..L5 全绿、355 tests pass、164 功能条目、18 软告警。",
   "done": [
     "tree-change 提案 1：新增 M01.F05 / I01 / I02 / I03（已批准）",
     "PLAN-2026-005-M01.F05-saas-dashboard.md 写完（含 /audit-logs 偏差说明）",
@@ -62,16 +62,24 @@
     "  - 每个 page.tsx 加 @entry M06.F0x.I0y 注释（L5 用正则扫这两个模式匹配 UI 入口）",
     "tests/features/settings-pages: 重写为通用组件测试（5 tests: page root + dialog open + boolean PUT + number PUT + string PUT），用真 fn-ID M06.F02.I02/M06.F03.I02/M06.F04.I05 fixture",
     "tests/features/settings-security: 1 test 改用通用组件 testId 模式（security-btn-M06.F01.I0y）",
-    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、352 tests pass、164 功能条目、18 软告警（M06 子项从占位升级真交互后 L5 检测每个已上线子项需 UI 入口，靠 page.tsx 的 @entry 注释满足）"
+    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、352 tests pass、164 功能条目、18 软告警（M06 子项从占位升级真交互后 L5 检测每个已上线子项需 UI 入口，靠 page.tsx 的 @entry 注释满足）",
+    "M03.F01 5 子项补完：",
+    "  - I02: roles-client Table 加 data-fn=M03.F01.I02（mount 自动 fetchRoles 已在 server component 完成）",
+    "  - I06: NewRoleDialog / EditRoleDialog 内容容器加 data-fn=M03.F01.I06（必填/取消/loading 三件套实现已存在）",
+    "  - I07: 角色菜单权限绑定真实现：roles-client 加 RolePermissionsDialog 组件（checkbox 列表 + 调 GET/PUT /api/roles/[id]/permissions），表加「权限」按钮 data-fn=M03.F01.I07",
+    "  - /api/roles/[id]/permissions/route.ts: GET 返回 {roleId, permissions[]}，PUT 接收 {permissions: string[]} 调 roleStore.setRolePermissions",
+    "  - I08: src/lib/role-store.ts 顶部加 // @entry M03.F01.I08 / M03.F02.I05 / M03.F03.I05",
+    "  - I10: src/lib/permissions-store.ts 顶部加 // @entry M03.F01.I10 / M03.F01.I09",
+    "tests/features/roles-list: 13→16 (+3 I07 tests: 权限按钮 + GET 拉权限 + PUT 提交权限)",
+    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、355 tests pass、164 功能条目、18 软告警"
   ],
   "next": [
-    "刷新浏览器 GET /settings/login-methods /password /tokens /notifications /risk /openapi /security，点任一编辑按钮确认 Dialog 弹出",
-    "git commit M06 settings 改造（建议拆：(a) 通用组件 + route + page 改造 (b) tests 改造）",
+    "刷新浏览器 GET /roles 点任一行的「权限」按钮确认 Dialog 弹出 + 勾选 + 保存",
+    "git commit 当前 M03.F01 5 项补完 + roles/permissions-store/role-store 修改 + roles-list 3 测试",
     "schema.ts:279 auditLogs.timestamp default 是字面字符串 '(datetime(\\'now\\'))' —— Drizzle 没识别为 SQL 表达式。需另起 ADR + tree-change 修",
     "scripts/seed.ts 现在灌的是 dashboard 验证子集（4 个表）。完整 seed 跑 src/db/seed.ts:seedDatabase() 路径但 tsx 跑它会被 server-only 拦",
     "M05 上线后回链：I03 第三张卡从 /orgs 改回 /audit-logs（另起 tree-change '变更'）",
-    "M03.F01 角色管理 I02 (列表查询) / I06 (表单校验) / I07 (角色菜单权限绑定) / I08 (store 接口文档) / I10 (permissionStore) — I03/I04/I05 已实现",
-    "考虑抽通用 ResourceDialog 组件（title + children + onSubmit + submitting）以减少 ~60% 重复代码，但 8 模块已经跑顺模式，权衡之后先按现在模式做"
+    "考虑抽通用 ResourceDialog 组件（title + children + onSubmit + submitting）以减少 ~60% 重复代码，但 9 模块已经跑顺模式，权衡之后先按现在模式做"
   ],
   "open_questions": [
     "_suite 自己 ruff 漂了：python scripts/gate.py --all 时 _suite L1 格式 fail 'ruff format scripts tests'。本次未碰 suite scripts，是预存在状态。是否允许动 suite 还是另开一个会话处理？",
