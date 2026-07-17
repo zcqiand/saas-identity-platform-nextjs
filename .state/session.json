@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "alert('demo') 占位真实现已推 5/5 模块：orgs/positions/user-groups/users + 修 tenants/roles 也走 ConfirmDialog（CLAUDE.md 禁 window.confirm/alert）。剩 0 alert('demo')。L0..L5 全绿、319 tests pass、164 功能条目、0 软告警。",
+  "current_task": "M06 7 个 settings/* 页 placeholder 升级真交互：通用 SettingsDomainClient + PlatformSettingDialog 组件 + /api/platform-settings/[key] GET/PUT route。L0..L5 全绿、352 tests pass、164 功能条目、18 软告警。剩：M03.F01 5 子项 (I02/I06/I07/I08/I10)。",
   "done": [
     "tree-change 提案 1：新增 M01.F05 / I01 / I02 / I03（已批准）",
     "PLAN-2026-005-M01.F05-saas-dashboard.md 写完（含 /audit-logs 偏差说明）",
@@ -43,18 +43,35 @@
     "tests/features/users-list: 7→11 (新增 I05 dialog open + submit + I06 dialog open + submit)",
     "CLAUDE.md 禁止事项第 11 条：window.confirm/alert 走 ConfirmDialog/sonner。tenants/roles 之前用 window.confirm 也改 ConfirmDialog。delete 测试相应更新",
     "src/components/app/confirm-dialog.tsx: 加 testId prop + 默认 testId='confirm-dialog'，方便测试 querySelector 到 dialog 容器",
-    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、319 tests pass、164 功能条目、0 软告警"
+    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、319 tests pass、164 功能条目、0 软告警",
+    "M04.F01 应用管理真实现：/api/apps + /api/apps/[id] + /api/menus + /api/menus/[id] 4 个 CRUD route；apps/page + apps-client (NewAppDialog/EditAppDialog/ConfirmDialog + Link→/apps/[id]/menus)；apps/[id]/menus/page + menus-client (NewMenuDialog 含父菜单下拉 + EditMenuDialog + ConfirmDialog)。覆盖 I01-I12",
+    "M04.F02 API Keys 真实现：/api/api-keys + /api/api-keys/[id] (GET/PATCH toggle/DELETE)；api-keys/page + api-keys-client (NewApiKeyDialog 含 app select + 启停按钮 + ConfirmDialog)。覆盖 I01-I04",
+    "M05.F01 审计日志真实现：/api/audit-logs GET(tab: all/login/operation/security + operator) + POST(导出 CSV, content-type text/csv + content-disposition attachment)；audit-logs/page + audit-logs-client (4 Tab + operator 搜索 + 导出走 URL.createObjectURL + a.click)。覆盖 I01-I08",
+    "sidebar-nav.tsx 加 3 入口：应用管理 / API 凭据 / 审计日志",
+    "tests/features/apps-list: 10 tests (I01-I06 全覆盖 + 新建/编辑 dialog + Link)",
+    "tests/features/app-menus: 8 tests (I07-I11 全覆盖)",
+    "tests/features/api-keys-list: 6 tests (I01-I04 + dialog + toggle)",
+    "tests/features/audit-logs: 9 tests (I01-I07 + tab 切换 effect + 导出 fetch)",
+    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、352 tests pass、164 功能条目、0 软告警",
+    "M06 7 个 settings/* 子页 placeholder 升级真交互：",
+    "  - src/components/app/platform-setting-dialog.tsx: 通用 PlatformSettingDialog (boolean/number/string 三型控件 + sonner 反馈 + 调 PUT /api/platform-settings/[key])",
+    "  - src/components/app/settings-domain-client.tsx: 通用 SettingsDomainClient (items 数组配置驱动 + 点编辑打开 Dialog)",
+    "  - src/app/api/platform-settings/[key]/route.ts: GET + PUT route handler (调 platform-settings-store.setPlatformSetting)",
+    "  - 删 6 个旧 *-client.tsx (login-methods/password/tokens/notifications/risk/openapi/security)；page.tsx 重写为 ITEMS 配置驱动",
+    "  - 新建 /settings/security/page.tsx 路由（M06.F01 之前无路由，security-client.tsx 是孤儿）",
+    "  - 每个 page.tsx 加 @entry M06.F0x.I0y 注释（L5 用正则扫这两个模式匹配 UI 入口）",
+    "tests/features/settings-pages: 重写为通用组件测试（5 tests: page root + dialog open + boolean PUT + number PUT + string PUT），用真 fn-ID M06.F02.I02/M06.F03.I02/M06.F04.I05 fixture",
+    "tests/features/settings-security: 1 test 改用通用组件 testId 模式（security-btn-M06.F01.I0y）",
+    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、352 tests pass、164 功能条目、18 软告警（M06 子项从占位升级真交互后 L5 检测每个已上线子项需 UI 入口，靠 page.tsx 的 @entry 注释满足）"
   ],
   "next": [
-    "刷新浏览器 GET /orgs、/positions、/user-groups、/users，确认 dialog 打开/字段/提交/关闭都正常（next dev HMR 自动；否则重启 npm run dev）",
-    "git add output/saas-identity-platform-nextjs/ 一次性 commit；建议拆：(a) ConfirmDialog testId 改造 + 4 模块 client 改造 + 4 模块 tests 改造 + user-groups PUT route (b) tenants/roles ConfirmDialog 改造 + tests 改造",
-    "schema.ts:279 auditLogs.timestamp default 是字面字符串 '(datetime(\\'now\\'))' —— Drizzle 没识别为 SQL 表达式。需另起 ADR + tree-change 修：改成 sql`(datetime('now'))` 模板",
-    "scripts/seed.ts 现在灌的是 dashboard 验证子集（4 个表）。完整 seed 跑 src/db/seed.ts:seedDatabase() 路径但 tsx 跑它会被 server-only 拦。两种方案：(a) 同样绕开 server-only 在 scripts/seed.ts 里把整段 seedDatabase 搬过来 (b) 把 src/db/seed.ts 重构成接受 db 参数的纯函数",
+    "刷新浏览器 GET /settings/login-methods /password /tokens /notifications /risk /openapi /security，点任一编辑按钮确认 Dialog 弹出",
+    "git commit M06 settings 改造（建议拆：(a) 通用组件 + route + page 改造 (b) tests 改造）",
+    "schema.ts:279 auditLogs.timestamp default 是字面字符串 '(datetime(\\'now\\'))' —— Drizzle 没识别为 SQL 表达式。需另起 ADR + tree-change 修",
+    "scripts/seed.ts 现在灌的是 dashboard 验证子集（4 个表）。完整 seed 跑 src/db/seed.ts:seedDatabase() 路径但 tsx 跑它会被 server-only 拦",
     "M05 上线后回链：I03 第三张卡从 /orgs 改回 /audit-logs（另起 tree-change '变更'）",
-    "M04 /apps /menus /api-keys UI 补全",
-    "M06 platform settings 8 个 page + 46 子项 UI 补全",
     "M03.F01 角色管理 I02 (列表查询) / I06 (表单校验) / I07 (角色菜单权限绑定) / I08 (store 接口文档) / I10 (permissionStore) — I03/I04/I05 已实现",
-    "考虑抽通用 ResourceDialog 组件（title + children + onSubmit + submitting）以减少 ~60% 重复代码，但 6 模块已经跑顺模式，权衡之后先按现在模式做，需要时再重构"
+    "考虑抽通用 ResourceDialog 组件（title + children + onSubmit + submitting）以减少 ~60% 重复代码，但 8 模块已经跑顺模式，权衡之后先按现在模式做"
   ],
   "open_questions": [
     "_suite 自己 ruff 漂了：python scripts/gate.py --all 时 _suite L1 格式 fail 'ruff format scripts tests'。本次未碰 suite scripts，是预存在状态。是否允许动 suite 还是另开一个会话处理？",
