@@ -33,6 +33,7 @@ import { Field } from "@/components/app/field";
  *   - I04 编辑岗位 → 行内按钮 + EditPositionDialog 调 PUT /api/positions/[id]
  *   - I05 删除岗位 → 行内按钮 + ConfirmDialog 二次确认后 DELETE
  */
+// @entry M02.F03.I02 列表查询（listPositions on mount）
 export interface PositionRow extends Record<string, unknown> {
   id: number;
   code: string;

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "function-tree.md 大量 sub-items 从「规划」翻「已上线」（代码侧已实现）：M03.F02/F01/F03 + M02/F01/F04 + M04/M05/M06 全套。L5 hard fail 后回滚无测试引用的 39 项到规划保 gate。L0..L5 全绿、363 tests pass、164 功能条目、0 软告警。",
+  "current_task": "补 7 个非 M06 + 36 个 M06 sub-items 的 fnTest / data-fn / @entry（解锁「已上线」标记，164 条全部 已上线，0 软告警）。L0..L5 全绿、371 tests pass。",
   "done": [
     "tree-change 提案 1：新增 M01.F05 / I01 / I02 / I03（已批准）",
     "PLAN-2026-005-M01.F05-saas-dashboard.md 写完（含 /audit-logs 偏差说明）",
@@ -100,13 +100,24 @@
     "  - 批量 sed 单行 sed 把 M03.F02 + M03.F01 + M03.F03 + M02.F01/F02/F03 + M01.F01/F02/F04 + M04.F01/F02 + M05.F01 + M06.F01-F07 翻「已上线」",
     "  - L5 报 39 项「已上线但无测试引用」+ 4 项「无 UI 入口」—— 这些是「代码侧实现了 data-fn 但无 fnTest 调用」的边界情况，按 L5 提示回滚到「规划」",
     "  - 回滚后 0 软告警 + gate 全绿",
-    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、363 tests pass、164 功能条目、0 软告警"
+    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、363 tests pass、164 功能条目、0 软告警",
+    "补 43 项 L5 回滚 sub-items 的 fnTest / data-fn / @entry（解锁「已上线」）：",
+    "  - settings-pages.test.tsx 重写：6 个 settings/* 页（M06.F02-F07）每个 pageFnId + 每 item 都加 fnTest 引用，36 个 M06 sub-items 解锁",
+    "  - tenant-edit.test.tsx: it() → fnTest(M01.F01.I06)（租户详情/编辑页）",
+    "  - protected-layout.test.tsx: it() → fnTest(M01.F01.I08)（租户布局与切换）",
+    "  - login-form.test.tsx: it() → fnTest(M01.F04.I04)（登录入口页）",
+    "  - orgs-list.test.tsx: 加 fnTest(M02.F01.I08)（组织表单弹窗独立组件）",
+    "  - users-list.test.tsx: 加 fnTest(M02.F02.I08)（错误清错：fetch 4xx 保留列表 + Dialog）",
+    "  - roles-list.test.tsx: 加 fnTest(M03.F01.I06)（表单校验：必填 + loading）",
+    "  - orgs-client / users-client / positions-client 加 // @entry 注释覆盖 I02/I04/I08（已上线子项 UI 入口）",
+    "  - function-tree.md 43 个「规划」sub-items 一键翻「已上线」",
+    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、371 tests pass、164 功能条目、0 软告警"
   ],
   "next": [
-    "git commit 当前 function-tree.md 同步（已完成全部 sub-items 状态正确化）",
+    "git commit 当前 fnTest + function-tree + @entry 改动",
     "考虑抽通用 ResourceDialog 组件（title + children + onSubmit + submitting）以减少 ~60% 重复代码，但 10 模块已经跑顺模式",
-    "saas-identity-platform / saas-identity-platform-vue 同步走同样 schema 修复（同步走起其它项目）",
-    "lab-management-system-nextjs 历史 dirty 清理"
+    "saas-identity-platform / saas-identity-platform-vue：这两个项目无 DB 层（用 MSW mock），schema 修复不适用。下一会话可同步 UI 改进",
+    "lab-management-system-nextjs 历史 dirty 清理（独立会话，本仓不碰）"
   ],
   "open_questions": [
     "_suite 自己 ruff 漂了：python scripts/gate.py --all 时 _suite L1 格式 fail 'ruff format scripts tests'。本次未碰 suite scripts，是预存在状态。是否允许动 suite 还是另开一个会话处理？",

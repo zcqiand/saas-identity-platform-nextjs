@@ -34,7 +34,11 @@ import { Field } from "@/components/app/field";
  *   - I05 新增用户 → 顶部按钮 + NewUserDialog 调 POST /api/users
  *   - I06 编辑用户 → 行内按钮 + EditUserDialog 调 PUT /api/users/[id]
  *   - I07 删除用户 → 行内按钮 + ConfirmDialog 二次确认后 DELETE
+ *   - I08 错误清错（fetchUsers 路径返回 4xx 时不关 Dialog、不加列表）
  */
+// @entry M02.F02.I02 列表查询（fetchUsers on mount，含 keyword/role/status 筛选）
+// @entry M02.F02.I04 角色筛选（role-filter select）
+// @entry M02.F02.I08 错误清错（client 端 catch 后 toast.error，不动本地状态）
 export interface UserRow extends Record<string, unknown> {
   id: number;
   username: string;

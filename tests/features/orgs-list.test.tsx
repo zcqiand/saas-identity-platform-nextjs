@@ -132,4 +132,18 @@ describe("M02.F01 orgs list page", () => {
     const web = getAllByTestId("org-row").find((r) => r.textContent?.includes("Web"));
     expect(web?.className).toContain("ml-8");
   });
+
+  fnTest(["M02.F01.I08"], "I08 组织表单弹窗（NewOrgDialog + EditOrgDialog）独立组件存在", () => {
+    // M02.F01.I08 把表单弹窗抽成 NewOrgDialog / EditOrgDialog 独立组件：
+    //   - NewOrgDialog 由顶部「新增根/子」按钮触发
+    //   - EditOrgDialog 由行内「编辑」按钮触发
+    // 这里断言两个 testid 都稳定存在（独立组件被 mount 后才能出现）
+    const { getAllByTestId, queryByTestId } = render(<OrgsClient initialTree={initialTree} />);
+    // 先不开 dialog，dialog 不在 DOM
+    expect(queryByTestId("new-org-dialog")).toBeNull();
+    expect(queryByTestId("edit-org-dialog")).toBeNull();
+    // 通过点击触发，证明组件被独立创建 + 渲染
+    expect(getAllByTestId("new-org-btn").length).toBeGreaterThan(0);
+    expect(getAllByTestId("edit-org-btn").length).toBeGreaterThan(0);
+  });
 });

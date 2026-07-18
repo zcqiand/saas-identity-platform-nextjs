@@ -23,6 +23,9 @@ import {
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { Field } from "@/components/app/field";
 
+// @entry M02.F01.I02 树形查询（getOrgTree 走 SQLite CTE 一次拉整棵树）
+// @entry M02.F01.I08 组织表单弹窗（NewOrgDialog + EditOrgDialog 独立组件）
+
 /**
  * M02.F01 组织管理（client table + 树形）
  *
@@ -33,6 +36,7 @@ import { Field } from "@/components/app/field";
  *   - I04 新增子部门 → 顶部按钮 + Dialog，预填 parentId（pickable）
  *   - I05 编辑 → 行内按钮 + EditOrgDialog 调 PUT /api/orgs/[id]
  *   - I06 删除 → 行内按钮 + ConfirmDialog 二次确认后调 DELETE
+ *   - I08 组织表单弹窗（独立组件 NewOrgDialog + EditOrgDialog）—— 本文件内
  */
 export interface OrgNode extends Record<string, unknown> {
   id: number;

@@ -231,6 +231,32 @@ describe("M03.F01 roles list page", () => {
     expect(queryByTestId("edit-role-dialog")).toBeTruthy();
   });
 
+  fnTest(
+    ["M03.F01.I06"],
+    "I06 表单校验：Code / 名称 必填，loading 时按钮禁用",
+    async () => {
+      const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue(
+        new Response(JSON.stringify({ id: 99, code: "qa", name: "QA", description: null, enabled: true, createdAt: "", updatedAt: "" }), { status: 201 }),
+      );
+      const { getByTestId } = render(<RolesClient initialRoles={initialRoles} />);
+      fireEvent.click(getByTestId("new-role-btn"));
+      await waitFor(() => expect(getByTestId("new-role-dialog")).toBeTruthy());
+      // 表单区有 data-fn M03.F01.I06（必填/取消/loading 三件套）
+      expect(
+        getByTestId("new-role-dialog").querySelector("[data-fn='M03.F01.I06']"),
+      ).toBeTruthy();
+      // 空提交不调 fetch（必填校验拦在前面）
+      fireEvent.click(getByTestId("new-role-submit"));
+      await new Promise((r) => setTimeout(r, 50));
+      expect(fetchSpy).not.toHaveBeenCalled();
+      // 填齐必填后提交，调 fetch + 关 Dialog
+      fireEvent.change(getByTestId("new-role-code"), { target: { value: "qa" } });
+      fireEvent.change(getByTestId("new-role-name"), { target: { value: "QA" } });
+      fireEvent.click(getByTestId("new-role-submit"));
+      await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    },
+  );
+
   fnTest(["M03.F01.I07"], "I07 行内「权限」按钮挂 data-fn M03.F01.I07", () => {
     const { getAllByTestId } = render(<RolesClient initialRoles={initialRoles} />);
     expect(getAllByTestId("role-permissions-btn")[0]!.getAttribute("data-fn")).toBe(

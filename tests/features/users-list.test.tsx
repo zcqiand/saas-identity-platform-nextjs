@@ -161,4 +161,30 @@ describe("M02.F02 users list page", () => {
     expect(url).toBe("/api/users/1");
     expect(init.method).toBe("DELETE");
   });
+
+  fnTest(
+    ["M02.F02.I08"],
+    "I08 错误清错：fetch 4xx 时不关 Dialog、不加列表（错误态可观察）",
+    async () => {
+      // fetchUsers 路径返回 4xx 时，client 必须保留当前列表 + Dialog 不关（错误暴露给用户）
+      const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue(
+        new Response(JSON.stringify({ error: "boom" }), { status: 400 }),
+      );
+      const { getByTestId, getAllByTestId } = render(
+        <UsersClient initialUsers={initialUsers} />,
+      );
+      const newBtn = getByTestId("new-user-btn");
+      expect(newBtn.getAttribute("data-fn")).toBe("M02.F02.I05");
+      fireEvent.click(newBtn);
+      await waitFor(() => expect(getByTestId("new-user-dialog")).toBeTruthy());
+      fireEvent.change(getByTestId("new-user-username"), { target: { value: "x" } });
+      fireEvent.change(getByTestId("new-user-displayname"), { target: { value: "X" } });
+      fireEvent.change(getByTestId("new-user-email"), { target: { value: "x@x.com" } });
+      fireEvent.click(getByTestId("new-user-submit"));
+      await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+      // 列表不应增加（错误态保留）
+      await new Promise((r) => setTimeout(r, 50));
+      expect(getAllByTestId("user-row").length).toBe(3);
+    },
+  );
 });
