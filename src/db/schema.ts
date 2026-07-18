@@ -199,6 +199,24 @@ export type NewUserGroup = typeof userGroups.$inferInsert;
 export type UserGroupMember = typeof userGroupMembers.$inferSelect;
 export type NewUserGroupMember = typeof userGroupMembers.$inferInsert;
 
+// M03.F02 权限组（permission_groups）— 权限模板：name + description + permissions(JSON)
+// + sort + enabled。roles 通过 role_permissions 关联到 permission_code；权限组是给 UI
+// 批量管理权限码的中间层（"管理员权限包" / "只读权限包"），与 roles 表解耦。
+export const permissionGroups = sqliteTable("permission_groups", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  /** JSON 字符串数组：["user:read", "role:write"] — 命名空间由调用方约定 */
+  permissions: text("permissions").notNull().default("[]"),
+  sort: integer("sort").notNull().default(0),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
+export type PermissionGroup = typeof permissionGroups.$inferSelect;
+export type NewPermissionGroup = typeof permissionGroups.$inferInsert;
+
 // ─────────────────────────────────────────────────────────────────────────
 // M04 schema：apps / app_menus / api_keys
 // ─────────────────────────────────────────────────────────────────────────

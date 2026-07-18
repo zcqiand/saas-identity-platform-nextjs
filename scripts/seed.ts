@@ -91,6 +91,23 @@ const USER_GROUP_SEED = [
   { id: 2, name: "All Users", description: null, enabled: true },
 ] as const;
 
+const PERMISSION_GROUP_SEED = [
+  {
+    name: "admin-pack",
+    description: "管理员全部权限",
+    permissions: ["user:read", "user:write", "role:read", "role:write", "tenant:read", "tenant:write", "audit:read", "platform:admin"],
+    sort: 0,
+    enabled: true,
+  },
+  {
+    name: "read-pack",
+    description: "只读权限集合",
+    permissions: ["user:read", "role:read", "tenant:read"],
+    sort: 1,
+    enabled: true,
+  },
+] as const;
+
 const APP_SEED = [
   { code: "dashboard", name: "数据看板", type: "web", description: null, enabled: true },
   { code: "billing", name: "计费系统", type: "web", description: null, enabled: true },
@@ -191,6 +208,7 @@ db.delete(schema.positionMembers).run();
 db.delete(schema.positions).run();
 db.delete(schema.rolePermissions).run();
 db.delete(schema.roles).run();
+db.delete(schema.permissionGroups).run();
 db.delete(schema.orgs).run();
 db.delete(schema.tenantUsers).run();
 db.delete(schema.users).run();
@@ -230,6 +248,15 @@ for (const rp of ROLE_PERMISSION_SEED) {
   }
 }
 for (const g of USER_GROUP_SEED) db.insert(schema.userGroups).values(g).run();
+for (const pg of PERMISSION_GROUP_SEED) {
+  db.insert(schema.permissionGroups).values({
+    name: pg.name,
+    description: pg.description,
+    permissions: JSON.stringify(pg.permissions),
+    sort: pg.sort,
+    enabled: pg.enabled,
+  }).run();
+}
 for (const a of APP_SEED) db.insert(schema.apps).values(a).run();
 // app_menus 需要 app.id 和（parent）menu.id
 const menuIdByCode = new Map<string, number>();
@@ -276,6 +303,7 @@ const stats = {
   roles: db.select().from(schema.roles).all().length,
   role_permissions: db.select().from(schema.rolePermissions).all().length,
   user_groups: db.select().from(schema.userGroups).all().length,
+  permission_groups: db.select().from(schema.permissionGroups).all().length,
   apps: db.select().from(schema.apps).all().length,
   app_menus: db.select().from(schema.appMenus).all().length,
   api_keys: db.select().from(schema.apiKeys).all().length,

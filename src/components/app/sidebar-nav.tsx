@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
  *   岗位管理 /positions M02.F03
  *   角色管理 /roles    M03.F01
  *   用户组 /user-groups M03.F03
+ *   权限组 /permission-groups M03.F02
  *   应用管理 /apps     M04.F01
  *   API 凭据 /api-keys M04.F02
  *   审计日志 /audit-logs M05.F01
@@ -40,6 +41,7 @@ const NAV_ITEMS: readonly NavItem[] = [
   { href: "/positions", label: "岗位管理" },
   { href: "/roles", label: "角色管理" },
   { href: "/user-groups", label: "用户组" },
+  { href: "/permission-groups", label: "权限组" },
   { href: "/apps", label: "应用管理" },
   { href: "/api-keys", label: "API 凭据" },
   { href: "/audit-logs", label: "审计日志" },
