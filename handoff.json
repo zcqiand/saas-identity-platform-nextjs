@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "tag": "v0.5.0-saas-iam",
+  "tag": "v1.0-001",
   "project": "saas-identity-platform-nextjs",
   "exported_at": "2026-07-18T14:55:40+08:00",
   "current_task": "v0.5.0 收尾。9 个 commit + 3 个 fix 落地 saas-identity-platform-nextjs MVP：6 大模块 UI 全实交互、12 张表 schema + 完整 seed、Tailwind v4 + shadcn/ui 装对、dev server 7 个路由全 200。",
@@ -57,8 +57,8 @@
     "db_tables_seeded": 12
   },
   "tag_instructions": {
-    "created": "git tag -a v0.5.0-saas-iam -m \"feat: saas-identity-platform-nextjs MVP - 6 modules, 12 tables, 144 tests\" aceb470",
-    "verify": "git tag --verify v0.5.0-saas-iam",
-    "push": "git push origin v0.5.0-saas-iam"
+    "created": "git tag -a v1.0-001 -m \"feat: saas-identity-platform-nextjs MVP - 6 modules, 12 tables, 144 tests\" aceb470",
+    "verify": "git tag --verify v1.0-001",
+    "push": "git push origin v1.0-001"
   }
 }
