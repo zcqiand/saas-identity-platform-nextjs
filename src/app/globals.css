@@ -1,49 +1,47 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* shadcn/ui 语义 token —— globals.css 与 tailwind.config.ts 的 cssVariables 配套 */
-@layer base {
-  :root {
-    --background: 0 0% 98%;
-    --foreground: 0 0% 9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
-    --primary: 221 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 92%;
-    --input: 0 0% 89%;
-    --ring: 221 100% 50%;
-    --radius: 0.5rem;
-  }
+/**
+ * SaaS IAM — Tailwind v4 主题定义
+ *
+ * Tailwind v4 用 CSS-based 配置（@theme）取代 tailwind.config.js。
+ * 这里定义 shadcn/ui 语义 token（HSL values），对应 components/ui/*.tsx
+ * 里的 bg-background / text-foreground / border-border 等用法。
+ */
+@theme {
+  --color-background: hsl(0 0% 98%);
+  --color-foreground: hsl(0 0% 9%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(0 0% 9%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(0 0% 9%);
+  --color-primary: hsl(221 100% 50%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(0 0% 96%);
+  --color-secondary-foreground: hsl(0 0% 9%);
+  --color-muted: hsl(0 0% 96%);
+  --color-muted-foreground: hsl(0 0% 45%);
+  --color-accent: hsl(0 0% 96%);
+  --color-accent-foreground: hsl(0 0% 9%);
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-success: hsl(142 71% 45%);
+  --color-success-foreground: hsl(0 0% 100%);
+  --color-warning: hsl(38 92% 50%);
+  --color-warning-foreground: hsl(0 0% 9%);
+  --color-border: hsl(0 0% 92%);
+  --color-input: hsl(0 0% 89%);
+  --color-ring: hsl(221 100% 50%);
+  --color-sidebar: hsl(0 0% 98%);
+  --color-sidebar-foreground: hsl(0 0% 9%);
+  --color-sidebar-accent: hsl(0 0% 96%);
+  --color-sidebar-accent-foreground: hsl(0 0% 9%);
+  --color-sidebar-border: hsl(0 0% 92%);
+  --color-sidebar-ring: hsl(221 100% 50%);
 
-  .dark {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 4%;
-    --card-foreground: 0 0% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 64%;
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 0% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 217 91% 60%;
-  }
+  --radius: 0.5rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
 }
 
 @layer base {
