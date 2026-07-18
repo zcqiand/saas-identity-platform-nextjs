@@ -1,0 +1,48 @@
+# 依赖
+node_modules/
+.pnpm-store/
+
+# 构建产物
+dist/
+dist-ssr/
+
+# 缓存
+.cache/
+.vite/
+coverage/
+*.tsbuildinfo
+.next/
+.claude/
+.harness/
+.state/
+
+# 本地环境
+.env
+.env.local
+.env.*.local
+
+# 编辑器
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+npm-debug.log*
+# 数据库
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# 内层 git（项目自己 .git，不进外层 git 跟踪）
+.git/
+
+# next.js build output
+.next/
+
+# logs
+*.log

@@ -1,0 +1,69 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1784238740469,
+      "tag": "0000_abnormal_dorian_gray",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1784249490628,
+      "tag": "0001_faithful_rictor",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784252519646,
+      "tag": "0002_unusual_morlocks",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1784257449086,
+      "tag": "0003_loving_the_watchers",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1784259307268,
+      "tag": "0004_wonderful_ozymandias",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1784261193137,
+      "tag": "0005_calm_king_bedlam",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1784263808171,
+      "tag": "0006_serious_wildside",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1784310545716,
+      "tag": "0007_fix_datetime_sql_default",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1784333802819,
+      "tag": "0008_add_permission_groups",
+      "breakpoints": true
+    }
+  ]
+}
