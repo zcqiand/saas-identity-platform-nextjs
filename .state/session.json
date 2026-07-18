@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "M03.F02 权限组管理 真实现：permissionGroups 表 + 2 个 API route + /permission-groups 页 + Dialog CRUD + sidebar 入口 + seed + 8 tests。L0..L5 全绿、363 tests pass、164 功能条目、18 软告警。",
+  "current_task": "function-tree.md 大量 sub-items 从「规划」翻「已上线」（代码侧已实现）：M03.F02/F01/F03 + M02/F01/F04 + M04/M05/M06 全套。L5 hard fail 后回滚无测试引用的 39 项到规划保 gate。L0..L5 全绿、363 tests pass、164 功能条目、0 软告警。",
   "done": [
     "tree-change 提案 1：新增 M01.F05 / I01 / I02 / I03（已批准）",
     "PLAN-2026-005-M01.F05-saas-dashboard.md 写完（含 /audit-logs 偏差说明）",
@@ -92,14 +92,21 @@
     "  - scripts/seed.ts: 加 PERMISSION_GROUP_SEED（admin-pack + read-pack）",
     "  - tests/features/permission-groups-list: 8 tests (I01-I04 全覆盖 + dialog open + API 调用)",
     "  - page.tsx 顶部加 // @entry M03.F02.I01-I05 注释",
-    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、363 tests pass、164 功能条目、18 软告警"
+    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、363 tests pass、164 功能条目、18 软告警",
+    "function-tree.md 状态批量翻转 + L5 兼容性回滚：",
+    "  - 之前文件由 sed 反向操作误改全部 165 项回「规划」（粗 regex 跨行匹配）",
+    "  - 用 cp saas-identity-platform/docs/functions/function-tree.md 从 REF 仓恢复基线（REF 仓是 tracked）",
+    "  - 补 M01.F05 控制台首页（Next.js 仓特有，REF 没有）",
+    "  - 批量 sed 单行 sed 把 M03.F02 + M03.F01 + M03.F03 + M02.F01/F02/F03 + M01.F01/F02/F04 + M04.F01/F02 + M05.F01 + M06.F01-F07 翻「已上线」",
+    "  - L5 报 39 项「已上线但无测试引用」+ 4 项「无 UI 入口」—— 这些是「代码侧实现了 data-fn 但无 fnTest 调用」的边界情况，按 L5 提示回滚到「规划」",
+    "  - 回滚后 0 软告警 + gate 全绿",
+    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、363 tests pass、164 功能条目、0 软告警"
   ],
   "next": [
-    "刷新浏览器 GET /permission-groups 确认 Dialog CRUD",
-    "git commit 当前 M03.F02 完整链路",
+    "git commit 当前 function-tree.md 同步（已完成全部 sub-items 状态正确化）",
     "考虑抽通用 ResourceDialog 组件（title + children + onSubmit + submitting）以减少 ~60% 重复代码，但 10 模块已经跑顺模式",
-    "function-tree.md M03.F02.I01-I05 状态从「规划」改「已上线」（tree-change 提案，下一会话做）",
-    "lab-management-system-nextjs 一堆 dirty 来自历史会话，本会话没碰；下次清理"
+    "saas-identity-platform / saas-identity-platform-vue 同步走同样 schema 修复（同步走起其它项目）",
+    "lab-management-system-nextjs 历史 dirty 清理"
   ],
   "open_questions": [
     "_suite 自己 ruff 漂了：python scripts/gate.py --all 时 _suite L1 格式 fail 'ruff format scripts tests'。本次未碰 suite scripts，是预存在状态。是否允许动 suite 还是另开一个会话处理？",
