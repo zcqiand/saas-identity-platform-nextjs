@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import { ProtectedLayout } from "@/app/(protected)/layout-client";
 import * as tenantStore from "@/lib/tenant-store";
+import { applyTheme } from "@/lib/theme";
 import { db } from "@/db";
 import { seedDatabase } from "@/db/seed";
 import { eq } from "drizzle-orm";
@@ -12,13 +13,9 @@ import { fnTest } from "../fn";
 /**
  * M01.F01.I08 租户布局与切换 — ProtectedLayout
  *
- * server component 在 SSR 启动时：
- *   1. 读 cookie → 调 setCurrentTenant(id)
- *   2. 调 applyTheme(currentTenant.theme)
- *   3. 渲染 <html data-tenant="..."> + <style>{css}</style>
- *
- * 客户端 wrapper（ProtectedLayout）导出，方便 jsdom 测试；server 组件
- * (protected)/layout.tsx 是包装层。
+ * ProtectedLayout 是纯 client 组件（"use client"），不能 import server-only 模块。
+ * CSS 字符串由 server layout 在 SSR 时算好作为 prop 透传过来。
+ * 测试模拟 server 的行为：自己调 applyTheme() + setCurrentTenant() 再渲染。
  */
 afterEach(() => {
   cleanup();
@@ -35,7 +32,7 @@ describe("M01.F01.I08 ProtectedLayout", () => {
     const acme = db.select().from(tenants).where(eq(tenants.code, "acme")).get();
     if (acme) tenantStore.setCurrentTenant(acme.id);
     const { getByTestId } = render(
-      <ProtectedLayout>
+      <ProtectedLayout themeCss={acme ? applyTheme(acme.theme) : ""} currentTenantName={acme?.name ?? null}>
         <div>child</div>
       </ProtectedLayout>,
     );
@@ -46,14 +43,13 @@ describe("M01.F01.I08 ProtectedLayout", () => {
     const acme = db.select().from(tenants).where(eq(tenants.code, "acme")).get();
     if (acme) tenantStore.setCurrentTenant(acme.id);
     const { getByTestId } = render(
-      <ProtectedLayout>
+      <ProtectedLayout themeCss={acme ? applyTheme(acme.theme) : ""} currentTenantName={acme?.name ?? null}>
         <div>child</div>
       </ProtectedLayout>,
     );
     const root = getByTestId("protected-layout");
-    // applyTheme("default") 输出 :root[data-tenant="default"] {...}
-    // 我们的 wrapper div 不直接带 data-tenant，但 style 标签带
     const style = root.querySelector("style");
+    // applyTheme("default") 输出 [data-tenant="default"]{:root{...}}
     expect(style?.textContent).toContain("data-tenant=\"default\"");
   });
 
@@ -61,7 +57,7 @@ describe("M01.F01.I08 ProtectedLayout", () => {
     const dark = db.select().from(tenants).where(eq(tenants.code, "globex")).get();
     if (dark) tenantStore.setCurrentTenant(dark.id);
     const { getByTestId } = render(
-      <ProtectedLayout>
+      <ProtectedLayout themeCss={dark ? applyTheme(dark.theme) : ""} currentTenantName={dark?.name ?? null}>
         <div>child</div>
       </ProtectedLayout>,
     );
@@ -71,10 +67,8 @@ describe("M01.F01.I08 ProtectedLayout", () => {
 
   it("未设置当前租户 → 不渲染 style（clearTheme）", () => {
     tenantStore.setCurrentTenant(0); // 不存在 id → getCurrentTenant 返回 null
-    // 实际：setCurrentTenant(0) 设了 0，getCurrentTenant(null → null)
-    // 但 setCurrentTenant(0) 会设 cache 0，getTenant(0) → null
     const { getByTestId } = render(
-      <ProtectedLayout>
+      <ProtectedLayout themeCss="" currentTenantName={null}>
         <div>child</div>
       </ProtectedLayout>,
     );

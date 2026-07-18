@@ -1,34 +1,35 @@
 "use client";
 
 import { SidebarNav } from "@/components/app/sidebar-nav";
-import { applyTheme } from "@/lib/theme";
-import { getCurrentTenant } from "@/lib/tenant-store";
 
 /**
  * M01.F01.I08 租户布局与切换 — ProtectedLayout client shell
  *
- * 测试期望：这个组件自己从 tenantStore.getCurrentTenant() 读当前 tenant，
- * 然后调 applyTheme / clearTheme 渲染 <style>。这样 jsdom 测试不用传 props。
+ * 接收 server layout 透传过来的 themeCss（已算好的 CSS 字符串）和
+ * currentTenantName。client 端只是渲染，不调任何 server-only 模块。
  *
- * 真实部署时：(protected)/layout.tsx (server) 在 SSR 启动时同步 cookie → tenantStore，
- * 本组件渲染时已经能拿到 tenant。CSS 用属性选择器 `[data-tenant="..."]`，保证 hydration 后无 flash。
+ * 测试期望：vitest 下直接调 <ProtectedLayout> 不传 props 时也能正常工作
+ * （默认 themeCss="" → 不渲染 <style>）。
  */
 export interface ProtectedLayoutProps {
   children: React.ReactNode;
+  themeCss?: string;
+  currentTenantName?: string | null;
 }
 
-export function ProtectedLayout({ children }: ProtectedLayoutProps) {
-  const tenant = getCurrentTenant();
-  const css = tenant ? applyTheme(tenant.theme) : null;
-
+export function ProtectedLayout({
+  children,
+  themeCss = "",
+  currentTenantName = null,
+}: ProtectedLayoutProps) {
   return (
     <div
       data-testid="protected-layout"
       data-fn="M01.F01.I08"
-      data-tenant={tenant?.theme ?? ""}
+      data-tenant={currentTenantName ?? ""}
       className="flex min-h-screen"
     >
-      {css !== null ? <style dangerouslySetInnerHTML={{ __html: css }} /> : null}
+      {themeCss ? <style dangerouslySetInnerHTML={{ __html: themeCss }} /> : null}
       <SidebarNav />
       <main className="flex-1 bg-background p-6">{children}</main>
     </div>
