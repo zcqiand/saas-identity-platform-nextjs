@@ -17,10 +17,11 @@ set -e
 # 把宿主机上的 dev.db（或初始化后的 prod.db）挂进来。
 if [ ! -d /app/data ]; then
     mkdir -p /app/data
-    chown -R nextjs:nodejs /app/data 2>/dev/null || true
+    # node:node 是 node:20-alpine 镜像自带的用户（UID/GID 1000），不是 nextjs
+    chown -R node:node /app/data 2>/dev/null || true
 fi
 
-# 把 node_modules/better-sqlite3 的权限修正（COPY 时是 nextjs:nodejs，但
+# 把 node_modules/better-sqlite3 的权限修正（COPY 时是 node:node，
 # runtime USER root 启动进程，child_process 子进程要能 dlopen .node 文件）。
 chmod -R a+rX /app/node_modules/better-sqlite3 2>/dev/null || true
 

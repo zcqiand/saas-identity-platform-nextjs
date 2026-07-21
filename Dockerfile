@@ -96,18 +96,22 @@ RUN apk add --no-cache nginx
 # .next/standalone/ 是一个自包含目录：server.js + 它需要的 node_modules 子集
 # （含 better-sqlite3 的 prebuilt binary，前提是 builder stage 在 Alpine 上跑的）。
 # 不要 COPY .next/standalone/node_modules/better-sqlite3 覆盖它——standalone 已经带。
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+#
+# chown 用 node:node（UID/GID 1000）—— node:20-alpine 镜像自带该用户，
+# 不要假设 nextjs:nodejs 存在（v1.0-007 失败就在此：chown -R nextjs:nodejs /app/data 报
+# 'invalid user'）。
+COPY --from=builder --chown=node:node /app/.next/standalone ./
 
 # 静态资源 + public：standalone 不带这两份，nginx 直接 serve 它们。
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
+COPY --from=builder --chown=node:node /app/public ./public
 
 # ---- nginx 配置 ----
 COPY --chown=root:root deploy/nginx.conf /etc/nginx/nginx.conf
 
 # ---- data/ 目录（SQLite 数据库文件）----
 # prod 用 volume 挂 /app/data，镜像里只创建空目录、设权限。
-RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
+RUN mkdir -p /app/data && chown -R node:node /app/data
 
 # ---- 启动脚本 ----
 # 顺序：先启 node server（后台），等它 ready，再启 nginx（前台保活）。
@@ -115,8 +119,10 @@ RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
 COPY --chown=root:root deploy/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# 安全：非 root 运行 next server（nginx 必须 root 才能 bind 80）。
-# 添加 nextjs 用户是 node:20-alpine 镜像自带的；如果版本变化检查 /etc/passwd。
+# 进程模型：
+# - nginx 跑在 root（必须 bind 80 + bind 53 如果做 resolver，这里不需要）
+# - node server.js 跑在 root（沙盒少一层简化生命周期）
+# node:20-alpine 镜像自带 node:node（UID/GID 1000），文件 owner 用它；进程都 root。
 USER root
 
 EXPOSE 80
