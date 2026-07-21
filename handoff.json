@@ -1,56 +1,60 @@
 {
   "schema": 1,
-  "tag": "v1.0-002",
+  "tag": "v1.0-009",
   "project": "saas-identity-platform-nextjs",
-  "exported_at": "2026-07-21T18:30:00+08:00",
-  "current_task": "完整部署基础设施上线，端口 8065。GitHub Action 跑中（commit a80b28c 触发的 ci #1 run）。",
+  "exported_at": "2026-07-21T20:30:00+08:00",
+  "current_task": "部署成功上线，端口 8065。Action ci #8 (1659ec3) 全绿。",
   "done": [
     "feat(deploy): Dockerfile 三阶段（deps→builder→runtime node+nginx）",
     "feat(deploy): 容器内 nginx 反代到 :3000 + 静态资源 1y 缓存 + gzip",
-    "feat(deploy): VPS deploy 脚本端口 8065（-p 127.0.0.1:8065:80）",
+    "feat(deploy): VPS deploy 脚本端口 8065",
     "feat(deploy): GitHub Actions ci.yml（tag push → vitest → docker build/push → ssh deploy）",
     "feat(deploy): VPS vhost 模板 + setup-vps.sh 一次性 bootstrap",
-    "feat(deploy): docs/DEPLOYMENT.md 完整部署手册 + 8 个 Next.js 专属坑",
-    "fix(next.config): output: 'standalone' 让 next build 产出可自包含 server.js",
-    "fix(eslint): eslint.config.js → eslint.config.mjs（Node 20 Windows ESM/CJS 解不出来）",
+    "feat(deploy): docs/DEPLOYMENT.md 完整部署手册",
+    "fix(next.config): output: 'standalone'",
+    "fix(eslint): eslint.config.js → eslint.config.mjs",
+    "fix(deploy): builder 阶段 build-from-source + verify better-sqlite3 + npmmirror binary mirror",
+    "fix(deploy): 加空 public/.gitkeep（项目原本没 public/ 目录）",
+    "fix(deploy): runtime 用户 nextjs:nodejs → node:node（node:20-alpine 自带用户）",
+    "fix(deploy): DATA_DIR /srv/... → ~/saas-identity-platform-nextjs-data（deploy 用户可写）",
     "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿 / 164 功能条目 / 29 软告警",
-    "git tag v1.0-002 + push origin，Action ci #1 启动"
+    "git tag v1.0-009 + push origin",
+    "Action ci #8 全绿：vitest ✅ (42s) + docker build/push ✅ (3m 5s) + ssh deploy ✅ (35s)，部署上线"
   ],
   "next": [
-    "等 Action ci #1 跑完，看 docker build 是否成功（better-sqlite3 在 alpine 上的 prebuilt binary 是最大风险点）",
-    "如果 ssh-deploy 步骤 fail：登录 VPS 看 docker logs saas-identity-platform-nextjs --tail 50",
-    "如果容器 healthcheck 不绿：docker exec 进去 wget 127.0.0.1:3000/ 看 node 起没起",
-    "首次部署 data/dev.db 还没拷：docker cp data/dev.db saas-identity-platform-nextjs:/app/data/dev.db && docker restart ...",
-    "AUTH_JWT_SECRET 还是 placeholder 'change-me-in-prod-please-32chars-min'，正式 prod 前换掉"
+    "浏览器真实访问 https://<your-domain>/ 验证前端 + API",
+    "首次部署 data/dev.db 拷到 ~/saas-identity-platform-nextjs-data/dev.db（docker cp 后 restart）",
+    "AUTH_JWT_SECRET 还是 placeholder 'change-me-in-prod-please-32chars-min'，正式 prod 前换掉",
+    "29 条软告警（M01.F05.I01/I02/I03 等「已上线无设计映射」、23 条「已上线无测试引用」）是历史欠账",
+    "verify VPS 上 ~/saas-identity-platform-nextjs-data/ 目录存在 + dev.db 写入成功"
   ],
   "open_questions": [
-    "首次部署需要把本地 data/dev.db 拷到 VPS 容器里（手工 docker cp）。后续要决定：是在 Dockerfile 加 seed 阶段把 db 烤进镜像，还是走 migrations 启动自动建表？",
-    "VPS 上 /srv/saas-identity-platform-nextjs/data/ 的 owner 是不是 deploy?deploy？需要 deploy.sh 前置 chown",
-    "saas-identity-platform-react / saas-identity-platform-vue 没有 schema 层（zustand + MSW），原计划「同步 schema 修复」不适用；两个项目的「功能 1:1 对齐」靠 store API 接口契约（不是 DB schema）",
-    "lab-management-system-nextjs 之前历史会话遗留 dirty（src/app/(protected)/{data-entry,receipt,receipts,report-*}/ + 新 lib + 新 tests），本任务没动这部分，待独立会话梳理",
-    "M03.F02 sub-items 已经在 function-tree 翻 已上线，但 docs/requirements/ 里没有对应 REQ 文档（L5 不强制要求，跳过）",
-    "29 条软告警（M01.F05.I01/I02/I03 等「已上线无设计映射」、23 条「已上线无测试引用」）是历史欠账，本任务没动"
+    "首次部署 data/dev.db：手工 docker cp 还是走 Dockerfile seed 阶段烤进镜像？后续要决定",
+    "VPS 上 nginx vhost 还没建（用户用 setup-vps.sh 跑过没？），没 vhost 容器跑起来也访问不到",
+    "29 条软告警是历史欠账，本任务没动",
+    "lab-management-system-nextjs 之前历史会话遗留 dirty（src/app/(protected)/{data-entry,receipt,receipts,report-*}/ + 新 lib + 新 tests），本任务没动这部分"
   ],
   "dont": [
     "不要改 .harness/stack.json 让门变松",
     "不要给 skip 的测试挂功能 ID",
     "不要直接编辑 docs/functions/function-tree.md —— 走 tree-change",
-    "tree-change 提案是一次性令牌；批准后必须同一次写入",
     "npm install 必须用 registry.npmmirror.com",
-    "drizzle schema.ts 改完必须 drizzle-kit generate；改 default 时要确认 Drizzle 把它当 SQL 表达式（用 sql`...` 模板）",
+    "drizzle schema.ts 改完必须 drizzle-kit generate",
     "不要在 next dev 运行时去 rm data/dev.db：Windows 上 better-sqlite3 持锁",
-    "import 'server-only' 的 lib 不能混 client-safe 纯函数；规则：拆 xxx-client.ts 和 xxx-server.ts",
-    "client 组件要拿 server-only 数据，**必须**通过 server layout / page 把数据作为 props 传下来，不要在 client 里 import server-only",
-    "Tailwind v4 用 CSS-based @theme 配置，不要再写 tailwind.config.js 的 extend.colors",
-    "vitest.config.ts 用 esbuild.{ jsx: \"automatic\" }，不要用 oxc（v2 兼容）",
-    "不要把 secrets 建在 GitHub environment 里：会解析成空字符串（DEPLOYMENT.md 坑 7-8）",
-    "不要用 appleboy/scp-action / appleboy/ssh-action：sidecar 看不见 runner ~/.ssh（DEPLOYMENT.md 坑 4-5）",
-    "改 next.config.ts 加 output: 'standalone' 后**不能** revert，否则镜像 build 失败"
+    "import 'server-only' 的 lib 不能混 client-safe 纯函数",
+    "client 组件要拿 server-only 数据，必须通过 server layout / page 把数据作为 props 传下来",
+    "Tailwind v4 用 CSS-based @theme 配置",
+    "vitest.config.ts 用 esbuild.{ jsx: \"automatic\" }",
+    "不要把 secrets 建在 GitHub environment 里（DEPLOYMENT.md 坑 7-8）",
+    "不要用 appleboy/scp-action / appleboy/ssh-action（DEPLOYMENT.md 坑 4-5）",
+    "改 next.config.ts 加 output: 'standalone' 后不能 revert，否则镜像 build 失败",
+    "Dockerfile / 部署脚本不要写死 nextjs:nodejs（v1.0-007 坑），用 node:node",
+    "DATA_DIR 不要放 /srv/，deploy 用户写不了（v1.0-008 坑），放 ~/"
   ],
   "last_gate_passed_at": "2026-07-21 gate.py -p saas-identity-platform-nextjs exit 0（L0..L5 全绿 / 164 功能条目 / 29 软告警）",
   "stats": {
-    "commits_on_master": 14,
-    "files_loc_lines": "~9500",
+    "commits_on_master": 17,
+    "files_loc_lines": "~9700",
     "lib_stores": 14,
     "api_routes": 14,
     "pages": 16,
@@ -60,14 +64,15 @@
     "soft_warnings": 29,
     "fn_items": 164,
     "db_tables_seeded": 12,
-    "deploy_files_added": 9,
+    "deploy_files_added": 11,
     "container_port": 80,
     "host_port": 8065
   },
   "tag_instructions": {
-    "created": "git tag -a v1.0-002 -m 'feat: deploy 基础设施 + 端口 8065 上线' a80b28c",
-    "verify": "git tag --verify v1.0-002",
-    "pushed": "git push origin master + git push origin v1.0-002 (at 2026-07-21T18:30:00+08:00)",
-    "ci_run_url": "https://github.com/zcqiand/saas-identity-platform-nextjs/actions/runs/<see gh run list>"
+    "created": "git tag -a v1.0-009 -m 'fix(deploy): DATA_DIR 从 /srv/ 移到 ~/' 1659ec3",
+    "verify": "git tag --verify v1.0-009",
+    "pushed": "git push origin master + git push origin v1.0-009",
+    "ci_run_url": "https://github.com/zcqiand/saas-identity-platform-nextjs/actions/runs/29862964918",
+    "ci_status": "success (vitest 42s + docker build/push 3m 5s + ssh deploy 35s = 4m 35s)"
   }
 }
