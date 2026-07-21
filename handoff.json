@@ -1,33 +1,35 @@
 {
   "schema": 1,
-  "tag": "v1.0-001",
+  "tag": "v1.0-002",
   "project": "saas-identity-platform-nextjs",
-  "exported_at": "2026-07-18T14:55:40+08:00",
-  "current_task": "v0.5.0 收尾。9 个 commit + 3 个 fix 落地 saas-identity-platform-nextjs MVP：6 大模块 UI 全实交互、12 张表 schema + 完整 seed、Tailwind v4 + shadcn/ui 装对、dev server 7 个路由全 200。",
+  "exported_at": "2026-07-21T18:30:00+08:00",
+  "current_task": "完整部署基础设施上线，端口 8065。GitHub Action 跑中（commit a80b28c 触发的 ci #1 run）。",
   "done": [
-    "feat(M02/M03): 4 模块 alert(demo) 真实现 + tenants/roles 改 ConfirmDialog",
-    "feat(M04/M05): 应用/菜单/API Keys/审计日志 4 模块真实现",
-    "feat(M06): 7 个 settings/* 子页 placeholder 升级真交互",
-    "feat(M03.F01): 5 子项补完 (I02/I06/I07/I08/I10)",
-    "fix(schema): auditLogs.timestamp 改 SQL 表达式 + seed 扩 11 表",
-    "feat(M03.F02): 权限组管理 全链路（schema + API + UI + seed + tests）",
-    "docs(function-tree): 大量 sub-items 状态 规划→已上线",
-    "docs+test: 43 项 L5 回滚 sub-items 加 fnTest/data-fn/@entry",
-    "fix(nextjs): root layout.tsx + globals.css",
-    "fix(nextjs): tailwind v4 @theme 语法 + vitest esbuild jsx",
-    "fix(nextjs): layout.tsx 在 server 端算 themeCss + 测试同步"
+    "feat(deploy): Dockerfile 三阶段（deps→builder→runtime node+nginx）",
+    "feat(deploy): 容器内 nginx 反代到 :3000 + 静态资源 1y 缓存 + gzip",
+    "feat(deploy): VPS deploy 脚本端口 8065（-p 127.0.0.1:8065:80）",
+    "feat(deploy): GitHub Actions ci.yml（tag push → vitest → docker build/push → ssh deploy）",
+    "feat(deploy): VPS vhost 模板 + setup-vps.sh 一次性 bootstrap",
+    "feat(deploy): docs/DEPLOYMENT.md 完整部署手册 + 8 个 Next.js 专属坑",
+    "fix(next.config): output: 'standalone' 让 next build 产出可自包含 server.js",
+    "fix(eslint): eslint.config.js → eslint.config.mjs（Node 20 Windows ESM/CJS 解不出来）",
+    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿 / 164 功能条目 / 29 软告警",
+    "git tag v1.0-002 + push origin，Action ci #1 启动"
   ],
   "next": [
-    "浏览器真实访问 /tenants /orgs /users /audit-logs /settings /login 每个页面，验证 dialog CRUD 真交互",
-    "lab-management-system-nextjs 历史 dirty 清理（来自其他会话，本任务外）",
-    "抽通用 ResourceDialog 组件减少 ~60% 重复代码（10 模块已跑顺，权衡再做）",
-    "把 commit hash 推到 GitHub release / 打 npm tag"
+    "等 Action ci #1 跑完，看 docker build 是否成功（better-sqlite3 在 alpine 上的 prebuilt binary 是最大风险点）",
+    "如果 ssh-deploy 步骤 fail：登录 VPS 看 docker logs saas-identity-platform-nextjs --tail 50",
+    "如果容器 healthcheck 不绿：docker exec 进去 wget 127.0.0.1:3000/ 看 node 起没起",
+    "首次部署 data/dev.db 还没拷：docker cp data/dev.db saas-identity-platform-nextjs:/app/data/dev.db && docker restart ...",
+    "AUTH_JWT_SECRET 还是 placeholder 'change-me-in-prod-please-32chars-min'，正式 prod 前换掉"
   ],
   "open_questions": [
+    "首次部署需要把本地 data/dev.db 拷到 VPS 容器里（手工 docker cp）。后续要决定：是在 Dockerfile 加 seed 阶段把 db 烤进镜像，还是走 migrations 启动自动建表？",
+    "VPS 上 /srv/saas-identity-platform-nextjs/data/ 的 owner 是不是 deploy?deploy？需要 deploy.sh 前置 chown",
     "saas-identity-platform-react / saas-identity-platform-vue 没有 schema 层（zustand + MSW），原计划「同步 schema 修复」不适用；两个项目的「功能 1:1 对齐」靠 store API 接口契约（不是 DB schema）",
     "lab-management-system-nextjs 之前历史会话遗留 dirty（src/app/(protected)/{data-entry,receipt,receipts,report-*}/ + 新 lib + 新 tests），本任务没动这部分，待独立会话梳理",
     "M03.F02 sub-items 已经在 function-tree 翻 已上线，但 docs/requirements/ 里没有对应 REQ 文档（L5 不强制要求，跳过）",
-    "dev.db-wal / dev.db-shm 还可能残留锁：Windows 上 better-sqlite3 持锁，若要 rm data/ 必须先停 next dev"
+    "29 条软告警（M01.F05.I01/I02/I03 等「已上线无设计映射」、23 条「已上线无测试引用」）是历史欠账，本任务没动"
   ],
   "dont": [
     "不要改 .harness/stack.json 让门变松",
@@ -40,12 +42,15 @@
     "import 'server-only' 的 lib 不能混 client-safe 纯函数；规则：拆 xxx-client.ts 和 xxx-server.ts",
     "client 组件要拿 server-only 数据，**必须**通过 server layout / page 把数据作为 props 传下来，不要在 client 里 import server-only",
     "Tailwind v4 用 CSS-based @theme 配置，不要再写 tailwind.config.js 的 extend.colors",
-    "vitest.config.ts 用 esbuild.{ jsx: \"automatic\" }，不要用 oxc（v2 兼容）"
+    "vitest.config.ts 用 esbuild.{ jsx: \"automatic\" }，不要用 oxc（v2 兼容）",
+    "不要把 secrets 建在 GitHub environment 里：会解析成空字符串（DEPLOYMENT.md 坑 7-8）",
+    "不要用 appleboy/scp-action / appleboy/ssh-action：sidecar 看不见 runner ~/.ssh（DEPLOYMENT.md 坑 4-5）",
+    "改 next.config.ts 加 output: 'standalone' 后**不能** revert，否则镜像 build 失败"
   ],
-  "last_gate_passed_at": "2026-07-18 gate.py -p saas-identity-platform-nextjs exit 0（L0..L5 全绿 / 164 功能条目 / 29 软告警 / 144 tests pass）",
+  "last_gate_passed_at": "2026-07-21 gate.py -p saas-identity-platform-nextjs exit 0（L0..L5 全绿 / 164 功能条目 / 29 软告警）",
   "stats": {
-    "commits_on_master": 12,
-    "files_loc_lines": "~8500",
+    "commits_on_master": 14,
+    "files_loc_lines": "~9500",
     "lib_stores": 14,
     "api_routes": 14,
     "pages": 16,
@@ -54,11 +59,15 @@
     "tests": 144,
     "soft_warnings": 29,
     "fn_items": 164,
-    "db_tables_seeded": 12
+    "db_tables_seeded": 12,
+    "deploy_files_added": 9,
+    "container_port": 80,
+    "host_port": 8065
   },
   "tag_instructions": {
-    "created": "git tag -a v1.0-001 -m \"feat: saas-identity-platform-nextjs MVP - 6 modules, 12 tables, 144 tests\" aceb470",
-    "verify": "git tag --verify v1.0-001",
-    "push": "git push origin v1.0-001"
+    "created": "git tag -a v1.0-002 -m 'feat: deploy 基础设施 + 端口 8065 上线' a80b28c",
+    "verify": "git tag --verify v1.0-002",
+    "pushed": "git push origin master + git push origin v1.0-002 (at 2026-07-21T18:30:00+08:00)",
+    "ci_run_url": "https://github.com/zcqiand/saas-identity-platform-nextjs/actions/runs/<see gh run list>"
   }
 }
