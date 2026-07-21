@@ -62,8 +62,21 @@ COPY . .
 # 工具链（python3 + make + g++）已在前面装好。
 RUN npm rebuild better-sqlite3 --build-from-source
 
+# 验证 better-sqlite3 能正常 dlopen 并执行 SQL（这一行如果挂了说明源码编译失败）。
+RUN node -e "const Database = require('better-sqlite3'); \
+    const db = new Database(':memory:'); \
+    db.exec('CREATE TABLE t(x INT)'); \
+    db.prepare('INSERT INTO t VALUES (?)').run(42); \
+    const row = db.prepare('SELECT x FROM t').get(); \
+    console.log('better-sqlite3 verify OK:', JSON.stringify(row));"
+
 # next.config.ts 已开 output: 'standalone'，这里跑 build。
-# 不需要 env vars（项目用的是 :memory: SQLite 兼容 prod 用 mounted volume）。
+# DB_PATH=:memory: 让 build 阶段也走内存 DB，避开 data/dev.db 在 builder 上下文
+# 不存在 / 路径不同导致的副作用；prod 阶段会用真实 DB_PATH + -v /srv/.../data。
+ENV DB_PATH=:memory:
+# NEXT_DEBUG=1 让 next build 把 "Failed to collect page data" 背后的真实异常
+# 完整打出来（默认会吞掉原 error，只显示 type: 'Error'）。
+ENV NEXT_DEBUG=1
 RUN npm run build
 
 
