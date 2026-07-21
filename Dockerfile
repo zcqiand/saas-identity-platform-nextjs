@@ -54,9 +54,13 @@ ENV npm_config_better_sqlite3_binary_host_mirror=https://registry.npmmirror.com/
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# 防御性 rebuild：保证 better-sqlite3 的 .node binary 跟当前 Node ABI 一致。
-# prebuilt 命中就秒过，没命中就 build-from-source（前面装好的工具链在此用）。
-RUN npm rebuild better-sqlite3
+# 强制 build-from-source：忽略 prebuilt binary，直接从 better-sqlite3 的 C++ 源码编译。
+# v1.0-002/003/004 都挂在 'Failed to collect page data for /api/api-keys/[id]'，
+# 根因是 deps 阶段拉下来的 prebuilt .node binary 跟 Alpine Node ABI 不匹配（即使
+# binary mirror 设了，npmmirror 上偶尔会缺 musl-x64 的对应版本，npm fallback 不稳）。
+# 强制从源码编译，保证 .node binary 一定对当前 Node 20-alpine 正确。
+# 工具链（python3 + make + g++）已在前面装好。
+RUN npm rebuild better-sqlite3 --build-from-source
 
 # next.config.ts 已开 output: 'standalone'，这里跑 build。
 # 不需要 env vars（项目用的是 :memory: SQLite 兼容 prod 用 mounted volume）。
