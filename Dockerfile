@@ -22,11 +22,14 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Alpine 上 better-sqlite3 需要 python3 + make + g++ 做 native build。
-# 装在独立层，源码变动不会重新跑 apk add。
-RUN apk add --no-cache libc6-compat
+# Alpine 上 better-sqlite3 需要 libc6-compat（musl glibc 符号 shim）+ 兜底编译链。
+# prebuilt binary 默认从 github.com/WiseLibs/.../releases 拉，npmmirror 镜像一份。
+# 设 binary host mirror 优先拉 npmmirror，缺则回源 GitHub；都没合适的就 build-from-source。
+RUN apk add --no-cache libc6-compat python3 make g++
 
-# 走 npmmirror（项目硬约束 CLAUDE.md §2）。
+# 走 npmmirror（项目硬约束 CLAUDE.md §2）+ binary mirror。
+ENV npm_config_better_sqlite3_binary_host_mirror=https://registry.npmmirror.com/-/binary/better-sqlite3
+
 COPY package.json package-lock.json ./
 RUN npm config set registry https://registry.npmmirror.com \
  && npm ci --no-audit --no-fund
@@ -37,11 +40,23 @@ RUN npm config set registry https://registry.npmmirror.com \
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# builder stage 也需要编译链：next build 在 "Collecting page data" 阶段会执行
+# API routes，那些 route 一上来就 import better-sqlite3。如果 prebuilt binary
+# 在 alpine 上 ABI 不对（比如 32-bit / 老 Node），fallback 到 build-from-source
+# 必须有 python3 + make + g++。
+RUN apk add --no-cache libc6-compat python3 make g++
+
 # next telemetry 在 CI 里关掉，避免污染构建日志。
 ENV NEXT_TELEMETRY_DISABLED=1
+# 让 builder 阶段也走 npmmirror binary mirror（万一 prebuilt 重下）。
+ENV npm_config_better_sqlite3_binary_host_mirror=https://registry.npmmirror.com/-/binary/better-sqlite3
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# 防御性 rebuild：保证 better-sqlite3 的 .node binary 跟当前 Node ABI 一致。
+# prebuilt 命中就秒过，没命中就 build-from-source（前面装好的工具链在此用）。
+RUN npm rebuild better-sqlite3
 
 # next.config.ts 已开 output: 'standalone'，这里跑 build。
 # 不需要 env vars（项目用的是 :memory: SQLite 兼容 prod 用 mounted volume）。
