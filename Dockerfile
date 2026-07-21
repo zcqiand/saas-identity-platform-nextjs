@@ -74,9 +74,6 @@ RUN node -e "const Database = require('better-sqlite3'); \
 # DB_PATH=:memory: 让 build 阶段也走内存 DB，避开 data/dev.db 在 builder 上下文
 # 不存在 / 路径不同导致的副作用；prod 阶段会用真实 DB_PATH + -v /srv/.../data。
 ENV DB_PATH=:memory:
-# NEXT_DEBUG=1 让 next build 把 "Failed to collect page data" 背后的真实异常
-# 完整打出来（默认会吞掉原 error，只显示 type: 'Error'）。
-ENV NEXT_DEBUG=1
 RUN npm run build
 
 
