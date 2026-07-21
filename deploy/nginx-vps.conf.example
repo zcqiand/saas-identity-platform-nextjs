@@ -1,0 +1,91 @@
+# =============================================================================
+# deploy/nginx-vps.conf.example — VPS nginx vhost 模板
+#
+# 部署到 /etc/nginx/sites-available/<your-domain>，然后：
+#   sudo ln -sf /etc/nginx/sites-available/<your-domain> /etc/nginx/sites-enabled/
+#   sudo rm -f /etc/nginx/sites-enabled/default     # 防 duplicate default_server
+#   sudo nginx -t && sudo nginx -s reload
+#
+# 和老项目 saas-identity-platform/DEPLOYMENT.md §2 同构，反代目标改成 8065。
+#
+# 关键点：
+#   - listen 443 ssl + http2；TLS 终止
+#   - ssl_certificate /etc/nginx/ssl/your-cert.crt (fullchain.pem)
+#   - ssl_certificate_key /etc/nginx/ssl/your-cert.key (privkey.pem)
+#   - 反代上游：127.0.0.1:8065（容器网关暴露的端口）
+#   - 80 强制跳转 443
+# =============================================================================
+
+# upstream 定义在 http context（如果用 single vhost 写这里也可以）
+upstream saas_identity_platform_nextjs_app {
+    server 127.0.0.1:8065;
+    keepalive 16;
+}
+
+# ---- HTTP → HTTPS ----
+server {
+    listen 80;
+    listen [::]:80;
+    server_name <your-domain>;
+
+    # Certbot 验证用
+    location /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+    }
+
+    # 其它一律 301 到 https
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# ---- HTTPS ----
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name <your-domain>;
+
+    ssl_certificate     /etc/nginx/ssl/your-cert.crt;
+    ssl_certificate_key /etc/nginx/ssl/your-cert.key;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    # HSTS
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # 上传大小（server actions / form 上传）
+    client_max_body_size 10m;
+
+    # gzip（VPS 这一层也压一下，重复压没事但省 VPS→浏览器的流量）
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/javascript application/javascript application/json image/svg+xml;
+
+    # 通用代理头
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_read_timeout 60s;
+    proxy_send_timeout 60s;
+
+    location / {
+        proxy_pass http://saas_identity_platform_nextjs_app;
+    }
+
+    # 可选：访问日志 / 错误日志
+    access_log /var/log/nginx/saas-identity-platform-nextjs.access.log;
+    error_log  /var/log/nginx/saas-identity-platform-nextjs.error.log;
+}

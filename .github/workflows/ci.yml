@@ -1,0 +1,156 @@
+# =============================================================================
+# .github/workflows/ci.yml — saas-identity-platform-nextjs 发布流水线
+#
+# 触发：git push origin vX.Y-ZZZ（只跑 tag 推送，不跑 master push）
+#
+# 步骤：
+#   1. test              vitest run（带 coverage 阈值）
+#   2. docker build      多阶段 build（详见 ./Dockerfile）
+#   3. docker push       :latest + :vX.Y-ZZZ 双 tag
+#   4. ssh deploy        VPS 上跑 deploy/saas-identity-platform-nextjs.sh
+#
+# 参考：saas-identity-platform/DEPLOYMENT.md §7
+# 关键坑（不要再踩）：
+#   - secrets 放 Repository 级，不要 environment 级（坑 7-8）
+#   - 不要用 appleboy/scp-action（坑 4）
+#   - 不要用 appleboy/ssh-action（坑 5）
+#   - 用 runner-native ssh + TOFU，fingerprint 易踩坑 6
+# =============================================================================
+
+name: ci
+
+on:
+  push:
+    tags:
+      - "v*.*-*"   # vX.Y-ZZZ 格式
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "image tag to deploy (e.g. v1.0-002)"
+        required: true
+
+# 关键：去掉 environment: VPS 这一行（坑 7）
+# 所有 secrets 全部走 Repository secrets 解析。
+
+env:
+  IMAGE_NAME: saas-identity-platform-nextjs
+
+jobs:
+  # ---------- 1. test ----------
+  test:
+    name: vitest
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          registry-url: https://registry.npmmirror.com
+
+      - name: npm ci
+        run: npm ci --no-audit --no-fund
+
+      - name: vitest run
+        run: npm test
+
+      # 阈值检查交给 gate.py（项目自己跑），CI 不在这里重复。
+
+  # ---------- 2+3. docker build & push ----------
+  docker:
+    name: docker build & push
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: extract tag
+        id: tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: docker build & push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            docker.io/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.value }}
+            docker.io/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=registry,ref=docker.io/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=docker.io/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+
+  # ---------- 4. ssh deploy ----------
+  ssh-deploy:
+    name: ssh deploy to VPS
+    runs-on: ubuntu-latest
+    needs: docker
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: extract tag
+        id: tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # 写 deploy key 到 runner 的 ~/.ssh/，权限 600。
+      - name: install ssh key
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -t rsa,ecdsa,ed25519 "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      # 把 deploy 脚本传到 VPS（runner-native scp，避开坑 4-5）。
+      - name: scp deploy script
+        shell: bash
+        run: |
+          scp -i ~/.ssh/id_ed25519 \
+              -o StrictHostKeyChecking=yes \
+              deploy/saas-identity-platform-nextjs.sh \
+              "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/saas-identity-platform-nextjs.sh"
+
+      # 在 VPS 上跑部署脚本。
+      - name: ssh deploy
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+              -o StrictHostKeyChecking=yes \
+              "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+              "sh ~/saas-identity-platform-nextjs.sh '${{ secrets.DOCKER_USERNAME }}' '${{ secrets.DOCKER_PASSWORD }}' '${{ steps.tag.outputs.value }}'"
+
+      - name: verify
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+              -o StrictHostKeyChecking=yes \
+              "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+              "docker ps --filter name=saas-identity-platform-nextjs --format '{{.Names}} {{.Status}} {{.Image}}'"

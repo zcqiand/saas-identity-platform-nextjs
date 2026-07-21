@@ -1,0 +1,61 @@
+# .dockerignore
+# 让 docker build 只 COPY 必要文件，image 干净 + 构建层缓存友好。
+
+# 依赖：镜像内自己 npm ci
+node_modules
+.npm
+
+# Next 构建产物：镜像内自己 next build
+.next
+out
+
+# 数据 / 运行时
+data
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# 测试产物
+coverage
+.nyc_output
+tests/.vitest-cache
+
+# 编辑器 / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 环境
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Claude / harness
+.claude
+.harness
+.state
+docs/adr
+docs/conventions
+docs/requirements
+docs/design
+docs/functions
+
+# 部署产物（这些已经通过 deploy/ 显式 COPY）
+.github
