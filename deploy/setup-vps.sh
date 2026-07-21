@@ -25,7 +25,9 @@ set -e
 DOMAIN="${1:?usage: sudo bash $0 <your-domain>}"
 DEPLOY_USER="deploy"
 APP_DIR="/home/${DEPLOY_USER}/saas-identity-platform-nextjs"
-DATA_DIR="/srv/saas-identity-platform-nextjs/data"
+# 数据目录放 deploy 用户 home 下（与 deploy.sh 保持一致）。
+# 老代码用 /srv/... 需 root 建，但 CI ssh 跑 deploy.sh 不用 sudo，会 permission denied。
+DATA_DIR="/home/${DEPLOY_USER}/${CONTAINER_NAME:-saas-identity-platform-nextjs}-data"
 NGINX_AVAIL="/etc/nginx/sites-available/${DOMAIN}"
 NGINX_ENABLED="/etc/nginx/sites-enabled/${DOMAIN}"
 
@@ -59,6 +61,7 @@ echo "[setup] creating work + data dirs..."
 mkdir -p "${APP_DIR}"
 mkdir -p "${DATA_DIR}"
 chown -R "${DEPLOY_USER}:${DEPLOY_USER}" "${APP_DIR}"
+# DATA_DIR 现在在 /home/deploy/ 下，mkdir 之后 chown；不必 sudo 改 /srv
 chown -R "${DEPLOY_USER}:${DEPLOY_USER}" "${DATA_DIR}"
 
 # 把 saas-identity-platform-nextjs.sh 拷进去

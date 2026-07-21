@@ -26,7 +26,10 @@ TAG="${3:?usage: $0 <DOCKER_USER> <DOCKER_PAT> <TAG>}"
 IMAGE="docker.io/${DOCKER_USER}/saas-identity-platform-nextjs:${TAG}"
 CONTAINER_NAME="saas-identity-platform-nextjs"
 HOST_PORT=8065
-DATA_DIR="/srv/${CONTAINER_NAME}/data"
+# 数据目录放在 deploy 用户的 home 下 —— 不需要 sudo，写权限天然有。
+# 老代码用 /srv/${CONTAINER_NAME}/data 需要 root 建，但 CI 用 ssh deploy@ 跑，
+# 不会 sudo。~/ 是 deploy 默认 home，可写。
+DATA_DIR="${HOME}/${CONTAINER_NAME}-data"
 
 echo "[deploy] image:    ${IMAGE}"
 echo "[deploy] port:     127.0.0.1:${HOST_PORT}:80"
