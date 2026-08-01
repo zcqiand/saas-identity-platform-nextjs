@@ -31,6 +31,10 @@
 | M01.F04.I03 | SSO 回调处理页 | 页面 |  |  |
 | M01.F04.I04 | 登录入口页 | 页面 |  |  |
 | M01.F04.I05 | SSO handler + JWT 工具 | 接口 | `sso/{ssoRedirect,SsoCallback}` + MSW `/sso/*` |  |
+| M01.F04.I06 | 授权码端点（/api/sso/authorize） | 接口 | `api/sso/authorize/route.ts`（GET → 302 redirect） |  |
+| M01.F04.I07 | 授权码换 token（/api/auth/oauth/callback） | 接口 | `api/auth/oauth/callback/route.ts`（POST {code, clientId} → {token, user}） |  |
+| M01.F04.I08 | 权限集端点（/api/auth/permissions） | 接口 | `api/auth/permissions/route.ts`（GET Bearer, ?orgId） |  |
+| M01.F04.I09 | 业务菜单端点（/api/sso/menus） | 接口 | `api/sso/menus/route.ts`（GET ?appId=app-lab） |  |
 | __M02.F01__ | __M02 模块__组织管理页 类的子项__ | — | — | — |
 | M02.F01.I01 | 组织管理页 | 页面 |  |  |
 | M02.F01.I02 | 查询组织树 | 查询 |  |  |

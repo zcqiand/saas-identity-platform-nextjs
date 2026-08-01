@@ -74,7 +74,7 @@
 
 | 功能 ID | 功能名称 | 业务闭环 | 状态 |
 |---|---|---|---|
-| M01.F04 | SSO 单点登录 | 跳转 + 回调处理（含 OAuth2 授权服务器模拟） | 已上线 |
+| M01.F04 | SSO 单点登录 | OAuth 2.0 授权码流程：跳转 + 回调 + server-side IdP（authorize / oauth/callback / permissions / sso/menus 4 路由） | 已上线 |
 
 | 子项 ID | 名称 | 类型 | 状态 |
 |---|---|---|---|
@@ -83,6 +83,10 @@
 | M01.F04.I03 | SSO 回调处理页 | 页面 | 规划 |
 | M01.F04.I04 | 登录入口页 | 页面 | 已上线 |
 | M01.F04.I05 | SSO handler + JWT 工具 | 接口 | 已上线 |
+| M01.F04.I06 | 授权码端点（/api/sso/authorize） | 接口 | 已上线 |
+| M01.F04.I07 | 授权码换 token（/api/auth/oauth/callback） | 接口 | 已上线 |
+| M01.F04.I08 | 权限集端点（/api/auth/permissions） | 接口 | 已上线 |
+| M01.F04.I09 | 业务菜单端点（/api/sso/menus） | 接口 | 已上线 |
 
 ### M01.F05 — 控制台首页（Next.js 仓特有，dashboard 卡片聚合）
 
