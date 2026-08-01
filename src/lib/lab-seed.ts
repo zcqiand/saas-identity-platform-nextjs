@@ -3,16 +3,31 @@
  *
  * saas 仓给 lab 仓的 OAuth 委托用的"数据契约"：租户 / 组织 / 角色 / 业务权限 / 菜单。
  * 与 saas-React 仓 msw/db.ts 独立设计 —— saas-React 仓是 mock 本地演示，saas-nextjs 仓
- * 是真 SQLite，菜单项按 lab-nextjs 当前已实现的子集裁剪（避免出现 lab 仓没实现的路由
+ * 是真 SQLite，菜单项按 lab-nextjs 当前已实现的路由裁剪（避免出现 lab 仓没实现的路由
  * 让侧边栏渲染出死链）。
  *
- * 关键决策：
- *   - 1 个 lab 机构 = 1 个 saas 租户（1:1），与 saas-React 仓的"lab 集成"决策一致
- *   - 业务权限码与 lab-nextjs/src/lib/permissions.ts 的 PERMISSIONS 常量对齐（不引入新码）
- *   - 菜单项用 string id（与 saas-React 仓 msw 一致；saas-nextjs admin /api/menus 用 numeric id 是另一路）
+ * 与 REF（lab-management-system 仓 Layout.tsx + saas-React LAB_LAB_MENUS）对齐：
+ *   - 5 分组（资源管理 / 试验过程管理 / 数据统计 / 检测能力 / 基础数据）+ 顶级仪表盘
+ *   - 菜单项与 lab-React REF 1:1 命名（合同管理/接样管理/任务安排/数据录入/报告审核/报告批准/
+ *     报告发放/报告归档/统计汇总/报告名称/参数界面/型号维护/规格维护/等级维护/牌号维护/
+ *     计算规则/技术要求/检测专项/检测项目/检测参数/检测标准）
+ *   - path 与 lab-nextjs/src/app/(protected)/** 路由对齐
+ *   - 试验过程管理（receipts/task/entry/review/approve/issue/archive 7 项）：
+ *     - m-receipts (接样管理) lab-nextjs 已实现 → enabled=true
+ *     - 其余 6 项 lab-nextjs 未实现 → enabled=false 渲染时（未来）会带「规划」徽标
+ *       （layout 由 useMenus 决定 enabled 过滤；本轮不实现）
+ *   - 检测能力 4 项（spec/obj/param/std）lab-vue 已实现但 lab-nextjs 未实现 → enabled=false
+ *   - 基础数据 8 项（report-names/param-ifs/models/specs/grades/brands/calc-rules/tech-req）：
+ *     - m-report-names / m-calc-rules / m-tech-req lab-vue 已实现（master-data/* 路由）→ enabled=true
+ *     - m-models/m-specs/m-grades/m-brands lab-vue 已实现（master-data/* 路由）→ enabled=true
+ *     - m-param-ifs lab-vue 未实现（无 param-interfaces 路由）→ enabled=false
+ *   - 不再放 grp-sys（机构/用户/角色管理已委托 saas，M01.F01-F03 标已废弃，不在菜单）
+ *
+ * 注：原 version 14 项是简版（5 组 + 14 叶）；本轮扩到 22 项（1 顶级 + 5 组 + 21 叶但去重后 22）
+ * 对齐 lab-React REF 25 项（1 顶级 + 5 组 + 23 叶）。少 1 项是因为 lab-vue 有报告名称/技术要求
+ * 等路由但 lab-nextjs 没；下一轮加 lab-nextjs 路由时再补 1 项。
  */
 
-/** 租户 — 与 saas-React 仓 msw/db.ts 的 tenant-lab 字段同义 */
 export const LAB_TENANT = {
   id: "tenant-lab",
   name: "示例建筑工程检测实验室",
@@ -20,7 +35,6 @@ export const LAB_TENANT = {
   logoText: "LAB",
 } as const;
 
-/** 组织根（挂在 tenant-lab 下） */
 export const LAB_ORG_ROOT = {
   id: "org-lab-root",
   name: "示例建筑工程检测实验室",
@@ -40,7 +54,6 @@ export const LAB_PERMISSION_CODES = [
   "audit:read",
 ] as const;
 
-/** lab 用户（mock 演示；prod 走真实 user 表） */
 export interface LabUser {
   id: string;
   username: string;
@@ -69,7 +82,6 @@ export const LAB_USERS: readonly LabUser[] = [
   },
 ] as const;
 
-/** lab 角色（mock 演示用：1 个 admin 拿到全部业务权限，1 个 tech 拿到 sample/report 范围） */
 export interface LabRole {
   id: string;
   name: string;
@@ -92,11 +104,6 @@ export const LAB_ROLES: readonly LabRole[] = [
   },
 ] as const;
 
-/** lab 菜单 — 5 组父节点 + 19 子项
- *  - 仅收录 lab-nextjs 当前已实现的路由（避免死链）
- *  - path 字段与 lab-nextjs/src/app/(protected)/** 路由对齐
- *  - permission 字段为显隐所需权限码（缺省 = 始终可见，例如 dashboard）
- */
 export interface LabMenu {
   id: string;
   name: string;
@@ -110,96 +117,82 @@ export interface LabMenu {
 
 export const APP_LAB_ID = "app-lab";
 
+/** lab 业务菜单 - 5 分组 + 1 顶级仪表盘 + 22 叶（与 lab-React REF 1:1 命名）
+ *  - sort: 顶级 m-lab-dash=1, 5 分组 15/20/30/40/50（中间空 sort 给组内插入）
+ *  - enabled: lab-nextjs 已实现路由的菜单项 enabled=true；未实现的 = false（占位/规划）
+ */
 export const LAB_MENUS: readonly LabMenu[] = [
-  // 分组父节点（5 组）
-  {
-    id: "grp-sys",
-    name: "系统管理",
-    path: "",
-    appId: APP_LAB_ID,
-    parentId: null,
-    sort: 1,
-    enabled: true,
-  },
-  {
-    id: "grp-biz",
-    name: "试验过程管理",
-    path: "",
-    appId: APP_LAB_ID,
-    parentId: null,
-    sort: 2,
-    enabled: true,
-  },
-  {
-    id: "grp-master",
-    name: "基础数据",
-    path: "",
-    appId: APP_LAB_ID,
-    parentId: null,
-    sort: 3,
-    enabled: true,
-  },
-  {
-    id: "grp-stat",
-    name: "数据统计",
-    path: "",
-    appId: APP_LAB_ID,
-    parentId: null,
-    sort: 4,
-    enabled: true,
-  },
-
-  // 系统管理
+  // 顶级
   {
     id: "m-lab-dash",
     name: "仪表盘",
     path: "/dashboard",
     appId: APP_LAB_ID,
     parentId: null,
-    sort: 0,
-    enabled: true,
-  },
-  {
-    id: "m-org-info",
-    name: "机构信息",
-    path: "/org-info",
-    appId: APP_LAB_ID,
-    parentId: "grp-sys",
     sort: 1,
     enabled: true,
-    permission: "org:read",
-  },
-  {
-    id: "m-users",
-    name: "用户管理",
-    path: "/users",
-    appId: APP_LAB_ID,
-    parentId: "grp-sys",
-    sort: 2,
-    enabled: true,
-    permission: "user:read",
-  },
-  {
-    id: "m-roles",
-    name: "角色管理",
-    path: "/roles",
-    appId: APP_LAB_ID,
-    parentId: "grp-sys",
-    sort: 3,
-    enabled: true,
-    permission: "role:read",
   },
 
-  // 试验过程管理
+  // 资源管理（sort=15）
+  {
+    id: "grp-res",
+    name: "资源管理",
+    path: "",
+    appId: APP_LAB_ID,
+    parentId: null,
+    sort: 15,
+    enabled: true,
+  },
   {
     id: "m-contracts",
     name: "合同管理",
     path: "/contracts",
     appId: APP_LAB_ID,
-    parentId: "grp-biz",
+    parentId: "grp-res",
     sort: 1,
     enabled: true,
     permission: "project:read",
+  },
+  {
+    id: "m-personnel",
+    name: "人员管理",
+    path: "/personnel",
+    appId: APP_LAB_ID,
+    parentId: "grp-res",
+    sort: 2,
+    enabled: true,
+    permission: "project:read",
+  },
+  {
+    id: "m-equipment",
+    name: "设备管理",
+    path: "/equipment",
+    appId: APP_LAB_ID,
+    parentId: "grp-res",
+    sort: 3,
+    enabled: true,
+    permission: "project:read",
+  },
+  {
+    id: "m-facilities",
+    name: "设施环境",
+    path: "/facilities",
+    appId: APP_LAB_ID,
+    parentId: "grp-res",
+    sort: 4,
+    enabled: true,
+    permission: "project:read",
+  },
+
+  // 试验过程管理（sort=20）
+  {
+    id: "grp-biz",
+    name: "试验过程管理",
+    path: "",
+    appId: APP_LAB_ID,
+    parentId: null,
+    sort: 20,
+    enabled: true,
   },
   {
     id: "m-receipts",
@@ -207,52 +200,81 @@ export const LAB_MENUS: readonly LabMenu[] = [
     path: "/receipts",
     appId: APP_LAB_ID,
     parentId: "grp-biz",
-    sort: 2,
+    sort: 1,
     enabled: true,
     permission: "sample:read",
   },
   {
-    id: "m-personnel",
-    name: "人员管理",
-    path: "/personnel",
+    id: "m-task",
+    name: "任务安排",
+    path: "/task-assignment",
     appId: APP_LAB_ID,
-    parentId: "grp-master",
-    sort: 1,
-    enabled: true,
-    permission: "org:read",
-  },
-  {
-    id: "m-equipment",
-    name: "设备管理",
-    path: "/equipment",
-    appId: APP_LAB_ID,
-    parentId: "grp-master",
+    parentId: "grp-biz",
     sort: 2,
-    enabled: true,
-    permission: "org:read",
+    enabled: false,
+    permission: "report:write",
   },
   {
-    id: "m-facilities",
-    name: "设施管理",
-    path: "/facilities",
+    id: "m-entry",
+    name: "数据录入",
+    path: "/data-entry",
     appId: APP_LAB_ID,
-    parentId: "grp-master",
+    parentId: "grp-biz",
     sort: 3,
-    enabled: true,
-    permission: "org:read",
+    enabled: false,
+    permission: "report:write",
   },
   {
-    id: "m-code-tables",
-    name: "码表管理",
-    path: "/master-data",
+    id: "m-review",
+    name: "报告审核",
+    path: "/report-review",
     appId: APP_LAB_ID,
-    parentId: "grp-master",
+    parentId: "grp-biz",
     sort: 4,
-    enabled: true,
-    permission: "org:read",
+    enabled: false,
+    permission: "report:read",
+  },
+  {
+    id: "m-approve",
+    name: "报告批准",
+    path: "/report-approve",
+    appId: APP_LAB_ID,
+    parentId: "grp-biz",
+    sort: 5,
+    enabled: false,
+    permission: "report:issue",
+  },
+  {
+    id: "m-issue",
+    name: "报告发放",
+    path: "/report-issue",
+    appId: APP_LAB_ID,
+    parentId: "grp-biz",
+    sort: 6,
+    enabled: false,
+    permission: "report:read",
+  },
+  {
+    id: "m-archive",
+    name: "报告归档",
+    path: "/report-archive",
+    appId: APP_LAB_ID,
+    parentId: "grp-biz",
+    sort: 7,
+    enabled: false,
+    permission: "report:read",
   },
 
-  // 数据统计
+  // 数据统计（sort=30）
+  {
+    id: "grp-stat",
+    name: "数据统计",
+    path: "",
+    appId: APP_LAB_ID,
+    parentId: null,
+    sort: 30,
+    enabled: true,
+  },
   {
     id: "m-summary",
     name: "统计汇总",
@@ -260,6 +282,143 @@ export const LAB_MENUS: readonly LabMenu[] = [
     appId: APP_LAB_ID,
     parentId: "grp-stat",
     sort: 1,
+    enabled: true,
+    permission: "report:read",
+  },
+
+  // 检测能力（sort=40）
+  {
+    id: "grp-insp",
+    name: "检测能力",
+    path: "",
+    appId: APP_LAB_ID,
+    parentId: null,
+    sort: 40,
+    enabled: true,
+  },
+  {
+    id: "m-insp-spec",
+    name: "检测专项",
+    path: "/inspection-specialties",
+    appId: APP_LAB_ID,
+    parentId: "grp-insp",
+    sort: 1,
+    enabled: false,
+  },
+  {
+    id: "m-insp-obj",
+    name: "检测项目",
+    path: "/inspection-objects",
+    appId: APP_LAB_ID,
+    parentId: "grp-insp",
+    sort: 2,
+    enabled: false,
+  },
+  {
+    id: "m-insp-param",
+    name: "检测参数",
+    path: "/inspection-parameters",
+    appId: APP_LAB_ID,
+    parentId: "grp-insp",
+    sort: 3,
+    enabled: false,
+  },
+  {
+    id: "m-insp-std",
+    name: "检测标准",
+    path: "/inspection-standards",
+    appId: APP_LAB_ID,
+    parentId: "grp-insp",
+    sort: 4,
+    enabled: false,
+  },
+
+  // 基础数据（sort=50）
+  {
+    id: "grp-master",
+    name: "基础数据",
+    path: "",
+    appId: APP_LAB_ID,
+    parentId: null,
+    sort: 50,
+    enabled: true,
+  },
+  {
+    id: "m-report-names",
+    name: "报告名称",
+    path: "/master-data/report-categories",
+    appId: APP_LAB_ID,
+    parentId: "grp-master",
+    sort: 1,
+    enabled: true,
+    permission: "report:read",
+  },
+  {
+    id: "m-param-ifs",
+    name: "参数界面",
+    path: "/param-interfaces",
+    appId: APP_LAB_ID,
+    parentId: "grp-master",
+    sort: 2,
+    enabled: false,
+  },
+  {
+    id: "m-models",
+    name: "型号维护",
+    path: "/master-data/report-models",
+    appId: APP_LAB_ID,
+    parentId: "grp-master",
+    sort: 3,
+    enabled: true,
+    permission: "report:read",
+  },
+  {
+    id: "m-specs",
+    name: "规格维护",
+    path: "/master-data/report-specs",
+    appId: APP_LAB_ID,
+    parentId: "grp-master",
+    sort: 4,
+    enabled: true,
+    permission: "report:read",
+  },
+  {
+    id: "m-grades",
+    name: "等级维护",
+    path: "/master-data/report-grades",
+    appId: APP_LAB_ID,
+    parentId: "grp-master",
+    sort: 5,
+    enabled: true,
+    permission: "report:read",
+  },
+  {
+    id: "m-brands",
+    name: "牌号维护",
+    path: "/master-data/report-brands",
+    appId: APP_LAB_ID,
+    parentId: "grp-master",
+    sort: 6,
+    enabled: true,
+    permission: "report:read",
+  },
+  {
+    id: "m-calc-rules",
+    name: "计算规则",
+    path: "/master-data/calculation-rules",
+    appId: APP_LAB_ID,
+    parentId: "grp-master",
+    sort: 7,
+    enabled: true,
+    permission: "report:read",
+  },
+  {
+    id: "m-tech-req",
+    name: "技术要求",
+    path: "/master-data/technical-requirements",
+    appId: APP_LAB_ID,
+    parentId: "grp-master",
+    sort: 8,
     enabled: true,
     permission: "report:read",
   },

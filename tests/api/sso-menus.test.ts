@@ -34,9 +34,12 @@ describe("M01.F04.I09 GET /api/sso/menus", () => {
         parentId: string | null;
         path: string;
       }[];
-      expect(body.length).toBe(LAB_MENUS.filter((m) => m.enabled).length);
+      // 端点 /api/sso/menus 不做 enabled 过滤（lab 端 use-menus 拿全量后按 permission 过滤；
+      // enabled 是路由实现状态，lab 端 sidebar 用它决定是否挂「规划」徽标，不做硬过滤）
+      expect(body.length).toBe(LAB_MENUS.length);
       expect(body.find((m) => m.id === "m-lab-dash")?.parentId).toBeNull();
-      expect(body.find((m) => m.id === "m-contracts")?.parentId).toBe("grp-biz");
+      // 合同管理移到 grp-res（资源管理）以对齐 lab-React REF
+      expect(body.find((m) => m.id === "m-contracts")?.parentId).toBe("grp-res");
     })();
   });
 });

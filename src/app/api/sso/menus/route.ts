@@ -9,6 +9,10 @@
  *     生产可加 Bearer 校验
  *
  * Query：appId（必填，本路由仅支持 app-lab）
+ *
+ * 不按 enabled 过滤：enabled=false 的菜单项（lab-nextjs 路由未实现）也返回给 lab，
+ * lab 端 sidebar 据此挂「规划」徽标 —— 行为对齐 lab-React REF（GroupSection 渲染
+ * built=false 项带「规划」badge）。
  */
 import { NextResponse } from "next/server";
 import { LAB_MENUS, APP_LAB_ID } from "@/lib/lab-seed";
@@ -21,7 +25,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ message: "appId 必填且仅支持 app-lab" }, { status: 400 });
   }
 
-  const items = LAB_MENUS.filter((m) => m.appId === appId && m.enabled).map((m) => ({
+  const items = LAB_MENUS.filter((m) => m.appId === appId).map((m) => ({
     id: m.id,
     name: m.name,
     path: m.path,
