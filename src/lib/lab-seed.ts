@@ -15,7 +15,7 @@
  *   - 试验过程管理（receipts/task/entry/review/approve/issue/archive 7 项）lab-nextjs
  *     暂未实现任意一个 → 全 enabled=false，sidebar 渲染带「规划」徽标 + 跳 /coming-soon
  *     （避免真路由 404）
- *   - 检测能力 4 项（spec/obj/param/std）lab-vue 已实现但 lab-nextjs 未实现 → enabled=false
+ *   - 检测能力 4 项（spec/obj/param/std）lab-vue 已实现，对齐 REF 已上线 → enabled=true
  *   - 基础数据 8 项（report-names/param-ifs/models/specs/grades/brands/calc-rules/tech-req）：
  *     - m-report-names / m-calc-rules / m-tech-req lab-vue 已实现（master-data/* 路由）→ enabled=true
  *     - m-models/m-specs/m-grades/m-brands lab-vue 已实现（master-data/* 路由）→ enabled=true
@@ -302,7 +302,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
     appId: APP_LAB_ID,
     parentId: "grp-insp",
     sort: 1,
-    enabled: false,
+    enabled: true,
   },
   {
     id: "m-insp-obj",
@@ -311,7 +311,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
     appId: APP_LAB_ID,
     parentId: "grp-insp",
     sort: 2,
-    enabled: false,
+    enabled: true,
   },
   {
     id: "m-insp-param",
@@ -320,7 +320,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
     appId: APP_LAB_ID,
     parentId: "grp-insp",
     sort: 3,
-    enabled: false,
+    enabled: true,
   },
   {
     id: "m-insp-std",
@@ -329,7 +329,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
     appId: APP_LAB_ID,
     parentId: "grp-insp",
     sort: 4,
-    enabled: false,
+    enabled: true,
   },
 
   // 基础数据（sort=50）
