@@ -12,10 +12,9 @@
  *     报告发放/报告归档/统计汇总/报告名称/参数界面/型号维护/规格维护/等级维护/牌号维护/
  *     计算规则/技术要求/检测专项/检测项目/检测参数/检测标准）
  *   - path 与 lab-nextjs/src/app/(protected)/** 路由对齐
- *   - 试验过程管理（receipts/task/entry/review/approve/issue/archive 7 项）：
- *     - m-receipts (接样管理) lab-nextjs 已实现 → enabled=true
- *     - 其余 6 项 lab-nextjs 未实现 → enabled=false 渲染时（未来）会带「规划」徽标
- *       （layout 由 useMenus 决定 enabled 过滤；本轮不实现）
+ *   - 试验过程管理（receipts/task/entry/review/approve/issue/archive 7 项）lab-nextjs
+ *     暂未实现任意一个 → 全 enabled=false，sidebar 渲染带「规划」徽标 + 跳 /coming-soon
+ *     （避免真路由 404）
  *   - 检测能力 4 项（spec/obj/param/std）lab-vue 已实现但 lab-nextjs 未实现 → enabled=false
  *   - 基础数据 8 项（report-names/param-ifs/models/specs/grades/brands/calc-rules/tech-req）：
  *     - m-report-names / m-calc-rules / m-tech-req lab-vue 已实现（master-data/* 路由）→ enabled=true
@@ -126,7 +125,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
   {
     id: "m-lab-dash",
     name: "仪表盘",
-    path: "/dashboard",
+    path: "/",
     appId: APP_LAB_ID,
     parentId: null,
     sort: 1,
@@ -201,7 +200,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
     appId: APP_LAB_ID,
     parentId: "grp-biz",
     sort: 1,
-    enabled: true,
+    enabled: false,
     permission: "sample:read",
   },
   {
