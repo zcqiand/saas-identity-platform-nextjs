@@ -298,7 +298,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
   {
     id: "m-insp-spec",
     name: "检测专项",
-    path: "/inspection-specialties",
+    path: "/master-data/inspection-specialties",
     appId: APP_LAB_ID,
     parentId: "grp-insp",
     sort: 1,
@@ -307,7 +307,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
   {
     id: "m-insp-obj",
     name: "检测项目",
-    path: "/inspection-objects",
+    path: "/master-data/inspection-objects",
     appId: APP_LAB_ID,
     parentId: "grp-insp",
     sort: 2,
@@ -316,7 +316,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
   {
     id: "m-insp-param",
     name: "检测参数",
-    path: "/inspection-parameters",
+    path: "/master-data/inspection-parameters",
     appId: APP_LAB_ID,
     parentId: "grp-insp",
     sort: 3,
@@ -325,7 +325,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
   {
     id: "m-insp-std",
     name: "检测标准",
-    path: "/inspection-standards",
+    path: "/master-data/inspection-standards",
     appId: APP_LAB_ID,
     parentId: "grp-insp",
     sort: 4,
