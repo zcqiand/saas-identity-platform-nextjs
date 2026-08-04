@@ -13,8 +13,6 @@ coverage/
 *.tsbuildinfo
 .next/
 .claude/
-.harness/
-.state/
 
 # 本地环境
 .env
