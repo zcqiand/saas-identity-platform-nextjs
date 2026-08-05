@@ -12,14 +12,11 @@
  *     报告发放/报告归档/统计汇总/报告名称/参数界面/型号维护/规格维护/等级维护/牌号维护/
  *     计算规则/技术要求/检测专项/检测项目/检测参数/检测标准）
  *   - path 与 lab-nextjs/src/app/(protected)/** 路由对齐
- *   - 试验过程管理（receipts/task/entry/review/approve/issue/archive 7 项）lab-nextjs
- *     暂未实现任意一个 → 全 enabled=false，sidebar 渲染带「规划」徽标 + 跳 /coming-soon
- *     （避免真路由 404）
- *   - 检测能力 4 项（spec/obj/param/std）lab-vue 已实现，对齐 REF 已上线 → enabled=true
- *   - 基础数据 8 项（report-names/param-ifs/models/specs/grades/brands/calc-rules/tech-req）：
- *     - m-report-names / m-calc-rules / m-tech-req lab-vue 已实现（master-data/* 路由）→ enabled=true
- *     - m-models/m-specs/m-grades/m-brands lab-vue 已实现（master-data/* 路由）→ enabled=true
- *     - m-param-ifs lab-vue 未实现（无 param-interfaces 路由）→ enabled=false
+ *   - 试验过程管理（receipts/task/entry/review/approval/issuance/archive 7 项）lab-nextjs
+ *     已全部实现 → enabled=true（2026-08-06 更新：旧 seed 误标 false 致 sidebar 跳 /coming-soon）
+ *   - 检测能力 4 项（spec/obj/param/std）→ enabled=true
+ *   - 基础数据 8 项（report-names/param-ifs/models/specs/grades/brands/calc-rules/tech-req）
+ *     lab-nextjs 已全部实现 → enabled=true，path 对齐 nextjs master-data/* 实际路由
  *   - 不再放 grp-sys（机构/用户/角色管理已委托 saas，M01.F01-F03 标已废弃，不在菜单）
  *
  * 注：原 version 14 项是简版（5 组 + 14 叶）；本轮扩到 22 项（1 顶级 + 5 组 + 21 叶但去重后 22）
@@ -183,10 +180,10 @@ export const LAB_MENUS: readonly LabMenu[] = [
     permission: "project:read",
   },
 
-  // 试验过程管理（sort=20）
+  // 实验过程管理（sort=20）
   {
     id: "grp-biz",
-    name: "试验过程管理",
+    name: "实验过程管理",
     path: "",
     appId: APP_LAB_ID,
     parentId: null,
@@ -200,7 +197,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
     appId: APP_LAB_ID,
     parentId: "grp-biz",
     sort: 1,
-    enabled: false,
+    enabled: true,
     permission: "sample:read",
   },
   {
@@ -210,7 +207,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
     appId: APP_LAB_ID,
     parentId: "grp-biz",
     sort: 2,
-    enabled: false,
+    enabled: true,
     permission: "report:write",
   },
   {
@@ -220,7 +217,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
     appId: APP_LAB_ID,
     parentId: "grp-biz",
     sort: 3,
-    enabled: false,
+    enabled: true,
     permission: "report:write",
   },
   {
@@ -230,27 +227,27 @@ export const LAB_MENUS: readonly LabMenu[] = [
     appId: APP_LAB_ID,
     parentId: "grp-biz",
     sort: 4,
-    enabled: false,
+    enabled: true,
     permission: "report:read",
   },
   {
     id: "m-approve",
     name: "报告批准",
-    path: "/report-approve",
+    path: "/report-approval",
     appId: APP_LAB_ID,
     parentId: "grp-biz",
     sort: 5,
-    enabled: false,
+    enabled: true,
     permission: "report:issue",
   },
   {
     id: "m-issue",
     name: "报告发放",
-    path: "/report-issue",
+    path: "/report-issuance",
     appId: APP_LAB_ID,
     parentId: "grp-biz",
     sort: 6,
-    enabled: false,
+    enabled: true,
     permission: "report:read",
   },
   {
@@ -260,14 +257,14 @@ export const LAB_MENUS: readonly LabMenu[] = [
     appId: APP_LAB_ID,
     parentId: "grp-biz",
     sort: 7,
-    enabled: false,
+    enabled: true,
     permission: "report:read",
   },
 
-  // 数据统计（sort=30）
+  // 统计报表（sort=30）
   {
     id: "grp-stat",
-    name: "数据统计",
+    name: "统计报表",
     path: "",
     appId: APP_LAB_ID,
     parentId: null,
@@ -345,7 +342,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
   {
     id: "m-report-names",
     name: "报告名称",
-    path: "/master-data/report-categories",
+    path: "/master-data/report-names",
     appId: APP_LAB_ID,
     parentId: "grp-master",
     sort: 1,
@@ -355,16 +352,16 @@ export const LAB_MENUS: readonly LabMenu[] = [
   {
     id: "m-param-ifs",
     name: "参数界面",
-    path: "/param-interfaces",
+    path: "/master-data/param-interfaces",
     appId: APP_LAB_ID,
     parentId: "grp-master",
     sort: 2,
-    enabled: false,
+    enabled: true,
   },
   {
     id: "m-models",
     name: "型号维护",
-    path: "/master-data/report-models",
+    path: "/master-data/models",
     appId: APP_LAB_ID,
     parentId: "grp-master",
     sort: 3,
@@ -374,7 +371,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
   {
     id: "m-specs",
     name: "规格维护",
-    path: "/master-data/report-specs",
+    path: "/master-data/specifications",
     appId: APP_LAB_ID,
     parentId: "grp-master",
     sort: 4,
@@ -384,7 +381,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
   {
     id: "m-grades",
     name: "等级维护",
-    path: "/master-data/report-grades",
+    path: "/master-data/grades",
     appId: APP_LAB_ID,
     parentId: "grp-master",
     sort: 5,
@@ -394,7 +391,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
   {
     id: "m-brands",
     name: "牌号维护",
-    path: "/master-data/report-brands",
+    path: "/master-data/brands",
     appId: APP_LAB_ID,
     parentId: "grp-master",
     sort: 6,
@@ -404,7 +401,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
   {
     id: "m-calc-rules",
     name: "计算规则",
-    path: "/master-data/calculation-rules",
+    path: "/master-data/inspection-calculation-rules",
     appId: APP_LAB_ID,
     parentId: "grp-master",
     sort: 7,
@@ -414,7 +411,7 @@ export const LAB_MENUS: readonly LabMenu[] = [
   {
     id: "m-tech-req",
     name: "技术要求",
-    path: "/master-data/technical-requirements",
+    path: "/master-data/inspection-technical-requirements",
     appId: APP_LAB_ID,
     parentId: "grp-master",
     sort: 8,
