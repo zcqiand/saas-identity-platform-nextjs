@@ -22,14 +22,14 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-beforeEach(() => {
-  seedDatabase();
+beforeEach(async () => {
+  await seedDatabase();
   tenantStore.setCurrentTenant(0);
 });
 
 describe("M01.F01.I08 ProtectedLayout", () => {
-  fnTest(["M01.F01.I08"], "根元素挂 data-fn M01.F01.I08", () => {
-    const acme = db.select().from(tenants).where(eq(tenants.code, "acme")).get();
+  fnTest(["M01.F01.I08"], "根元素挂 data-fn M01.F01.I08", async () => {
+    const acme = (await db.select().from(tenants).where(eq(tenants.code, "acme")))[0];
     if (acme) tenantStore.setCurrentTenant(acme.id);
     const { getByTestId } = render(
       <ProtectedLayout themeCss={acme ? applyTheme(acme.theme) : ""} currentTenantName={acme?.name ?? null}>
@@ -39,8 +39,8 @@ describe("M01.F01.I08 ProtectedLayout", () => {
     expect(getByTestId("protected-layout").getAttribute("data-fn")).toBe("M01.F01.I08");
   });
 
-  it("data-tenant 属性跟随当前 tenant theme", () => {
-    const acme = db.select().from(tenants).where(eq(tenants.code, "acme")).get();
+  it("data-tenant 属性跟随当前 tenant theme", async () => {
+    const acme = (await db.select().from(tenants).where(eq(tenants.code, "acme")))[0];
     if (acme) tenantStore.setCurrentTenant(acme.id);
     const { getByTestId } = render(
       <ProtectedLayout themeCss={acme ? applyTheme(acme.theme) : ""} currentTenantName={acme?.name ?? null}>
@@ -53,8 +53,8 @@ describe("M01.F01.I08 ProtectedLayout", () => {
     expect(style?.textContent).toContain("data-tenant=\"default\"");
   });
 
-  it("切换到 dark tenant 后 style 标签用 dark 主题", () => {
-    const dark = db.select().from(tenants).where(eq(tenants.code, "globex")).get();
+  it("切换到 dark tenant 后 style 标签用 dark 主题", async () => {
+    const dark = (await db.select().from(tenants).where(eq(tenants.code, "globex")))[0];
     if (dark) tenantStore.setCurrentTenant(dark.id);
     const { getByTestId } = render(
       <ProtectedLayout themeCss={dark ? applyTheme(dark.theme) : ""} currentTenantName={dark?.name ?? null}>

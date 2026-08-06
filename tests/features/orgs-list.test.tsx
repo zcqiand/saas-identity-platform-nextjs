@@ -15,8 +15,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-beforeEach(() => {
-  seedDatabase();
+beforeEach(async () => {
+  await seedDatabase();
   vi.spyOn(window, "confirm").mockReturnValue(true);
   vi.spyOn(window, "alert").mockImplementation(() => undefined);
 });

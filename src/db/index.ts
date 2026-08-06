@@ -13,7 +13,13 @@ declare global {
 function open(): Db {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is required");
-  const pool = new Pool({ connectionString: url });
+  // 测试期由 tests/setup-db.ts 注入：每 worker 一个 schema，靠 pool options
+  // 设 search_path 让 db 单例的所有查询落到该 schema。
+  const testSchema = process.env.VITEST_SCHEMA;
+  const pool = new Pool({
+    connectionString: url,
+    ...(testSchema ? { options: `-c search_path=${testSchema},public` } : {}),
+  });
   return drizzle(pool, { schema });
 }
 
