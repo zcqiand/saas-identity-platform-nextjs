@@ -25,11 +25,15 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    // forks pool：每个 worker 是独立子进程，独立 pg 连接池 + 独立 schema。
+    // forks pool：每个测试文件是独立子进程，独立 pg 连接池 + 独立 per-pid schema。
     // 避免线程池共享进程导致 VITEST_SCHEMA 串号。
     pool: "forks",
     include: ["tests/**/*.test.{ts,tsx}"],
     exclude: ["node_modules", "dist", ".next", "src/**/*.{test,spec}.{ts,tsx}"],
+    // globalSetup 在所有 worker 前后各跑一次：清扫陈旧 test_* schema（启动前）
+    // + 回收本次 worker 建的 schema（退出后）。setup-db.ts 的 afterAll 故意不删，
+    // 统一交给这里兜底（进程崩溃也能回收）。
+    globalSetup: ["tests/global-setup.ts"],
     // setup-db 必须排第一：它同步注入 VITEST_SCHEMA，store 文件 import @/db 时才能读到。
     setupFiles: ["tests/setup-db.ts", "tests/setup.ts"],
     // beforeAll 里跑 pg 迁移到远端库，首次连接较慢；放宽 hook 超时。
