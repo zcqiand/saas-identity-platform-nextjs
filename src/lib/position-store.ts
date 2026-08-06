@@ -64,6 +64,6 @@ export async function updatePosition(
 }
 
 export async function deletePosition(id: number): Promise<boolean> {
-  await db.delete(positions).where(eq(positions.id, id));
-  return true;
+  const result = await db.delete(positions).where(eq(positions.id, id));
+  return (result.rowCount ?? 0) > 0;
 }

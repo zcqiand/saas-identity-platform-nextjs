@@ -64,6 +64,6 @@ export async function updateApp(
 }
 
 export async function deleteApp(id: number): Promise<boolean> {
-  await db.delete(apps).where(eq(apps.id, id));
-  return true;
+  const result = await db.delete(apps).where(eq(apps.id, id));
+  return (result.rowCount ?? 0) > 0;
 }

@@ -54,8 +54,8 @@ export async function updateOrg(
 }
 
 export async function deleteOrg(id: number): Promise<boolean> {
-  await db.delete(orgs).where(eq(orgs.id, id));
-  return true;
+  const result = await db.delete(orgs).where(eq(orgs.id, id));
+  return (result.rowCount ?? 0) > 0;
 }
 
 /** 递归 CTE：用 db.execute 跑原生 SQL，一次查全树。列别名 camelCase。 */

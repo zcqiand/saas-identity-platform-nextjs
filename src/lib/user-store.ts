@@ -88,6 +88,6 @@ export async function updateUser(
 }
 
 export async function deleteUser(id: number): Promise<boolean> {
-  await db.delete(users).where(eq(users.id, id));
-  return true;
+  const result = await db.delete(users).where(eq(users.id, id));
+  return (result.rowCount ?? 0) > 0;
 }

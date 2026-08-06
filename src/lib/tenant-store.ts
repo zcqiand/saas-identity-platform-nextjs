@@ -43,8 +43,8 @@ export async function updateTenant(
 }
 
 export async function deleteTenant(id: number): Promise<boolean> {
-  await db.delete(tenants).where(eq(tenants.id, id));
-  return true;
+  const result = await db.delete(tenants).where(eq(tenants.id, id));
+  return (result.rowCount ?? 0) > 0;
 }
 
 export function setCurrentTenant(id: number): void {

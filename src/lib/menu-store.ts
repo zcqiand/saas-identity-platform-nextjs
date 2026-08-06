@@ -73,8 +73,8 @@ export async function updateMenu(
 }
 
 export async function deleteMenu(id: number): Promise<boolean> {
-  await db.delete(appMenus).where(eq(appMenus.id, id));
-  return true;
+  const result = await db.delete(appMenus).where(eq(appMenus.id, id));
+  return (result.rowCount ?? 0) > 0;
 }
 
 /** 递归 CTE：用 db.execute 跑原生 SQL，返回树形节点（depth 缩进用）。列别名 camelCase。 */

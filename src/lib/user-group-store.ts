@@ -49,6 +49,6 @@ export async function updateUserGroup(
 }
 
 export async function deleteUserGroup(id: number): Promise<boolean> {
-  await db.delete(userGroups).where(eq(userGroups.id, id));
-  return true;
+  const result = await db.delete(userGroups).where(eq(userGroups.id, id));
+  return (result.rowCount ?? 0) > 0;
 }

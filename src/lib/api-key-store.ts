@@ -44,6 +44,6 @@ export async function toggleApiKey(id: number): Promise<ApiKey | null> {
 }
 
 export async function deleteApiKey(id: number): Promise<boolean> {
-  await db.delete(apiKeys).where(eq(apiKeys.id, id));
-  return true;
+  const result = await db.delete(apiKeys).where(eq(apiKeys.id, id));
+  return (result.rowCount ?? 0) > 0;
 }

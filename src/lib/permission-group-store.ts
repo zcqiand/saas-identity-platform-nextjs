@@ -90,10 +90,10 @@ export async function updatePermissionGroup(
 }
 
 export async function deletePermissionGroup(id: number): Promise<boolean> {
-  await db
+  const result = await db
     .delete(permissionGroups)
     .where(eq(permissionGroups.id, id));
-  return true;
+  return (result.rowCount ?? 0) > 0;
 }
 
 // 工具：暴露 JSON ↔ array 的 parse 函数给 UI 端复用（UI 自己 import parsePermissions 即可）

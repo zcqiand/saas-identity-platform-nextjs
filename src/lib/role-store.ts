@@ -56,8 +56,8 @@ export async function updateRole(
 }
 
 export async function deleteRole(id: number): Promise<boolean> {
-  await db.delete(roles).where(eq(roles.id, id));
-  return true;
+  const result = await db.delete(roles).where(eq(roles.id, id));
+  return (result.rowCount ?? 0) > 0;
 }
 
 export async function getRolePermissions(roleId: number): Promise<string[]> {
