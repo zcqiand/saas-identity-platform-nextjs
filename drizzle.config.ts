@@ -1,15 +1,12 @@
 import { defineConfig } from "drizzle-kit";
 
-/**
- * drizzle-kit 配置。`dbCredentials.url` 指向本地 dev.db；CI/生产换 env 即可。
- * out 目录约定是 ./drizzle，由 .gitignore 屏蔽（不要手写迁移）。
- */
+/** PostgreSQL drizzle-kit 配置。url 由 env 注入。 */
 export default defineConfig({
   schema: "./src/db/schema.ts",
   out: "./drizzle",
-  dialect: "sqlite",
+  dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DB_PATH ?? "data/dev.db",
+    url: process.env.DATABASE_URL ?? "postgresql://postgres:qiand68%2B%2B%2B@100.79.128.25:5432/saas_dev",
   },
   verbose: true,
   strict: true,

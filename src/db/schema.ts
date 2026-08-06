@@ -1,59 +1,73 @@
-import { sql } from "drizzle-orm";
-import { sqliteTable, integer, text, foreignKey } from "drizzle-orm/sqlite-core";
-
 /**
- * SQLite 表。
+ * PostgreSQL schema（drizzle pg-core）。
+ * 由旧 SQLite schema 1:1 翻译：同表名、同列名、同外键。
+ * 消费方（store / seed / api route）按表名 import 不变。
  *
- * 约定：
- *   - 改这张表的列后，跑 `npx drizzle-kit generate` 让它出新迁移。
- *   - 手动编辑 drizzle/000N_*.sql 是禁止的（见项目 CLAUDE.md 禁止事项）。
- *   - 字段命名 snake_case，与 SQL 习惯对齐。
- *   - 业务表到达后新增；目前只放 health_check 让 route handler /api/health 有可读写的表。
+ * 翻译约定：
+ *   - 自增 integer 主键 → serial().primaryKey()
+ *   - 非自增 integer 主键 → integer().primaryKey()（本 schema 无此例）
+ *   - text 列保持 text()（不引入 pgEnum，减少噪音）
+ *   - integer({ mode: "boolean" }) → boolean()
+ *   - 外键统一上提到表第三参 (t) => ({ ... })，列里只留 integer("fk_id")
+ *   - default(sql`(datetime('now'))`) → defaultNow()（语义等价，pg 原生）
  */
-export const healthCheck = sqliteTable("health_check", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+import { sql } from "drizzle-orm";
+import { boolean, foreignKey, integer, pgTable, serial, text } from "drizzle-orm/pg-core";
+
+export const healthCheck = pgTable("health_check", {
+  id: serial().primaryKey(),
   ok: integer("ok").notNull(),
   checkedAt: text("checked_at")
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`now()`),
 });
 
 export type HealthCheckRow = typeof healthCheck.$inferSelect;
 export type NewHealthCheckRow = typeof healthCheck.$inferInsert;
 
 // @entry M01.F01.I11 类型契约(tenant) — tenants + tenant_users + sso_states 三表
-export const tenants = sqliteTable("tenants", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const tenants = pgTable("tenants", {
+  id: serial().primaryKey(),
   code: text("code").notNull().unique(),
   name: text("name").notNull(),
   theme: text("theme").notNull().default("default"),
-  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`now()`),
 });
 
-export const tenantUsers = sqliteTable(
+export const tenantUsers = pgTable(
   "tenant_users",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    tenantId: integer("tenant_id")
-      .notNull()
-      .references(() => tenants.id, { onDelete: "cascade" }),
-    userId: integer("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    id: serial().primaryKey(),
+    tenantId: integer("tenant_id").notNull(),
+    userId: integer("user_id").notNull(),
     /** per-tenant role："admin" | "member" | "viewer"（D5 决策） */
     role: text("role").notNull().default("member"),
-    joinedAt: text("joined_at").notNull().default(sql`(datetime('now'))`),
+    joinedAt: text("joined_at")
+      .notNull()
+      .default(sql`now()`),
   },
+  (t) => ({
+    tenantFk: foreignKey({ columns: [t.tenantId], foreignColumns: [tenants.id] }).onDelete("cascade"),
+    userFk: foreignKey({ columns: [t.userId], foreignColumns: [users.id] }).onDelete("cascade"),
+  }),
 );
 
-export const ssoStates = sqliteTable("sso_states", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  state: text("state").notNull().unique(),
-  code: text("code"),
-  tenantId: integer("tenant_id").references(() => tenants.id),
-  userId: integer("user_id"),
-  expiresAt: text("expires_at").notNull(),
-});
+export const ssoStates = pgTable(
+  "sso_states",
+  {
+    id: serial().primaryKey(),
+    state: text("state").notNull().unique(),
+    code: text("code"),
+    tenantId: integer("tenant_id"),
+    userId: integer("user_id"),
+    expiresAt: text("expires_at").notNull(),
+  },
+  (t) => ({
+    tenantFk: foreignKey({ columns: [t.tenantId], foreignColumns: [tenants.id] }),
+  }),
+);
 
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
@@ -69,8 +83,8 @@ export type NewSsoState = typeof ssoStates.$inferInsert;
 // @entry M02.F02.I09 用户管理 — 用户资源契约(MSW) — schema 表挂此处
 // @entry M02.F03.I05 岗位管理 — 删除岗位按钮 — schema 表挂此处（岗位列表底层表）
 
-export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const users = pgTable("users", {
+  id: serial().primaryKey(),
   username: text("username").notNull().unique(),
   displayName: text("display_name").notNull(),
   email: text("email").notNull().unique(),
@@ -78,21 +92,29 @@ export const users = sqliteTable("users", {
   roles: text("roles").notNull().default('["member"]'),
   /** "active" | "disabled" | "pending" */
   status: text("status").notNull().default("active"),
-  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`now()`),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`now()`),
 });
 
-export const orgs = sqliteTable(
+export const orgs = pgTable(
   "orgs",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: serial().primaryKey(),
     name: text("name").notNull(),
     /** 自引用 FK：orgs.parent_id → orgs.id。删根 → 子节点 SET NULL（变独立根） */
     parentId: integer("parent_id"),
     sort: integer("sort").notNull().default(0),
-    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
-    createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-    updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+    enabled: boolean("enabled").notNull().default(true),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`now()`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`now()`),
   },
   (t) => ({
     parentFk: foreignKey({
@@ -103,29 +125,35 @@ export const orgs = sqliteTable(
   }),
 );
 
-export const positions = sqliteTable("positions", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const positions = pgTable("positions", {
+  id: serial().primaryKey(),
   code: text("code").notNull().unique(),
   name: text("name").notNull(),
   description: text("description"),
   sort: integer("sort").notNull().default(0),
-  enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
-  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+  enabled: boolean("enabled").notNull().default(true),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`now()`),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`now()`),
 });
 
-export const positionMembers = sqliteTable(
+export const positionMembers = pgTable(
   "position_members",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    positionId: integer("position_id")
+    id: serial().primaryKey(),
+    positionId: integer("position_id").notNull(),
+    userId: integer("user_id").notNull(),
+    joinedAt: text("joined_at")
       .notNull()
-      .references(() => positions.id, { onDelete: "cascade" }),
-    userId: integer("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    joinedAt: text("joined_at").notNull().default(sql`(datetime('now'))`),
+      .default(sql`now()`),
   },
+  (t) => ({
+    positionFk: foreignKey({ columns: [t.positionId], foreignColumns: [positions.id] }).onDelete("cascade"),
+    userFk: foreignKey({ columns: [t.userId], foreignColumns: [users.id] }).onDelete("cascade"),
+  }),
 );
 
 export type User = typeof users.$inferSelect;
@@ -144,50 +172,63 @@ export type NewPositionMember = typeof positionMembers.$inferInsert;
 // @entry M03.F02.I05 权限组 — 权限组 store 内部接口 — schema 表挂此处
 // @entry M03.F03.I05 用户组 — 用户组 store 内部接口 — schema 表挂此处
 
-export const roles = sqliteTable("roles", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const roles = pgTable("roles", {
+  id: serial().primaryKey(),
   code: text("code").notNull().unique(),
   name: text("name").notNull(),
   description: text("description"),
-  enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
-  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+  enabled: boolean("enabled").notNull().default(true),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`now()`),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`now()`),
 });
 
-export const rolePermissions = sqliteTable(
+export const rolePermissions = pgTable(
   "role_permissions",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    roleId: integer("role_id")
-      .notNull()
-      .references(() => roles.id, { onDelete: "cascade" }),
+    id: serial().primaryKey(),
+    roleId: integer("role_id").notNull(),
     /** 权限码字符串（"user:read" 等）—— D11 决策：不在独立表 */
     permissionCode: text("permission_code").notNull(),
-    createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`now()`),
   },
+  (t) => ({
+    roleFk: foreignKey({ columns: [t.roleId], foreignColumns: [roles.id] }).onDelete("cascade"),
+  }),
 );
 
-export const userGroups = sqliteTable("user_groups", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const userGroups = pgTable("user_groups", {
+  id: serial().primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
-  enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
-  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+  enabled: boolean("enabled").notNull().default(true),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`now()`),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`now()`),
 });
 
-export const userGroupMembers = sqliteTable(
+export const userGroupMembers = pgTable(
   "user_group_members",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    groupId: integer("group_id")
+    id: serial().primaryKey(),
+    groupId: integer("group_id").notNull(),
+    userId: integer("user_id").notNull(),
+    joinedAt: text("joined_at")
       .notNull()
-      .references(() => userGroups.id, { onDelete: "cascade" }),
-    userId: integer("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    joinedAt: text("joined_at").notNull().default(sql`(datetime('now'))`),
+      .default(sql`now()`),
   },
+  (t) => ({
+    groupFk: foreignKey({ columns: [t.groupId], foreignColumns: [userGroups.id] }).onDelete("cascade"),
+    userFk: foreignKey({ columns: [t.userId], foreignColumns: [users.id] }).onDelete("cascade"),
+  }),
 );
 
 export type Role = typeof roles.$inferSelect;
@@ -202,16 +243,20 @@ export type NewUserGroupMember = typeof userGroupMembers.$inferInsert;
 // M03.F02 权限组（permission_groups）— 权限模板：name + description + permissions(JSON)
 // + sort + enabled。roles 通过 role_permissions 关联到 permission_code；权限组是给 UI
 // 批量管理权限码的中间层（"管理员权限包" / "只读权限包"），与 roles 表解耦。
-export const permissionGroups = sqliteTable("permission_groups", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const permissionGroups = pgTable("permission_groups", {
+  id: serial().primaryKey(),
   name: text("name").notNull().unique(),
   description: text("description"),
   /** JSON 字符串数组：["user:read", "role:write"] — 命名空间由调用方约定 */
   permissions: text("permissions").notNull().default("[]"),
   sort: integer("sort").notNull().default(0),
-  enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
-  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+  enabled: boolean("enabled").notNull().default(true),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`now()`),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`now()`),
 });
 
 export type PermissionGroup = typeof permissionGroups.$inferSelect;
@@ -224,34 +269,41 @@ export type NewPermissionGroup = typeof permissionGroups.$inferInsert;
 // @entry M04.F01.I12 应用 store actions 内部接口 — schema 表挂此处
 // @entry M04.F02.I04 删除 API Key — schema 表挂此处
 
-export const apps = sqliteTable("apps", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const apps = pgTable("apps", {
+  id: serial().primaryKey(),
   code: text("code").notNull().unique(),
   name: text("name").notNull(),
   type: text("type").notNull().default("web"),
   description: text("description"),
-  enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
-  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+  enabled: boolean("enabled").notNull().default(true),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`now()`),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`now()`),
 });
 
-export const appMenus = sqliteTable(
+export const appMenus = pgTable(
   "app_menus",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    appId: integer("app_id")
-      .notNull()
-      .references(() => apps.id, { onDelete: "cascade" }),
+    id: serial().primaryKey(),
+    appId: integer("app_id").notNull(),
     parentId: integer("parent_id"),
     code: text("code").notNull(),
     name: text("name").notNull(),
     path: text("path").notNull(),
     sort: integer("sort").notNull().default(0),
-    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
-    createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-    updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+    enabled: boolean("enabled").notNull().default(true),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`now()`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`now()`),
   },
   (t) => ({
+    appFk: foreignKey({ columns: [t.appId], foreignColumns: [apps.id] }).onDelete("cascade"),
     parentFk: foreignKey({
       columns: [t.parentId],
       foreignColumns: [t.id],
@@ -260,19 +312,22 @@ export const appMenus = sqliteTable(
   }),
 );
 
-export const apiKeys = sqliteTable(
+export const apiKeys = pgTable(
   "api_keys",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: serial().primaryKey(),
     name: text("name").notNull(),
     key: text("key").notNull().unique(),
-    appId: integer("app_id")
-      .notNull()
-      .references(() => apps.id, { onDelete: "cascade" }),
-    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+    appId: integer("app_id").notNull(),
+    enabled: boolean("enabled").notNull().default(true),
     expiresAt: text("expires_at").notNull().default("never"),
-    createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`now()`),
   },
+  (t) => ({
+    appFk: foreignKey({ columns: [t.appId], foreignColumns: [apps.id] }).onDelete("cascade"),
+  }),
 );
 
 export type App = typeof apps.$inferSelect;
@@ -286,8 +341,8 @@ export type NewApiKey = typeof apiKeys.$inferInsert;
 // @entry M05.F01.I08 审计 store actions 内部接口
 // @entry M05.F01.I09 审计日志资源契约(MSW)
 
-export const auditLogs = sqliteTable("audit_logs", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const auditLogs = pgTable("audit_logs", {
+  id: serial().primaryKey(),
   /** "login" | "logout" | "create" | "update" | "delete" | "permission_change" */
   action: text("action").notNull(),
   operator: text("operator").notNull(),
@@ -295,7 +350,9 @@ export const auditLogs = sqliteTable("audit_logs", {
   resourceId: text("resource_id").notNull(),
   ip: text("ip").notNull().default("127.0.0.1"),
   detail: text("detail").notNull().default(""),
-  timestamp: text("timestamp").notNull().default(sql`(datetime('now'))`),
+  timestamp: text("timestamp")
+    .notNull()
+    .default(sql`now()`),
 });
 
 export type AuditLog = typeof auditLogs.$inferSelect;
@@ -305,12 +362,14 @@ export type NewAuditLog = typeof auditLogs.$inferInsert;
 // @entry M06.F01.I04 启用登录失败锁定 — schema 表挂此处
 // @entry M06.F03.I09 历史密码数量 — schema 表挂此处
 
-export const platformSettings = sqliteTable("platform_settings", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const platformSettings = pgTable("platform_settings", {
+  id: serial().primaryKey(),
   key: text("key").notNull().unique(),
   value: text("value").notNull(),
   description: text("description"),
-  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`now()`),
 });
 
 export type PlatformSetting = typeof platformSettings.$inferSelect;
