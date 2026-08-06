@@ -5,7 +5,7 @@
 
 ## 1. 技术栈
 
-`nextjs` — Next.js 15 (App Router) + TypeScript + Vitest + Tailwind v4 + shadcn/ui + Drizzle ORM (SQLite)
+`nextjs` — Next.js 15 (App Router) + TypeScript + Vitest + Tailwind v4 + shadcn/ui + Drizzle ORM (PostgreSQL)
 
 门禁命令见 `.harness/stack.json`。**不要改它来让门变松。**
 
