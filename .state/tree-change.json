@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "approved": true,
+  "base_sha": "ec37516c2cd4110f",
+  "summary": "M01.F05.I03 描述 doc 同步：原提案写「跳 /audit-logs」，实现调研发现 /audit-logs 路由不存在（M05.F01 整组规划中），改为跳 /orgs（最近似的『用户活动』语义已上线页面）。仅改描述文本，ID 不动。",
+  "changes": [
+    {
+      "id": "M01.F05.I03",
+      "action": "变更",
+      "name": "卡片点击跳转",
+      "reason": "原描述 /audit-logs 不存在（M05.F01 整组规划），改 /orgs；M05 上线后另起 tree-change 回链"
+    }
+  ],
+  "sync_files": [
+    "docs/functions/function-tree.md",
+    "docs/design/design-function-map.md"
+  ]
+}

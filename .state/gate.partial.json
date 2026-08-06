@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "project": "saas-identity-platform-nextjs",
+  "passed": true,
+  "partial": true,
+  "ran": [
+    "L5"
+  ],
+  "checked_at": "2026-07-17T12:06:14+0800",
+  "gates": [
+    {
+      "level": "L5",
+      "name": "引用完整性",
+      "passed": true,
+      "returncode": 0,
+      "duration_s": 8.485,
+      "output": "160 个功能条目，引用完整。软告警 0 条（见 .state/alignment.json）\nException in thread Thread-1 (_readerthread):\nTraceback (most recent call last):\n  File \"C:\\ProgramData\\anaconda3\\Lib\\threading.py\", line 1045, in _bootstrap_inner\n    self.run()\n  File \"C:\\ProgramData\\anaconda3\\Lib\\threading.py\", line 982, in run\n    self._target(*self._args, **self._kwargs)\n  File \"C:\\ProgramData\\anaconda3\\Lib\\subprocess.py\", line 1597, in _readerthread\n    buffer.append(fh.read())\n                  ^^^^^^^^^\nUnicodeDecodeError: 'gbk' codec can't decode byte 0x93 in position 97: illegal multibyte sequence"
+    }
+  ]
+}
