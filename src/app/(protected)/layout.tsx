@@ -31,7 +31,7 @@ export default async function ProtectedGroupLayout({
 
   if (cookieId && Number.isInteger(cookieId) && cookieId > 0) {
     setCurrentTenant(cookieId);
-    const t = getCurrentTenant();
+    const t = await getCurrentTenant();
     if (t) {
       tenantName = t.name;
       css = applyTheme(t.theme);

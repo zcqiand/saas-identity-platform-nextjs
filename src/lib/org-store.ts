@@ -21,45 +21,46 @@ export function clearErrors(): void {
   lastError = null;
 }
 
-export function listOrgs(): Org[] {
-  return db.select().from(orgs).all();
+export async function listOrgs(): Promise<Org[]> {
+  return db.select().from(orgs);
 }
 
-export function getOrg(id: number): Org | null {
-  return db.select().from(orgs).where(eq(orgs.id, id)).get() ?? null;
+export async function getOrg(id: number): Promise<Org | null> {
+  const [row] = await db.select().from(orgs).where(eq(orgs.id, id));
+  return row ?? null;
 }
 
-export function createOrg(input: Omit<NewOrg, "id" | "createdAt" | "updatedAt">): Org {
-  return db.insert(orgs).values(input).returning().get();
+export async function createOrg(input: Omit<NewOrg, "id" | "createdAt" | "updatedAt">): Promise<Org> {
+  const [row] = await db.insert(orgs).values(input).returning();
+  return row!;
 }
 
-export function updateOrg(
+export async function updateOrg(
   id: number,
   patch: Partial<Pick<NewOrg, "name" | "parentId" | "sort" | "enabled">>,
-): Org | null {
-  const existing = getOrg(id);
+): Promise<Org | null> {
+  const existing = await getOrg(id);
   if (!existing) return null;
   const merged: NewOrg = { ...existing, ...patch };
-  db.update(orgs)
+  await db.update(orgs)
     .set({
       name: merged.name,
       parentId: merged.parentId,
       sort: merged.sort,
       enabled: merged.enabled,
     })
-    .where(eq(orgs.id, id))
-    .run();
+    .where(eq(orgs.id, id));
   return getOrg(id);
 }
 
-export function deleteOrg(id: number): boolean {
-  const result = db.delete(orgs).where(eq(orgs.id, id)).run();
-  return result.changes > 0;
+export async function deleteOrg(id: number): Promise<boolean> {
+  await db.delete(orgs).where(eq(orgs.id, id));
+  return true;
 }
 
-/** SQLite 递归 CTE 一次查全树 */
-export function getOrgTree(): OrgTreeNode[] {
-  return db.all<OrgTreeNode>(sql`
+/** 递归 CTE：用 db.execute 跑原生 SQL，一次查全树。列别名 camelCase。 */
+export async function getOrgTree(): Promise<OrgTreeNode[]> {
+  const result = await db.execute(sql`
     WITH RECURSIVE org_tree(id, name, parent_id, sort, enabled, created_at, updated_at, depth) AS (
       SELECT id, name, parent_id, sort, enabled, created_at, updated_at, 0
       FROM orgs
@@ -73,4 +74,5 @@ export function getOrgTree(): OrgTreeNode[] {
     FROM org_tree
     ORDER BY depth, sort, name
   `);
+  return result.rows as unknown as OrgTreeNode[];
 }

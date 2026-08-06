@@ -16,7 +16,7 @@ export async function GET(
   if (id === null) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
-  const m = menuStore.getMenu(id);
+  const m = await menuStore.getMenu(id);
   if (!m) return NextResponse.json({ error: "menu not found" }, { status: 404 });
   return NextResponse.json(m);
 }
@@ -58,7 +58,7 @@ export async function PUT(
   else if (typeof b.parentId === "number") patch.parentId = b.parentId;
   if (typeof b.sort === "number") patch.sort = b.sort;
   if (typeof b.enabled === "boolean") patch.enabled = b.enabled;
-  const u = menuStore.updateMenu(id, patch);
+  const u = await menuStore.updateMenu(id, patch);
   if (!u) return NextResponse.json({ error: "menu not found" }, { status: 404 });
   return NextResponse.json(u);
 }
@@ -71,7 +71,7 @@ export async function DELETE(
   if (id === null) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
-  const ok = menuStore.deleteMenu(id);
+  const ok = await menuStore.deleteMenu(id);
   if (!ok) return NextResponse.json({ error: "menu not found" }, { status: 404 });
   return NextResponse.json({ deleted: true, id });
 }

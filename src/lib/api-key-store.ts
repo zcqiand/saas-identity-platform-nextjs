@@ -5,22 +5,23 @@ import { apiKeys, type ApiKey } from "@/db/schema";
 
 /** M04.F02.I04 — API Key store actions 内部接口 */
 
-export function listApiKeys(): ApiKey[] {
-  return db.select().from(apiKeys).all();
+export async function listApiKeys(): Promise<ApiKey[]> {
+  return db.select().from(apiKeys);
 }
 
-export function getApiKey(id: number): ApiKey | null {
-  return db.select().from(apiKeys).where(eq(apiKeys.id, id)).get() ?? null;
+export async function getApiKey(id: number): Promise<ApiKey | null> {
+  const [row] = await db.select().from(apiKeys).where(eq(apiKeys.id, id));
+  return row ?? null;
 }
 
-export function createApiKey(input: {
+export async function createApiKey(input: {
   name: string;
   key: string;
   appId: number;
   expiresAt?: string;
   enabled?: boolean;
-}): ApiKey {
-  return db
+}): Promise<ApiKey> {
+  const [row] = await db
     .insert(apiKeys)
     .values({
       name: input.name,
@@ -29,21 +30,20 @@ export function createApiKey(input: {
       expiresAt: input.expiresAt ?? "never",
       enabled: input.enabled ?? true,
     })
-    .returning()
-    .get();
+    .returning();
+  return row!;
 }
 
-export function toggleApiKey(id: number): ApiKey | null {
-  const existing = getApiKey(id);
+export async function toggleApiKey(id: number): Promise<ApiKey | null> {
+  const existing = await getApiKey(id);
   if (!existing) return null;
-  db.update(apiKeys)
+  await db.update(apiKeys)
     .set({ enabled: !existing.enabled })
-    .where(eq(apiKeys.id, id))
-    .run();
+    .where(eq(apiKeys.id, id));
   return getApiKey(id);
 }
 
-export function deleteApiKey(id: number): boolean {
-  const result = db.delete(apiKeys).where(eq(apiKeys.id, id)).run();
-  return result.changes > 0;
+export async function deleteApiKey(id: number): Promise<boolean> {
+  await db.delete(apiKeys).where(eq(apiKeys.id, id));
+  return true;
 }

@@ -8,6 +8,13 @@
       "when": 1785986368551,
       "tag": "0000_soft_inhumans",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785987222972,
+      "tag": "0001_loud_forge",
+      "breakpoints": true
     }
   ]
 }

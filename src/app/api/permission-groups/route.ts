@@ -17,7 +17,7 @@ function parsePerms(input: unknown): string[] {
 }
 
 export async function GET() {
-  return NextResponse.json(permGroupStore.listPermissionGroups());
+  return NextResponse.json(await permGroupStore.listPermissionGroups());
 }
 
 export async function POST(req: Request) {
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     );
   }
   try {
-    const created = permGroupStore.createPermissionGroup({
+    const created = await permGroupStore.createPermissionGroup({
       name: b.name.trim(),
       description: typeof b.description === "string" ? b.description : undefined,
       permissions: parsePerms(b.permissions),

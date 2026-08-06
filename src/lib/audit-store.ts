@@ -5,29 +5,30 @@ import { auditLogs, type AuditLog } from "@/db/schema";
 
 /** M05.F01.I08 — 审计 store actions 内部接口 */
 
-export function listAuditLogs(filter?: { action?: string; operator?: string }): AuditLog[] {
+export async function listAuditLogs(filter?: { action?: string; operator?: string }): Promise<AuditLog[]> {
   const conditions = [];
   if (filter?.action) conditions.push(eq(auditLogs.action, filter.action));
   if (filter?.operator) conditions.push(eq(auditLogs.operator, filter.operator));
   const where = conditions.length === 1 ? conditions[0] : conditions.length > 1 ? conditions[0] : undefined;
   const baseQuery = db.select().from(auditLogs);
-  const all = where ? baseQuery.where(where).all() : baseQuery.all();
+  const all = where ? await baseQuery.where(where) : await baseQuery;
   return all.sort((a, b) => b.id - a.id);
 }
 
-export function getAuditLog(id: number): AuditLog | null {
-  return db.select().from(auditLogs).where(eq(auditLogs.id, id)).get() ?? null;
+export async function getAuditLog(id: number): Promise<AuditLog | null> {
+  const [row] = await db.select().from(auditLogs).where(eq(auditLogs.id, id));
+  return row ?? null;
 }
 
-export function writeAuditLog(input: {
+export async function writeAuditLog(input: {
   action: string;
   operator: string;
   resource: string;
   resourceId: string;
   ip?: string;
   detail?: string;
-}): AuditLog {
-  return db
+}): Promise<AuditLog> {
+  const [row] = await db
     .insert(auditLogs)
     .values({
       action: input.action,
@@ -37,6 +38,6 @@ export function writeAuditLog(input: {
       ip: input.ip ?? "127.0.0.1",
       detail: input.detail ?? "",
     })
-    .returning()
-    .get();
+    .returning();
+  return row!;
 }

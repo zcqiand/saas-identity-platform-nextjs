@@ -12,7 +12,7 @@ interface CreateAppBody {
 }
 
 export async function GET() {
-  return NextResponse.json(appStore.listApps());
+  return NextResponse.json(await appStore.listApps());
 }
 
 export async function POST(req: Request) {
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const created = appStore.createApp({
+  const created = await appStore.createApp({
     code: b.code,
     name: b.name,
     type: typeof b.type === "string" ? b.type : undefined,

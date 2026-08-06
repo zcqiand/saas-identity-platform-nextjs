@@ -11,8 +11,8 @@ export default async function MenusPage({
   const { id } = await params;
   const appId = Number(id);
   if (!Number.isInteger(appId) || appId <= 0) notFound();
-  const app = getApp(appId);
+  const app = await getApp(appId);
   if (!app) notFound();
-  const tree = getMenuTree(appId) as unknown as MenuRow[];
+  const tree = (await getMenuTree(appId)) as unknown as MenuRow[];
   return <MenusClient appId={appId} appName={app.name} initialMenus={tree} />;
 }

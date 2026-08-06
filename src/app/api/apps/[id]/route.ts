@@ -16,7 +16,7 @@ export async function GET(
   if (id === null) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
-  const a = appStore.getApp(id);
+  const a = await appStore.getApp(id);
   if (!a) return NextResponse.json({ error: "app not found" }, { status: 404 });
   return NextResponse.json(a);
 }
@@ -54,7 +54,7 @@ export async function PUT(
   if (typeof b.type === "string") patch.type = b.type;
   if (typeof b.description === "string") patch.description = b.description;
   if (typeof b.enabled === "boolean") patch.enabled = b.enabled;
-  const u = appStore.updateApp(id, patch);
+  const u = await appStore.updateApp(id, patch);
   if (!u) return NextResponse.json({ error: "app not found" }, { status: 404 });
   return NextResponse.json(u);
 }
@@ -67,7 +67,7 @@ export async function DELETE(
   if (id === null) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
-  const ok = appStore.deleteApp(id);
+  const ok = await appStore.deleteApp(id);
   if (!ok) return NextResponse.json({ error: "app not found" }, { status: 404 });
   return NextResponse.json({ deleted: true, id });
 }

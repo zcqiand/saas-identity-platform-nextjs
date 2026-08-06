@@ -9,19 +9,20 @@ export interface MenuTreeNode extends AppMenu {
   depth: number;
 }
 
-export function listMenus(): AppMenu[] {
-  return db.select().from(appMenus).all();
+export async function listMenus(): Promise<AppMenu[]> {
+  return db.select().from(appMenus);
 }
 
-export function listMenusByApp(appId: number): AppMenu[] {
-  return db.select().from(appMenus).where(eq(appMenus.appId, appId)).all();
+export async function listMenusByApp(appId: number): Promise<AppMenu[]> {
+  return db.select().from(appMenus).where(eq(appMenus.appId, appId));
 }
 
-export function getMenu(id: number): AppMenu | null {
-  return db.select().from(appMenus).where(eq(appMenus.id, id)).get() ?? null;
+export async function getMenu(id: number): Promise<AppMenu | null> {
+  const [row] = await db.select().from(appMenus).where(eq(appMenus.id, id));
+  return row ?? null;
 }
 
-export function createMenu(input: {
+export async function createMenu(input: {
   appId: number;
   code: string;
   name: string;
@@ -29,8 +30,8 @@ export function createMenu(input: {
   parentId?: number | null;
   sort?: number;
   enabled?: boolean;
-}): AppMenu {
-  return db
+}): Promise<AppMenu> {
+  const [row] = await db
     .insert(appMenus)
     .values({
       appId: input.appId,
@@ -41,15 +42,15 @@ export function createMenu(input: {
       sort: input.sort ?? 0,
       enabled: input.enabled ?? true,
     } satisfies NewAppMenu)
-    .returning()
-    .get();
+    .returning();
+  return row!;
 }
 
-export function updateMenu(
+export async function updateMenu(
   id: number,
   patch: Partial<Pick<NewAppMenu, "name" | "path" | "parentId" | "sort" | "enabled">>,
-): AppMenu | null {
-  const existing = getMenu(id);
+): Promise<AppMenu | null> {
+  const existing = await getMenu(id);
   if (!existing) return null;
   const merged: NewAppMenu = {
     ...existing,
@@ -59,7 +60,7 @@ export function updateMenu(
     sort: patch.sort ?? existing.sort,
     enabled: patch.enabled ?? existing.enabled,
   };
-  db.update(appMenus)
+  await db.update(appMenus)
     .set({
       name: merged.name,
       path: merged.path,
@@ -67,18 +68,18 @@ export function updateMenu(
       sort: merged.sort,
       enabled: merged.enabled,
     })
-    .where(eq(appMenus.id, id))
-    .run();
+    .where(eq(appMenus.id, id));
   return getMenu(id);
 }
 
-export function deleteMenu(id: number): boolean {
-  const result = db.delete(appMenus).where(eq(appMenus.id, id)).run();
-  return result.changes > 0;
+export async function deleteMenu(id: number): Promise<boolean> {
+  await db.delete(appMenus).where(eq(appMenus.id, id));
+  return true;
 }
 
-export function getMenuTree(appId: number): MenuTreeNode[] {
-  return db.all<MenuTreeNode>(sql`
+/** 递归 CTE：用 db.execute 跑原生 SQL，返回树形节点（depth 缩进用）。列别名 camelCase。 */
+export async function getMenuTree(appId: number): Promise<MenuTreeNode[]> {
+  const result = await db.execute(sql`
     WITH RECURSIVE menu_tree(id, app_id, parent_id, code, name, path, sort, enabled, created_at, updated_at, depth) AS (
       SELECT id, app_id, parent_id, code, name, path, sort, enabled, created_at, updated_at, 0
       FROM app_menus
@@ -92,4 +93,5 @@ export function getMenuTree(appId: number): MenuTreeNode[] {
     FROM menu_tree
     ORDER BY depth, sort, name
   `);
+  return result.rows as unknown as MenuTreeNode[];
 }

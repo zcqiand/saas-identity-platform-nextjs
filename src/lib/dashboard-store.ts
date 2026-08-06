@@ -11,15 +11,15 @@ export interface DashboardCounts {
   todayLogins: number;
 }
 
-export function getDashboardCounts(): DashboardCounts {
-  const tenantsCount = db.select().from(tenants).all().length;
-  const usersCount = db.select().from(users).all().length;
+export async function getDashboardCounts(): Promise<DashboardCounts> {
+  const tenantsRows = await db.select().from(tenants);
+  const usersRows = await db.select().from(users);
 
   // 「今日登录」= audit_logs 里今天（>= 起始 ISO）的 action='login' 条数
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
   const isoStart = startOfDay.toISOString().replace("T", " ").slice(0, 19);
-  const todayLoginRows = db
+  const todayLoginRows = await db
     .select()
     .from(auditLogs)
     .where(
@@ -27,18 +27,17 @@ export function getDashboardCounts(): DashboardCounts {
         eq(auditLogs.action, "login"),
         gte(auditLogs.timestamp, isoStart),
       ),
-    )
-    .all();
+    );
 
   return {
-    tenants: tenantsCount,
-    users: usersCount,
+    tenants: tenantsRows.length,
+    users: usersRows.length,
     todayLogins: todayLoginRows.length,
   };
 }
 
 // 占位：仪表盘 future 可能需要的 hook（如 latestActivity）
-export function listRecentLoginLogs(limit: number) {
+export async function listRecentLoginLogs(limit: number) {
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   return db
     .select()
@@ -46,6 +45,5 @@ export function listRecentLoginLogs(limit: number) {
     .where(
       and(eq(auditLogs.action, "login"), like(auditLogs.timestamp, `${today}%`)),
     )
-    .limit(limit)
-    .all();
+    .limit(limit);
 }

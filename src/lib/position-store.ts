@@ -5,22 +5,23 @@ import { positions, type NewPosition, type Position } from "@/db/schema";
 
 /** M02.F03.I05 — 岗位管理 store（CRUD + members） */
 
-export function listPositions(): Position[] {
-  return db.select().from(positions).all();
+export async function listPositions(): Promise<Position[]> {
+  return db.select().from(positions);
 }
 
-export function getPosition(id: number): Position | null {
-  return db.select().from(positions).where(eq(positions.id, id)).get() ?? null;
+export async function getPosition(id: number): Promise<Position | null> {
+  const [row] = await db.select().from(positions).where(eq(positions.id, id));
+  return row ?? null;
 }
 
-export function createPosition(input: {
+export async function createPosition(input: {
   code: string;
   name: string;
   description?: string;
   sort?: number;
   enabled?: boolean;
-}): Position {
-  return db
+}): Promise<Position> {
+  const [row] = await db
     .insert(positions)
     .values({
       code: input.code,
@@ -29,11 +30,11 @@ export function createPosition(input: {
       sort: input.sort ?? 0,
       enabled: input.enabled ?? true,
     })
-    .returning()
-    .get();
+    .returning();
+  return row!;
 }
 
-export function updatePosition(
+export async function updatePosition(
   id: number,
   patch: {
     name?: string;
@@ -41,8 +42,8 @@ export function updatePosition(
     sort?: number;
     enabled?: boolean;
   },
-): Position | null {
-  const existing = getPosition(id);
+): Promise<Position | null> {
+  const existing = await getPosition(id);
   if (!existing) return null;
   const merged: NewPosition = {
     ...existing,
@@ -51,19 +52,18 @@ export function updatePosition(
     sort: patch.sort ?? existing.sort,
     enabled: patch.enabled ?? existing.enabled,
   };
-  db.update(positions)
+  await db.update(positions)
     .set({
       name: merged.name,
       description: merged.description,
       sort: merged.sort,
       enabled: merged.enabled,
     })
-    .where(eq(positions.id, id))
-    .run();
+    .where(eq(positions.id, id));
   return getPosition(id);
 }
 
-export function deletePosition(id: number): boolean {
-  const result = db.delete(positions).where(eq(positions.id, id)).run();
-  return result.changes > 0;
+export async function deletePosition(id: number): Promise<boolean> {
+  await db.delete(positions).where(eq(positions.id, id));
+  return true;
 }

@@ -15,7 +15,7 @@ export default async function TenantEditPage({
   if (!Number.isInteger(numericId) || numericId <= 0) {
     notFound();
   }
-  const tenant = getTenant(numericId);
+  const tenant = await getTenant(numericId);
   if (!tenant) {
     notFound();
   }

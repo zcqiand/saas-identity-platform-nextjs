@@ -10,21 +10,22 @@ import { rolePermissions, roles, type NewRole, type Role } from "@/db/schema";
 
 /** M03.F01.I08 — 角色 store（CRUD + role_permissions 关联） */
 
-export function listRoles(): Role[] {
-  return db.select().from(roles).all();
+export async function listRoles(): Promise<Role[]> {
+  return db.select().from(roles);
 }
 
-export function getRole(id: number): Role | null {
-  return db.select().from(roles).where(eq(roles.id, id)).get() ?? null;
+export async function getRole(id: number): Promise<Role | null> {
+  const [row] = await db.select().from(roles).where(eq(roles.id, id));
+  return row ?? null;
 }
 
-export function createRole(input: {
+export async function createRole(input: {
   code: string;
   name: string;
   description?: string;
   enabled?: boolean;
-}): Role {
-  return db
+}): Promise<Role> {
+  const [row] = await db
     .insert(roles)
     .values({
       code: input.code,
@@ -32,15 +33,15 @@ export function createRole(input: {
       description: input.description,
       enabled: input.enabled ?? true,
     })
-    .returning()
-    .get();
+    .returning();
+  return row!;
 }
 
-export function updateRole(
+export async function updateRole(
   id: number,
   patch: { name?: string; description?: string; enabled?: boolean },
-): Role | null {
-  const existing = getRole(id);
+): Promise<Role | null> {
+  const existing = await getRole(id);
   if (!existing) return null;
   const merged: NewRole = {
     ...existing,
@@ -48,33 +49,31 @@ export function updateRole(
     description: patch.description ?? existing.description,
     enabled: patch.enabled ?? existing.enabled,
   };
-  db.update(roles)
+  await db.update(roles)
     .set({ name: merged.name, description: merged.description, enabled: merged.enabled })
-    .where(eq(roles.id, id))
-    .run();
+    .where(eq(roles.id, id));
   return getRole(id);
 }
 
-export function deleteRole(id: number): boolean {
-  const result = db.delete(roles).where(eq(roles.id, id)).run();
-  return result.changes > 0;
+export async function deleteRole(id: number): Promise<boolean> {
+  await db.delete(roles).where(eq(roles.id, id));
+  return true;
 }
 
-export function getRolePermissions(roleId: number): string[] {
-  return db
+export async function getRolePermissions(roleId: number): Promise<string[]> {
+  const rows = await db
     .select({ code: rolePermissions.permissionCode })
     .from(rolePermissions)
-    .where(eq(rolePermissions.roleId, roleId))
-    .all()
-    .map((r) => r.code);
+    .where(eq(rolePermissions.roleId, roleId));
+  return rows.map((r) => r.code);
 }
 
 /** D18 决策：setRoleMenuPermissions 占位 MVP；UI 留 M04 */
-export function setRolePermissions(roleId: number, perms: string[]): void {
+export async function setRolePermissions(roleId: number, perms: string[]): Promise<void> {
   // CASCADE 删旧的
-  db.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId)).run();
+  await db.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId));
   for (const code of perms) {
-    db.insert(rolePermissions).values({ roleId, permissionCode: code }).run();
+    await db.insert(rolePermissions).values({ roleId, permissionCode: code });
   }
 }
 
@@ -88,14 +87,12 @@ export function clearErrors(): void {
 }
 
 // 验证 roleId 存在（用于 D14 auth-store 集成）
-export function roleHasPermission(roleId: number, code: string): boolean {
-  return db
+export async function roleHasPermission(roleId: number, code: string): Promise<boolean> {
+  const [row] = await db
     .select()
     .from(rolePermissions)
     .where(
       and(eq(rolePermissions.roleId, roleId), eq(rolePermissions.permissionCode, code)),
-    )
-    .get()
-    ? true
-    : false;
+    );
+  return row ? true : false;
 }

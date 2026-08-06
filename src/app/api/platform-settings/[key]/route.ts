@@ -14,7 +14,7 @@ export async function GET(
   _req: Request,
   { params }: { params: { key: string } },
 ) {
-  const setting = platformSettingsStore.getPlatformSetting(params.key);
+  const setting = await platformSettingsStore.getPlatformSetting(params.key);
   if (!setting) {
     return NextResponse.json(
       { error: "platform setting not found" },
@@ -47,7 +47,7 @@ export async function PUT(
   }
   const description =
     typeof b.description === "string" ? b.description : undefined;
-  const updated = platformSettingsStore.setPlatformSetting(
+  const updated = await platformSettingsStore.setPlatformSetting(
     params.key,
     value,
     description,

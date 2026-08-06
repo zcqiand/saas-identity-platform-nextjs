@@ -16,9 +16,9 @@ export async function GET(
   if (id === null) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
-  const role = roleStore.getRole(id);
+  const role = await roleStore.getRole(id);
   if (!role) return NextResponse.json({ error: "role not found" }, { status: 404 });
-  const permissions = roleStore.getRolePermissions(id);
+  const permissions = await roleStore.getRolePermissions(id);
   return NextResponse.json({ roleId: id, permissions });
 }
 
@@ -49,6 +49,6 @@ export async function PUT(
   const perms = (b.permissions as unknown[]).filter(
     (p): p is string => typeof p === "string",
   );
-  roleStore.setRolePermissions(id, perms);
+  await roleStore.setRolePermissions(id, perms);
   return NextResponse.json({ roleId: id, permissions: perms });
 }

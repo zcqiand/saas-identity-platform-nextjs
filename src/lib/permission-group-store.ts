@@ -23,28 +23,26 @@ function permissionsToJson(perms: string[]): string {
   return JSON.stringify(perms);
 }
 
-export function listPermissionGroups(): PermissionGroup[] {
-  return db.select().from(permissionGroups).all();
+export async function listPermissionGroups(): Promise<PermissionGroup[]> {
+  return db.select().from(permissionGroups);
 }
 
-export function getPermissionGroup(id: number): PermissionGroup | null {
-  return (
-    db
-      .select()
-      .from(permissionGroups)
-      .where(eq(permissionGroups.id, id))
-      .get() ?? null
-  );
+export async function getPermissionGroup(id: number): Promise<PermissionGroup | null> {
+  const [row] = await db
+    .select()
+    .from(permissionGroups)
+    .where(eq(permissionGroups.id, id));
+  return row ?? null;
 }
 
-export function createPermissionGroup(input: {
+export async function createPermissionGroup(input: {
   name: string;
   description?: string;
   permissions?: string[];
   sort?: number;
   enabled?: boolean;
-}): PermissionGroup {
-  return db
+}): Promise<PermissionGroup> {
+  const [row] = await db
     .insert(permissionGroups)
     .values({
       name: input.name,
@@ -53,11 +51,11 @@ export function createPermissionGroup(input: {
       sort: input.sort ?? 0,
       enabled: input.enabled ?? true,
     } satisfies NewPermissionGroup)
-    .returning()
-    .get();
+    .returning();
+  return row!;
 }
 
-export function updatePermissionGroup(
+export async function updatePermissionGroup(
   id: number,
   patch: {
     name?: string;
@@ -66,8 +64,8 @@ export function updatePermissionGroup(
     sort?: number;
     enabled?: boolean;
   },
-): PermissionGroup | null {
-  const existing = getPermissionGroup(id);
+): Promise<PermissionGroup | null> {
+  const existing = await getPermissionGroup(id);
   if (!existing) return null;
   const merged: NewPermissionGroup = {
     ...existing,
@@ -79,7 +77,7 @@ export function updatePermissionGroup(
     sort: patch.sort ?? existing.sort,
     enabled: patch.enabled ?? existing.enabled,
   };
-  db.update(permissionGroups)
+  await db.update(permissionGroups)
     .set({
       name: merged.name,
       description: merged.description,
@@ -87,17 +85,15 @@ export function updatePermissionGroup(
       sort: merged.sort,
       enabled: merged.enabled,
     })
-    .where(eq(permissionGroups.id, id))
-    .run();
+    .where(eq(permissionGroups.id, id));
   return getPermissionGroup(id);
 }
 
-export function deletePermissionGroup(id: number): boolean {
-  const result = db
+export async function deletePermissionGroup(id: number): Promise<boolean> {
+  await db
     .delete(permissionGroups)
-    .where(eq(permissionGroups.id, id))
-    .run();
-  return result.changes > 0;
+    .where(eq(permissionGroups.id, id));
+  return true;
 }
 
 // 工具：暴露 JSON ↔ array 的 parse 函数给 UI 端复用（UI 自己 import parsePermissions 即可）

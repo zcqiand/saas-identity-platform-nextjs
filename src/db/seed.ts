@@ -15,7 +15,10 @@ import {
   platformSettings,
 } from "./schema";
 
-/** M02.F01.I09 + 全部模块 — 测试用 seed（全量 11 表 + 4 关联表） */
+/** M02.F01.I09 + 全部模块 — 测试用 seed（全量 11 表 + 4 关联表）
+ *
+ * 异步版（Task 4：db 句柄迁到 pg Pool 后所有 db.* 调用必须 await）。
+ */
 
 const TENANT_SEED = [
   { code: "acme", name: "Acme Corp", theme: "default" },
@@ -75,40 +78,43 @@ const PLATFORM_SETTING_SEED = [
   { key: "token.access_ttl_sec", value: "3600", description: "access token TTL" },
 ];
 
-export function seedDatabase(): void {
+export async function seedDatabase(): Promise<void> {
   // Wipe in FK-safe order
-  db.delete(apiKeys).run();
-  db.delete(appMenus).run();
-  db.delete(apps).run();
-  db.delete(rolePermissions).run();
-  db.delete(roles).run();
-  db.delete(orgs).run();
-  db.delete(positions).run();
-  db.delete(userGroups).run();
-  db.delete(users).run();
-  db.delete(tenants).run();
-  db.delete(auditLogs).run();
-  db.delete(platformSettings).run();
+  await db.delete(apiKeys);
+  await db.delete(appMenus);
+  await db.delete(apps);
+  await db.delete(rolePermissions);
+  await db.delete(roles);
+  await db.delete(orgs);
+  await db.delete(positions);
+  await db.delete(userGroups);
+  await db.delete(users);
+  await db.delete(tenants);
+  await db.delete(auditLogs);
+  await db.delete(platformSettings);
 
-  // Insert in FK-safe order
-  for (const t of TENANT_SEED) db.insert(tenants).values(t).run();
-  for (const u of USER_SEED) db.insert(users).values(u).run();
-  for (const o of ORG_SEED) db.insert(orgs).values(o).run();
-  for (const p of POSITION_SEED) db.insert(positions).values(p).run();
-  for (const r of ROLE_SEED) db.insert(roles).values(r).run();
+  // Insert in FK-safe order (parents first)
+  for (const t of TENANT_SEED) await db.insert(tenants).values(t);
+  for (const u of USER_SEED) await db.insert(users).values(u);
+  for (const o of ORG_SEED) await db.insert(orgs).values(o);
+  for (const p of POSITION_SEED) await db.insert(positions).values(p);
+  for (const r of ROLE_SEED) await db.insert(roles).values(r);
   for (const rp of ROLE_PERMISSION_SEED) {
-    const roleRow = db.select().from(roles).all().find((x) => x.code === rp.roleCode);
-    if (roleRow) db.insert(rolePermissions).values({ roleId: roleRow.id, permissionCode: rp.permissionCode }).run();
+    const allRoles = await db.select().from(roles);
+    const roleRow = allRoles.find((x) => x.code === rp.roleCode);
+    if (roleRow) await db.insert(rolePermissions).values({ roleId: roleRow.id, permissionCode: rp.permissionCode });
   }
-  for (const g of USER_GROUP_SEED) db.insert(userGroups).values(g).run();
-  for (const a of APP_SEED) db.insert(apps).values(a).run();
+  for (const g of USER_GROUP_SEED) await db.insert(userGroups).values(g);
+  for (const a of APP_SEED) await db.insert(apps).values(a);
   for (const m of APP_MENU_SEED) {
-    const appRow = db.select().from(apps).all().find((x) => x.code === m.appCode);
-    if (appRow) db.insert(appMenus).values({ appId: appRow.id, code: m.code, name: m.name, path: m.path, parentId: null, sort: m.sort, enabled: m.enabled }).run();
+    const allApps = await db.select().from(apps);
+    const appRow = allApps.find((x) => x.code === m.appCode);
+    if (appRow) await db.insert(appMenus).values({ appId: appRow.id, code: m.code, name: m.name, path: m.path, parentId: null, sort: m.sort, enabled: m.enabled });
   }
   for (const k of API_KEY_SEED) {
-    const appRow = db.select().from(apps).all().find((x) => x.code === k.appCode);
-    if (appRow) db.insert(apiKeys).values({ name: k.name, key: k.key, appId: appRow.id, expiresAt: "never", enabled: k.enabled }).run();
+    const allApps = await db.select().from(apps);
+    const appRow = allApps.find((x) => x.code === k.appCode);
+    if (appRow) await db.insert(apiKeys).values({ name: k.name, key: k.key, appId: appRow.id, expiresAt: "never", enabled: k.enabled });
   }
-  for (const s of PLATFORM_SETTING_SEED) db.insert(platformSettings).values(s).run();
+  for (const s of PLATFORM_SETTING_SEED) await db.insert(platformSettings).values(s);
 }

@@ -14,7 +14,7 @@ export async function GET(
   if (id === null) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
-  const g = userGroupStore.getUserGroup(id);
+  const g = await userGroupStore.getUserGroup(id);
   if (!g) return NextResponse.json({ error: "user group not found" }, { status: 404 });
   return NextResponse.json(g);
 }
@@ -41,7 +41,7 @@ export async function PUT(
   if (typeof b.name === "string") patch.name = b.name;
   if (typeof b.description === "string") patch.description = b.description;
   if (typeof b.enabled === "boolean") patch.enabled = b.enabled;
-  const g = userGroupStore.updateUserGroup(id, patch);
+  const g = await userGroupStore.updateUserGroup(id, patch);
   if (!g) return NextResponse.json({ error: "user group not found" }, { status: 404 });
   return NextResponse.json(g);
 }
@@ -54,7 +54,7 @@ export async function DELETE(
   if (id === null) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
-  const ok = userGroupStore.deleteUserGroup(id);
+  const ok = await userGroupStore.deleteUserGroup(id);
   if (!ok) return NextResponse.json({ error: "user group not found" }, { status: 404 });
   return NextResponse.json({ deleted: true, id });
 }

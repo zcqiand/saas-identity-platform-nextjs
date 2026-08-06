@@ -20,14 +20,12 @@ export async function GET(req?: Request) {
     const opParam = u.searchParams.get("operator");
     if (opParam) operator = opParam;
   }
-  let logs: ReturnType<typeof auditStore.listAuditLogs>;
+  let logs: Awaited<ReturnType<typeof auditStore.listAuditLogs>>;
   if (tab === "all") {
-    logs = auditStore.listAuditLogs(operator ? { operator } : undefined);
+    logs = await auditStore.listAuditLogs(operator ? { operator } : undefined);
   } else {
     const allowed = TAB_TO_ACTIONS[tab]!;
-    logs = auditStore
-      .listAuditLogs(operator ? { operator } : undefined)
-      .filter((l) => allowed.includes(l.action));
+    logs = (await auditStore.listAuditLogs(operator ? { operator } : undefined)).filter((l) => allowed.includes(l.action));
   }
   return NextResponse.json(logs);
 }
@@ -47,14 +45,12 @@ export async function POST(req: Request) {
   const tab =
     typeof b.tab === "string" && b.tab in TAB_TO_ACTIONS ? b.tab : "all";
   const operator = typeof b.operator === "string" ? b.operator : undefined;
-  let logs: ReturnType<typeof auditStore.listAuditLogs>;
+  let logs: Awaited<ReturnType<typeof auditStore.listAuditLogs>>;
   if (tab === "all") {
-    logs = auditStore.listAuditLogs(operator ? { operator } : undefined);
+    logs = await auditStore.listAuditLogs(operator ? { operator } : undefined);
   } else {
     const allowed = TAB_TO_ACTIONS[tab]!;
-    logs = auditStore
-      .listAuditLogs(operator ? { operator } : undefined)
-      .filter((l) => allowed.includes(l.action));
+    logs = (await auditStore.listAuditLogs(operator ? { operator } : undefined)).filter((l) => allowed.includes(l.action));
   }
   const header = ["id", "action", "operator", "resource", "resourceId", "ip", "detail", "timestamp"];
   const escape = (v: string | number): string => {

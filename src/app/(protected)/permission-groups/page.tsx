@@ -10,7 +10,7 @@ import {
   type PermGroupRow,
 } from "./permission-groups-client";
 
-export default function PermissionGroupsPage() {
-  const groups = listPermissionGroups() as unknown as PermGroupRow[];
+export default async function PermissionGroupsPage() {
+  const groups = (await listPermissionGroups()) as unknown as PermGroupRow[];
   return <PermissionGroupsClient initialGroups={groups} />;
 }

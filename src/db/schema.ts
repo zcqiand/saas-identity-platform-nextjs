@@ -19,7 +19,7 @@ export const healthCheck = pgTable("health_check", {
   ok: integer("ok").notNull(),
   checkedAt: text("checked_at")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
 });
 
 export type HealthCheckRow = typeof healthCheck.$inferSelect;
@@ -33,7 +33,7 @@ export const tenants = pgTable("tenants", {
   theme: text("theme").notNull().default("default"),
   createdAt: text("created_at")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
 });
 
 export const tenantUsers = pgTable(
@@ -46,7 +46,7 @@ export const tenantUsers = pgTable(
     role: text("role").notNull().default("member"),
     joinedAt: text("joined_at")
       .notNull()
-      .default(sql`now()`),
+      .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
   },
   (t) => ({
     tenantFk: foreignKey({ columns: [t.tenantId], foreignColumns: [tenants.id] }).onDelete("cascade"),
@@ -94,10 +94,10 @@ export const users = pgTable("users", {
   status: text("status").notNull().default("active"),
   createdAt: text("created_at")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
   updatedAt: text("updated_at")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
 });
 
 export const orgs = pgTable(
@@ -111,10 +111,10 @@ export const orgs = pgTable(
     enabled: boolean("enabled").notNull().default(true),
     createdAt: text("created_at")
       .notNull()
-      .default(sql`now()`),
+      .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
     updatedAt: text("updated_at")
       .notNull()
-      .default(sql`now()`),
+      .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
   },
   (t) => ({
     parentFk: foreignKey({
@@ -134,10 +134,10 @@ export const positions = pgTable("positions", {
   enabled: boolean("enabled").notNull().default(true),
   createdAt: text("created_at")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
   updatedAt: text("updated_at")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
 });
 
 export const positionMembers = pgTable(
@@ -148,7 +148,7 @@ export const positionMembers = pgTable(
     userId: integer("user_id").notNull(),
     joinedAt: text("joined_at")
       .notNull()
-      .default(sql`now()`),
+      .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
   },
   (t) => ({
     positionFk: foreignKey({ columns: [t.positionId], foreignColumns: [positions.id] }).onDelete("cascade"),
@@ -180,10 +180,10 @@ export const roles = pgTable("roles", {
   enabled: boolean("enabled").notNull().default(true),
   createdAt: text("created_at")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
   updatedAt: text("updated_at")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
 });
 
 export const rolePermissions = pgTable(
@@ -195,7 +195,7 @@ export const rolePermissions = pgTable(
     permissionCode: text("permission_code").notNull(),
     createdAt: text("created_at")
       .notNull()
-      .default(sql`now()`),
+      .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
   },
   (t) => ({
     roleFk: foreignKey({ columns: [t.roleId], foreignColumns: [roles.id] }).onDelete("cascade"),
@@ -209,10 +209,10 @@ export const userGroups = pgTable("user_groups", {
   enabled: boolean("enabled").notNull().default(true),
   createdAt: text("created_at")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
   updatedAt: text("updated_at")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
 });
 
 export const userGroupMembers = pgTable(
@@ -223,7 +223,7 @@ export const userGroupMembers = pgTable(
     userId: integer("user_id").notNull(),
     joinedAt: text("joined_at")
       .notNull()
-      .default(sql`now()`),
+      .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
   },
   (t) => ({
     groupFk: foreignKey({ columns: [t.groupId], foreignColumns: [userGroups.id] }).onDelete("cascade"),
@@ -253,10 +253,10 @@ export const permissionGroups = pgTable("permission_groups", {
   enabled: boolean("enabled").notNull().default(true),
   createdAt: text("created_at")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
   updatedAt: text("updated_at")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
 });
 
 export type PermissionGroup = typeof permissionGroups.$inferSelect;
@@ -278,10 +278,10 @@ export const apps = pgTable("apps", {
   enabled: boolean("enabled").notNull().default(true),
   createdAt: text("created_at")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
   updatedAt: text("updated_at")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
 });
 
 export const appMenus = pgTable(
@@ -297,10 +297,10 @@ export const appMenus = pgTable(
     enabled: boolean("enabled").notNull().default(true),
     createdAt: text("created_at")
       .notNull()
-      .default(sql`now()`),
+      .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
     updatedAt: text("updated_at")
       .notNull()
-      .default(sql`now()`),
+      .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
   },
   (t) => ({
     appFk: foreignKey({ columns: [t.appId], foreignColumns: [apps.id] }).onDelete("cascade"),
@@ -323,7 +323,7 @@ export const apiKeys = pgTable(
     expiresAt: text("expires_at").notNull().default("never"),
     createdAt: text("created_at")
       .notNull()
-      .default(sql`now()`),
+      .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
   },
   (t) => ({
     appFk: foreignKey({ columns: [t.appId], foreignColumns: [apps.id] }).onDelete("cascade"),
@@ -352,7 +352,7 @@ export const auditLogs = pgTable("audit_logs", {
   detail: text("detail").notNull().default(""),
   timestamp: text("timestamp")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
 });
 
 export type AuditLog = typeof auditLogs.$inferSelect;
@@ -369,7 +369,7 @@ export const platformSettings = pgTable("platform_settings", {
   description: text("description"),
   updatedAt: text("updated_at")
     .notNull()
-    .default(sql`now()`),
+    .default(sql`to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')`),
 });
 
 export type PlatformSetting = typeof platformSettings.$inferSelect;

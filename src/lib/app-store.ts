@@ -5,26 +5,28 @@ import { apps, type App, type NewApp } from "@/db/schema";
 
 /** M04.F01.I12 — 应用 store actions 内部接口 */
 
-export function listApps(): App[] {
-  return db.select().from(apps).all();
+export async function listApps(): Promise<App[]> {
+  return db.select().from(apps);
 }
 
-export function getApp(id: number): App | null {
-  return db.select().from(apps).where(eq(apps.id, id)).get() ?? null;
+export async function getApp(id: number): Promise<App | null> {
+  const [row] = await db.select().from(apps).where(eq(apps.id, id));
+  return row ?? null;
 }
 
-export function getAppByCode(code: string): App | null {
-  return db.select().from(apps).where(eq(apps.code, code)).get() ?? null;
+export async function getAppByCode(code: string): Promise<App | null> {
+  const [row] = await db.select().from(apps).where(eq(apps.code, code));
+  return row ?? null;
 }
 
-export function createApp(input: {
+export async function createApp(input: {
   code: string;
   name: string;
   type?: string;
   description?: string;
   enabled?: boolean;
-}): App {
-  return db
+}): Promise<App> {
+  const [row] = await db
     .insert(apps)
     .values({
       code: input.code,
@@ -33,15 +35,15 @@ export function createApp(input: {
       description: input.description,
       enabled: input.enabled ?? true,
     } satisfies NewApp)
-    .returning()
-    .get();
+    .returning();
+  return row!;
 }
 
-export function updateApp(
+export async function updateApp(
   id: number,
   patch: Partial<Pick<NewApp, "name" | "type" | "description" | "enabled">>,
-): App | null {
-  const existing = getApp(id);
+): Promise<App | null> {
+  const existing = await getApp(id);
   if (!existing) return null;
   const merged: NewApp = {
     ...existing,
@@ -50,19 +52,18 @@ export function updateApp(
     description: patch.description ?? existing.description,
     enabled: patch.enabled ?? existing.enabled,
   };
-  db.update(apps)
+  await db.update(apps)
     .set({
       name: merged.name,
       type: merged.type,
       description: merged.description,
       enabled: merged.enabled,
     })
-    .where(eq(apps.id, id))
-    .run();
+    .where(eq(apps.id, id));
   return getApp(id);
 }
 
-export function deleteApp(id: number): boolean {
-  const result = db.delete(apps).where(eq(apps.id, id)).run();
-  return result.changes > 0;
+export async function deleteApp(id: number): Promise<boolean> {
+  await db.delete(apps).where(eq(apps.id, id));
+  return true;
 }

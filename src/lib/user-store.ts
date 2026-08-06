@@ -10,8 +10,8 @@ export interface ListUsersFilter {
   status?: string;
 }
 
-export function listUsers(filter: ListUsersFilter = {}): User[] {
-  const all = db.select().from(users).all();
+export async function listUsers(filter: ListUsersFilter = {}): Promise<User[]> {
+  const all = await db.select().from(users);
   let result = all;
   if (filter.keyword) {
     const kw = filter.keyword.toLowerCase();
@@ -27,25 +27,25 @@ export function listUsers(filter: ListUsersFilter = {}): User[] {
   return result;
 }
 
-export function getUser(id: number): User | null {
-  return db.select().from(users).where(eq(users.id, id)).get() ?? null;
+export async function getUser(id: number): Promise<User | null> {
+  const [row] = await db.select().from(users).where(eq(users.id, id));
+  return row ?? null;
 }
 
-export function getUserByEmail(email: string): User | null {
-  return (
-    db.select().from(users).where(eq(users.email, email)).get() ?? null
-  );
+export async function getUserByEmail(email: string): Promise<User | null> {
+  const [row] = await db.select().from(users).where(eq(users.email, email));
+  return row ?? null;
 }
 
-export function createUser(input: {
+export async function createUser(input: {
   username: string;
   displayName: string;
   email: string;
   roles?: string[];
   status?: string;
-}): User {
+}): Promise<User> {
   const roles = input.roles ?? ["member"];
-  return db
+  const [row] = await db
     .insert(users)
     .values({
       username: input.username,
@@ -54,11 +54,11 @@ export function createUser(input: {
       roles: JSON.stringify(roles),
       status: input.status ?? "active",
     } satisfies NewUser)
-    .returning()
-    .get();
+    .returning();
+  return row!;
 }
 
-export function updateUser(
+export async function updateUser(
   id: number,
   patch: {
     displayName?: string;
@@ -66,8 +66,8 @@ export function updateUser(
     roles?: string[];
     status?: string;
   },
-): User | null {
-  const existing = getUser(id);
+): Promise<User | null> {
+  const existing = await getUser(id);
   if (!existing) return null;
   const merged: NewUser = {
     ...existing,
@@ -76,19 +76,18 @@ export function updateUser(
     roles: patch.roles ? JSON.stringify(patch.roles) : existing.roles,
     status: patch.status ?? existing.status,
   };
-  db.update(users)
+  await db.update(users)
     .set({
       displayName: merged.displayName,
       email: merged.email,
       roles: merged.roles,
       status: merged.status,
     })
-    .where(eq(users.id, id))
-    .run();
+    .where(eq(users.id, id));
   return getUser(id);
 }
 
-export function deleteUser(id: number): boolean {
-  const result = db.delete(users).where(eq(users.id, id)).run();
-  return result.changes > 0;
+export async function deleteUser(id: number): Promise<boolean> {
+  await db.delete(users).where(eq(users.id, id));
+  return true;
 }

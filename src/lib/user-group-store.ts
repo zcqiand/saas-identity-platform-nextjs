@@ -5,35 +5,36 @@ import { userGroups, type NewUserGroup, type UserGroup } from "@/db/schema";
 
 /** M03.F03.I05 — 用户组 store（CRUD） */
 
-export function listUserGroups(): UserGroup[] {
-  return db.select().from(userGroups).all();
+export async function listUserGroups(): Promise<UserGroup[]> {
+  return db.select().from(userGroups);
 }
 
-export function getUserGroup(id: number): UserGroup | null {
-  return db.select().from(userGroups).where(eq(userGroups.id, id)).get() ?? null;
+export async function getUserGroup(id: number): Promise<UserGroup | null> {
+  const [row] = await db.select().from(userGroups).where(eq(userGroups.id, id));
+  return row ?? null;
 }
 
-export function createUserGroup(input: {
+export async function createUserGroup(input: {
   name: string;
   description?: string;
   enabled?: boolean;
-}): UserGroup {
-  return db
+}): Promise<UserGroup> {
+  const [row] = await db
     .insert(userGroups)
     .values({
       name: input.name,
       description: input.description,
       enabled: input.enabled ?? true,
     } satisfies NewUserGroup)
-    .returning()
-    .get();
+    .returning();
+  return row!;
 }
 
-export function updateUserGroup(
+export async function updateUserGroup(
   id: number,
   patch: { name?: string; description?: string; enabled?: boolean },
-): UserGroup | null {
-  const existing = getUserGroup(id);
+): Promise<UserGroup | null> {
+  const existing = await getUserGroup(id);
   if (!existing) return null;
   const merged: NewUserGroup = {
     ...existing,
@@ -41,14 +42,13 @@ export function updateUserGroup(
     description: patch.description ?? existing.description,
     enabled: patch.enabled ?? existing.enabled,
   };
-  db.update(userGroups)
+  await db.update(userGroups)
     .set({ name: merged.name, description: merged.description, enabled: merged.enabled })
-    .where(eq(userGroups.id, id))
-    .run();
+    .where(eq(userGroups.id, id));
   return getUserGroup(id);
 }
 
-export function deleteUserGroup(id: number): boolean {
-  const result = db.delete(userGroups).where(eq(userGroups.id, id)).run();
-  return result.changes > 0;
+export async function deleteUserGroup(id: number): Promise<boolean> {
+  await db.delete(userGroups).where(eq(userGroups.id, id));
+  return true;
 }

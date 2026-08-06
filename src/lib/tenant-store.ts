@@ -15,43 +15,43 @@ import { tenants, type NewTenant, type Tenant } from "@/db/schema";
 /** 当前租户的进程内缓存。SSR 启动时由 (protected)/layout.tsx 从 cookie 灌入 */
 let currentTenantId: number | null = null;
 
-export function listTenants(): Tenant[] {
-  return db.select().from(tenants).all();
+export async function listTenants(): Promise<Tenant[]> {
+  return db.select().from(tenants);
 }
 
-export function getTenant(id: number): Tenant | null {
-  return db.select().from(tenants).where(eq(tenants.id, id)).get() ?? null;
+export async function getTenant(id: number): Promise<Tenant | null> {
+  const [row] = await db.select().from(tenants).where(eq(tenants.id, id));
+  return row ?? null;
 }
 
-export function createTenant(input: Omit<NewTenant, "id" | "createdAt">): Tenant {
-  const inserted = db.insert(tenants).values(input).returning().get();
-  return inserted;
+export async function createTenant(input: Omit<NewTenant, "id" | "createdAt">): Promise<Tenant> {
+  const [row] = await db.insert(tenants).values(input).returning();
+  return row!;
 }
 
-export function updateTenant(
+export async function updateTenant(
   id: number,
   patch: Partial<Pick<NewTenant, "name" | "theme">>,
-): Tenant | null {
-  const existing = getTenant(id);
+): Promise<Tenant | null> {
+  const existing = await getTenant(id);
   if (!existing) return null;
   const merged: NewTenant = { ...existing, ...patch };
-  db.update(tenants)
+  await db.update(tenants)
     .set({ name: merged.name, theme: merged.theme })
-    .where(eq(tenants.id, id))
-    .run();
+    .where(eq(tenants.id, id));
   return getTenant(id);
 }
 
-export function deleteTenant(id: number): boolean {
-  const result = db.delete(tenants).where(eq(tenants.id, id)).run();
-  return result.changes > 0;
+export async function deleteTenant(id: number): Promise<boolean> {
+  await db.delete(tenants).where(eq(tenants.id, id));
+  return true;
 }
 
 export function setCurrentTenant(id: number): void {
   currentTenantId = id;
 }
 
-export function getCurrentTenant(): Tenant | null {
+export async function getCurrentTenant(): Promise<Tenant | null> {
   if (currentTenantId === null) return null;
   return getTenant(currentTenantId);
 }

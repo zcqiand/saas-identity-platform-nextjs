@@ -19,7 +19,7 @@ function generateRandomKey(): string {
 }
 
 export async function GET() {
-  return NextResponse.json(apiKeyStore.listApiKeys());
+  return NextResponse.json(await apiKeyStore.listApiKeys());
 }
 
 export async function POST(req: Request) {
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     );
   }
   const key = typeof b.key === "string" && b.key.trim() ? b.key.trim() : generateRandomKey();
-  const created = apiKeyStore.createApiKey({
+  const created = await apiKeyStore.createApiKey({
     name: b.name,
     key,
     appId: b.appId,

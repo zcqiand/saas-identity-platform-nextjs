@@ -1,39 +1,32 @@
 /**
- * 给 dev.db 灌种子数据（完整 11 表版本）。
+ * saas_dev 灌种子数据入口（PostgreSQL 版）。
  *
  * 用法：
- *   npm run db:seed
+ *   DATABASE_URL='postgresql://…' npm run db:seed
+ *   DATABASE_URL='postgresql://…' npx tsx scripts/seed.ts
  *
- * 这个脚本**不**走 src/db/index.ts（因为它有 `import "server-only"`，tsx 没有
- * next bundler 上下文会抛），而是自己开 better-sqlite3 + drizzle 直连 data/dev.db。
+ * 这个脚本**不**走 src/db/index.ts（它有 `import "server-only"`，tsx 没有 next bundler
+ * 上下文会抛），而是自己开 pg.Pool + drizzle 直连 DATABASE_URL。fixture 与 src/db/seed.ts
+ * 的精简版互补——这里更全（5 user / 4 org / 完整 platform_settings 等），用于 saas_dev
+ * 端到端联调；src/db/seed.ts 是测试用精简版（11 表 + 4 关联表的最小集）。
  *
  * 覆盖表：tenants / users / orgs / positions / roles / role_permissions /
- *        user_groups / apps / app_menus / api_keys / platform_settings /
- *        sso_states / audit_logs / tenant_users / position_members /
- *        user_group_members / health_check。
- * 11 + 4 张关联 + health_check + sso_states 全部一次性灌好。
+ *        user_groups / permission_groups / apps / app_menus / api_keys /
+ *        platform_settings / sso_states / audit_logs / tenant_users 等。
  */
-
-import Database from "better-sqlite3";
-import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import * as schema from "../src/db/schema";
 
-type Schema = typeof schema;
-type DbHandle = BetterSQLite3Database<Schema>;
-
-const DB_PATH = process.env.DB_PATH ?? "data/dev.db";
-
-function open(): DbHandle {
-  const sqlite = new Database(DB_PATH);
-  if (DB_PATH !== ":memory:") {
-    sqlite.pragma("journal_mode = WAL");
-    sqlite.pragma("foreign_keys = ON");
-  }
-  return drizzle(sqlite, { schema });
+const DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+  console.error("DATABASE_URL is required");
+  process.exit(1);
 }
 
-const db = open();
+const pool = new Pool({ connectionString: DATABASE_URL });
+const db = drizzle(pool, { schema });
 
 // ---------------------------------------------------------------------------
 // seed fixtures
@@ -135,7 +128,7 @@ const SSO_STATE_SEED = [
 const AUDIT_LOG_SEED: Array<{ action: string; operator: string; resource: string; resourceId: string; detail: string; ip: string; timestamp: string }> = (() => {
   const now = Date.now();
   const day = 86_400_000;
-  const iso = (offsetDays: number) => new Date(now - offsetDays * day).toISOString();
+  const iso = (offsetDays: number) => new Date(now - offsetDays * day).toISOString().replace("T", " ").slice(0, 19);
   return [
     { action: "login", operator: "alice", resource: "auth", resourceId: "alice", detail: "登录成功", ip: "192.168.1.10", timestamp: iso(0) },
     { action: "login", operator: "bob", resource: "auth", resourceId: "bob", detail: "登录成功", ip: "192.168.1.11", timestamp: iso(0) },
@@ -198,120 +191,133 @@ const PLATFORM_SETTING_SEED = [
   { key: "platform.announcement", value: "", description: "平台公告" },
 ] as const;
 
-// ---------------------------------------------------------------------------
-// Wipe in FK-safe order (children first)
-// ---------------------------------------------------------------------------
+async function seed(): Promise<void> {
+  // Wipe in FK-safe order (children first)
+  await db.delete(schema.userGroupMembers);
+  await db.delete(schema.userGroups);
+  await db.delete(schema.positionMembers);
+  await db.delete(schema.positions);
+  await db.delete(schema.rolePermissions);
+  await db.delete(schema.roles);
+  await db.delete(schema.permissionGroups);
+  await db.delete(schema.orgs);
+  await db.delete(schema.tenantUsers);
+  await db.delete(schema.users);
+  await db.delete(schema.appMenus);
+  await db.delete(schema.apps);
+  await db.delete(schema.apiKeys);
+  await db.delete(schema.auditLogs);
+  await db.delete(schema.platformSettings);
+  await db.delete(schema.ssoStates);
+  await db.delete(schema.tenants);
 
-db.delete(schema.userGroupMembers).run();
-db.delete(schema.userGroups).run();
-db.delete(schema.positionMembers).run();
-db.delete(schema.positions).run();
-db.delete(schema.rolePermissions).run();
-db.delete(schema.roles).run();
-db.delete(schema.permissionGroups).run();
-db.delete(schema.orgs).run();
-db.delete(schema.tenantUsers).run();
-db.delete(schema.users).run();
-db.delete(schema.appMenus).run();
-db.delete(schema.apps).run();
-db.delete(schema.apiKeys).run();
-db.delete(schema.auditLogs).run();
-db.delete(schema.platformSettings).run();
-db.delete(schema.ssoStates).run();
-db.delete(schema.tenants).run();
+  // Insert in FK-safe order (parents first)
+  for (const t of TENANT_SEED) await db.insert(schema.tenants).values(t);
+  for (const u of USER_SEED) await db.insert(schema.users).values(u);
 
-// ---------------------------------------------------------------------------
-// Insert in FK-safe order (parents first)
-// ---------------------------------------------------------------------------
-
-for (const t of TENANT_SEED) db.insert(schema.tenants).values(t).run();
-for (const u of USER_SEED) db.insert(schema.users).values(u).run();
-
-// 给每个 user 配 tenant_users 关联（默认 acme + member）
-for (const u of USER_SEED) {
-  const userRow = db.select().from(schema.users).where(eq(schema.users.username, u.username)).get();
-  const tenantRow = db.select().from(schema.tenants).where(eq(schema.tenants.code, "acme")).get();
-  if (userRow && tenantRow) {
-    db.insert(schema.tenantUsers).values({ tenantId: tenantRow.id, userId: userRow.id, role: u.username === "alice" ? "admin" : "member" }).run();
+  // 给每个 user 配 tenant_users 关联（默认 acme + member）
+  for (const u of USER_SEED) {
+    const [userRow] = await db.select().from(schema.users).where(eq(schema.users.username, u.username));
+    const [tenantRow] = await db.select().from(schema.tenants).where(eq(schema.tenants.code, "acme"));
+    if (userRow && tenantRow) {
+      await db.insert(schema.tenantUsers).values({ tenantId: tenantRow.id, userId: userRow.id, role: u.username === "alice" ? "admin" : "member" });
+    }
   }
-}
 
-for (const o of ORG_SEED) db.insert(schema.orgs).values(o).run();
-for (const p of POSITION_SEED) db.insert(schema.positions).values(p).run();
-for (const r of ROLE_SEED) db.insert(schema.roles).values(r).run();
+  for (const o of ORG_SEED) await db.insert(schema.orgs).values(o);
+  for (const p of POSITION_SEED) await db.insert(schema.positions).values(p);
+  for (const r of ROLE_SEED) await db.insert(schema.roles).values(r);
 
-// role_permissions 需要 role.id
-for (const rp of ROLE_PERMISSION_SEED) {
-  const roleRow = db.select().from(schema.roles).where(eq(schema.roles.code, rp.roleCode)).get();
-  if (roleRow) {
-    db.insert(schema.rolePermissions).values({ roleId: roleRow.id, permissionCode: rp.permissionCode }).run();
+  // role_permissions 需要 role.id
+  for (const rp of ROLE_PERMISSION_SEED) {
+    const [roleRow] = await db.select().from(schema.roles).where(eq(schema.roles.code, rp.roleCode));
+    if (roleRow) {
+      await db.insert(schema.rolePermissions).values({ roleId: roleRow.id, permissionCode: rp.permissionCode });
+    }
   }
-}
-for (const g of USER_GROUP_SEED) db.insert(schema.userGroups).values(g).run();
-for (const pg of PERMISSION_GROUP_SEED) {
-  db.insert(schema.permissionGroups).values({
-    name: pg.name,
-    description: pg.description,
-    permissions: JSON.stringify(pg.permissions),
-    sort: pg.sort,
-    enabled: pg.enabled,
-  }).run();
-}
-for (const a of APP_SEED) db.insert(schema.apps).values(a).run();
-// app_menus 需要 app.id 和（parent）menu.id
-const menuIdByCode = new Map<string, number>();
-for (const m of APP_MENU_SEED) {
-  const appRow = db.select().from(schema.apps).where(eq(schema.apps.code, m.appCode)).get();
-  if (!appRow) continue;
-  const parentId = m.parentCode ? menuIdByCode.get(`${m.appCode}:${m.parentCode}`) ?? null : null;
-  const inserted = db.insert(schema.appMenus).values({
-    appId: appRow.id,
-    code: m.code,
-    name: m.name,
-    path: m.path,
-    parentId,
-    sort: m.sort,
-    enabled: m.enabled,
-  }).returning().get();
-  menuIdByCode.set(`${m.appCode}:${m.code}`, inserted.id);
-}
-for (const k of API_KEY_SEED) {
-  const appRow = db.select().from(schema.apps).where(eq(schema.apps.code, k.appCode)).get();
-  if (appRow) {
-    db.insert(schema.apiKeys).values({
-      name: k.name,
-      key: k.key,
+  for (const g of USER_GROUP_SEED) await db.insert(schema.userGroups).values(g);
+  for (const pg of PERMISSION_GROUP_SEED) {
+    await db.insert(schema.permissionGroups).values({
+      name: pg.name,
+      description: pg.description,
+      permissions: JSON.stringify(pg.permissions),
+      sort: pg.sort,
+      enabled: pg.enabled,
+    });
+  }
+  for (const a of APP_SEED) await db.insert(schema.apps).values(a);
+  // app_menus 需要 app.id 和（parent）menu.id
+  const menuIdByCode = new Map<string, number>();
+  for (const m of APP_MENU_SEED) {
+    const [appRow] = await db.select().from(schema.apps).where(eq(schema.apps.code, m.appCode));
+    if (!appRow) continue;
+    const parentId = m.parentCode ? menuIdByCode.get(`${m.appCode}:${m.parentCode}`) ?? null : null;
+    const [inserted] = await db.insert(schema.appMenus).values({
       appId: appRow.id,
-      expiresAt: k.expiresAt,
-      enabled: k.enabled,
-    }).run();
+      code: m.code,
+      name: m.name,
+      path: m.path,
+      parentId,
+      sort: m.sort,
+      enabled: m.enabled,
+    }).returning();
+    menuIdByCode.set(`${m.appCode}:${m.code}`, inserted.id);
+  }
+  for (const k of API_KEY_SEED) {
+    const [appRow] = await db.select().from(schema.apps).where(eq(schema.apps.code, k.appCode));
+    if (appRow) {
+      await db.insert(schema.apiKeys).values({
+        name: k.name,
+        key: k.key,
+        appId: appRow.id,
+        expiresAt: k.expiresAt,
+        enabled: k.enabled,
+      });
+    }
+  }
+  for (const s of SSO_STATE_SEED) await db.insert(schema.ssoStates).values(s);
+  for (const log of AUDIT_LOG_SEED) await db.insert(schema.auditLogs).values(log);
+  for (const setting of PLATFORM_SETTING_SEED) await db.insert(schema.platformSettings).values(setting);
+
+  // Stats
+  const tenantsN = (await db.select().from(schema.tenants)).length;
+  const usersN = (await db.select().from(schema.users)).length;
+  const orgsN = (await db.select().from(schema.orgs)).length;
+  const positionsN = (await db.select().from(schema.positions)).length;
+  const rolesN = (await db.select().from(schema.roles)).length;
+  const rolePermsN = (await db.select().from(schema.rolePermissions)).length;
+  const userGroupsN = (await db.select().from(schema.userGroups)).length;
+  const permGroupsN = (await db.select().from(schema.permissionGroups)).length;
+  const appsN = (await db.select().from(schema.apps)).length;
+  const appMenusN = (await db.select().from(schema.appMenus)).length;
+  const apiKeysN = (await db.select().from(schema.apiKeys)).length;
+  const auditLogsN = (await db.select().from(schema.auditLogs)).length;
+  const platformSettingsN = (await db.select().from(schema.platformSettings)).length;
+
+  console.log("[seed] done — saas_dev populated:");
+  for (const [table, n] of Object.entries({
+    tenants: tenantsN,
+    users: usersN,
+    orgs: orgsN,
+    positions: positionsN,
+    roles: rolesN,
+    role_permissions: rolePermsN,
+    user_groups: userGroupsN,
+    permission_groups: permGroupsN,
+    apps: appsN,
+    app_menus: appMenusN,
+    api_keys: apiKeysN,
+    audit_logs: auditLogsN,
+    platform_settings: platformSettingsN,
+  })) {
+    console.log(`  ${table}: ${n}`);
   }
 }
-for (const s of SSO_STATE_SEED) db.insert(schema.ssoStates).values(s).run();
-for (const log of AUDIT_LOG_SEED) db.insert(schema.auditLogs).values(log).run();
-for (const setting of PLATFORM_SETTING_SEED) db.insert(schema.platformSettings).values(setting).run();
 
-// ---------------------------------------------------------------------------
-// Stats
-// ---------------------------------------------------------------------------
-
-const stats = {
-  tenants: db.select().from(schema.tenants).all().length,
-  users: db.select().from(schema.users).all().length,
-  orgs: db.select().from(schema.orgs).all().length,
-  positions: db.select().from(schema.positions).all().length,
-  roles: db.select().from(schema.roles).all().length,
-  role_permissions: db.select().from(schema.rolePermissions).all().length,
-  user_groups: db.select().from(schema.userGroups).all().length,
-  permission_groups: db.select().from(schema.permissionGroups).all().length,
-  apps: db.select().from(schema.apps).all().length,
-  app_menus: db.select().from(schema.appMenus).all().length,
-  api_keys: db.select().from(schema.apiKeys).all().length,
-  audit_logs: db.select().from(schema.auditLogs).all().length,
-  platform_settings: db.select().from(schema.platformSettings).all().length,
-};
-
-console.log(`[seed] done — ${DB_PATH} populated:`);
-for (const [table, n] of Object.entries(stats)) {
-  console.log(`  ${table}: ${n}`);
-}
+seed()
+  .then(() => pool.end())
+  .then(() => process.exit(0))
+  .catch((e) => {
+    console.error(e);
+    return pool.end().finally(() => process.exit(1));
+  });

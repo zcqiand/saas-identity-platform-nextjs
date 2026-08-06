@@ -20,11 +20,11 @@ export async function GET(req?: Request) {
     if (appIdStr) {
       const appId = Number(appIdStr);
       if (Number.isInteger(appId) && appId > 0) {
-        return NextResponse.json(menuStore.listMenusByApp(appId));
+        return NextResponse.json(await menuStore.listMenusByApp(appId));
       }
     }
   }
-  return NextResponse.json(menuStore.listMenus());
+  return NextResponse.json(await menuStore.listMenus());
 }
 
 export async function POST(req: Request) {
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const created = menuStore.createMenu({
+  const created = await menuStore.createMenu({
     appId: b.appId,
     code: b.code,
     name: b.name,

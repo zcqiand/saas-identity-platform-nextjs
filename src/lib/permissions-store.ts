@@ -11,9 +11,10 @@ import { db } from "@/db";
 /**
  * M03.F01.I10 当前用户权限拉取与查询(permissionStore)
  *
- * 用 raw SQL 而非 Drizzle query builder —— vitest 4 + rolldown module cache
- * 下，Drizzle 的 schema-bound query 偶尔走不同 module instance，:memory:
- * SQLite 看起来是空表。raw SQL 走 globalThis.__drizzle 单例，避开问题。
+ * 用 raw SQL 而非 Drizzle query builder —— 历史 vitest 4 + rolldown module cache
+ * 问题已在迁移到 pg 后消失，但保留 raw SQL 形态以减少噪音；现走 db.execute(sql)
+ * 拿 PG 结果行（结果类型用 as 断言，因为 db.execute 的泛型约束 Record<string, unknown>
+ * 与具名 interface 不兼容）。
  *
  * 派生策略（D14 决策）：
  *   1. user global roles (users.roles JSON 数组里的 role code) → role 表查 code → permissions
@@ -31,13 +32,12 @@ interface PermissionRow {
   code: string;
 }
 
-export function getCurrentUserPermissions(userId: number, tenantId: number): string[] {
+export async function getCurrentUserPermissions(userId: number, tenantId: number): Promise<string[]> {
   const collected = new Set<string>();
 
-  // 1. user global roles（raw SQL 走 globalThis.__drizzle 单例）
-  const userRow = db.all<{ roles: string }>(
-    sql`SELECT roles FROM users WHERE id = ${userId}`,
-  )[0];
+  // 1. user global roles
+  const userResult = await db.execute(sql`SELECT roles FROM users WHERE id = ${userId}`);
+  const userRow = (userResult.rows[0] as { roles: string } | undefined) ?? undefined;
   if (userRow) {
     let userRoleCodes: string[] = [];
     try {
@@ -51,31 +51,30 @@ export function getCurrentUserPermissions(userId: number, tenantId: number): str
     if (userRoleCodes.length > 0) {
       // 查 roles 表拿 role.id
       for (const code of userRoleCodes) {
-        const role = db.all<RoleRow>(
-          sql`SELECT id, code FROM roles WHERE code = ${code}`,
-        )[0];
+        const roleResult = await db.execute(sql`SELECT id, code FROM roles WHERE code = ${code}`);
+        const role = roleResult.rows[0] as RoleRow | undefined;
         if (!role) continue;
-        const perms = db.all<PermissionRow>(
+        const permsResult = await db.execute(
           sql`SELECT permission_code AS code FROM role_permissions WHERE role_id = ${role.id}`,
         );
-        for (const p of perms) collected.add(p.code);
+        for (const p of permsResult.rows as unknown as PermissionRow[]) collected.add(p.code);
       }
     }
   }
 
   // 2. tenant role
-  const tu = db.all<{ role: string }>(
+  const tuResult = await db.execute(
     sql`SELECT role FROM tenant_users WHERE user_id = ${userId} AND tenant_id = ${tenantId}`,
-  )[0];
+  );
+  const tu = tuResult.rows[0] as { role: string } | undefined;
   if (tu) {
-    const role = db.all<RoleRow>(
-      sql`SELECT id, code FROM roles WHERE code = ${tu.role}`,
-    )[0];
+    const roleResult = await db.execute(sql`SELECT id, code FROM roles WHERE code = ${tu.role}`);
+    const role = roleResult.rows[0] as RoleRow | undefined;
     if (role) {
-      const perms = db.all<PermissionRow>(
+      const permsResult = await db.execute(
         sql`SELECT permission_code AS code FROM role_permissions WHERE role_id = ${role.id}`,
       );
-      for (const p of perms) collected.add(p.code);
+      for (const p of permsResult.rows as unknown as PermissionRow[]) collected.add(p.code);
     }
   }
 

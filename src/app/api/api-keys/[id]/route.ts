@@ -16,7 +16,7 @@ export async function GET(
   if (id === null) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
-  const k = apiKeyStore.getApiKey(id);
+  const k = await apiKeyStore.getApiKey(id);
   if (!k) return NextResponse.json({ error: "api key not found" }, { status: 404 });
   return NextResponse.json(k);
 }
@@ -29,7 +29,7 @@ export async function PATCH(
   if (id === null) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
-  const k = apiKeyStore.toggleApiKey(id);
+  const k = await apiKeyStore.toggleApiKey(id);
   if (!k) return NextResponse.json({ error: "api key not found" }, { status: 404 });
   return NextResponse.json(k);
 }
@@ -42,7 +42,7 @@ export async function DELETE(
   if (id === null) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
-  const ok = apiKeyStore.deleteApiKey(id);
+  const ok = await apiKeyStore.deleteApiKey(id);
   if (!ok) return NextResponse.json({ error: "api key not found" }, { status: 404 });
   return NextResponse.json({ deleted: true, id });
 }

@@ -21,7 +21,7 @@ export async function GET(
   if (id === null) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
-  const g = permGroupStore.getPermissionGroup(id);
+  const g = await permGroupStore.getPermissionGroup(id);
   if (!g)
     return NextResponse.json({ error: "permission group not found" }, { status: 404 });
   return NextResponse.json(g);
@@ -64,7 +64,7 @@ export async function PUT(
   if (typeof b.sort === "number") patch.sort = b.sort;
   if (typeof b.enabled === "boolean") patch.enabled = b.enabled;
   try {
-    const u = permGroupStore.updatePermissionGroup(id, patch);
+    const u = await permGroupStore.updatePermissionGroup(id, patch);
     if (!u)
       return NextResponse.json({ error: "permission group not found" }, { status: 404 });
     return NextResponse.json(u);
@@ -82,7 +82,7 @@ export async function DELETE(
   if (id === null) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
-  const ok = permGroupStore.deletePermissionGroup(id);
+  const ok = await permGroupStore.deletePermissionGroup(id);
   if (!ok)
     return NextResponse.json({ error: "permission group not found" }, { status: 404 });
   return NextResponse.json({ deleted: true, id });
