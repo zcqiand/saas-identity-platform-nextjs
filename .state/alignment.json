@@ -6,9 +6,13 @@
     "features": 22,
     "items": 140
   },
-  "warnings_total": 33,
+  "warnings_total": 38,
   "warnings": {
     "已上线但无设计映射": [
+      "M01.F04.I06",
+      "M01.F04.I07",
+      "M01.F04.I08",
+      "M01.F04.I09",
       "M01.F05.I01",
       "M01.F05.I02",
       "M01.F05.I03"
@@ -22,6 +26,7 @@
       "M01.F03.I01",
       "M01.F04.I01",
       "M01.F04.I02",
+      "M01.F04.I03",
       "M01.F04.I05",
       "M01.F05.I02",
       "M02.F01.I07",
@@ -53,7 +58,7 @@
     "M01.F01.I01": {
       "name": "租户列表页",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -72,7 +77,7 @@
     "M01.F01.I02": {
       "name": "租户查询",
       "status": "已上线",
-      "type": "查询",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -90,7 +95,7 @@
     "M01.F01.I03": {
       "name": "新增租户",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -110,7 +115,7 @@
     "M01.F01.I04": {
       "name": "查看租户详情",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -128,7 +133,7 @@
     "M01.F01.I05": {
       "name": "删除租户",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -146,7 +151,7 @@
     "M01.F01.I06": {
       "name": "租户详情/编辑页",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -164,7 +169,7 @@
     "M01.F01.I07": {
       "name": "保存租户配置",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -180,7 +185,7 @@
     "M01.F01.I08": {
       "name": "租户布局与切换",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -198,7 +203,7 @@
     "M01.F01.I09": {
       "name": "切换租户(列表入口)",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -317,8 +322,8 @@
     },
     "M01.F04.I03": {
       "name": "SSO 回调处理页",
-      "status": "规划",
-      "type": "页面",
+      "status": "已上线",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -332,7 +337,7 @@
     "M01.F04.I04": {
       "name": "登录入口页",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -367,9 +372,7 @@
       "type": "接口",
       "requirements": [],
       "flows": [],
-      "designs": [
-        "docs\\design\\design-function-map.md"
-      ],
+      "designs": [],
       "tests": [
         "D:/zcqiand-life/1-projects/xr-code-suite/output/saas-identity-platform-nextjs/tests/api/sso-authorize.test.ts::redirect_uri 非 http(s) → 400（防 open redirect）",
         "D:/zcqiand-life/1-projects/xr-code-suite/output/saas-identity-platform-nextjs/tests/api/sso-authorize.test.ts::正常 → 302，Location 含 code + state",
@@ -384,9 +387,7 @@
       "type": "接口",
       "requirements": [],
       "flows": [],
-      "designs": [
-        "docs\\design\\design-function-map.md"
-      ],
+      "designs": [],
       "tests": [
         "D:/zcqiand-life/1-projects/xr-code-suite/output/saas-identity-platform-nextjs/tests/api/oauth-callback.test.ts::body 非 JSON → 400",
         "D:/zcqiand-life/1-projects/xr-code-suite/output/saas-identity-platform-nextjs/tests/api/oauth-callback.test.ts::clientId 非 lab-management → 401",
@@ -402,9 +403,7 @@
       "type": "接口",
       "requirements": [],
       "flows": [],
-      "designs": [
-        "docs\\design\\design-function-map.md"
-      ],
+      "designs": [],
       "tests": [
         "D:/zcqiand-life/1-projects/xr-code-suite/output/saas-identity-platform-nextjs/tests/api/auth-permissions.test.ts::Bearer 无效 → 401",
         "D:/zcqiand-life/1-projects/xr-code-suite/output/saas-identity-platform-nextjs/tests/api/auth-permissions.test.ts::orgId 非 org-lab-root → 403",
@@ -419,9 +418,7 @@
       "type": "接口",
       "requirements": [],
       "flows": [],
-      "designs": [
-        "docs\\design\\design-function-map.md"
-      ],
+      "designs": [],
       "tests": [
         "D:/zcqiand-life/1-projects/xr-code-suite/output/saas-identity-platform-nextjs/tests/api/sso-menus.test.ts::appId 非 app-lab → 400",
         "D:/zcqiand-life/1-projects/xr-code-suite/output/saas-identity-platform-nextjs/tests/api/sso-menus.test.ts::正常 → 200，返回 LAB_MENUS 子集",
@@ -476,9 +473,9 @@
       ]
     },
     "M02.F01.I01": {
-      "name": "组织管理页",
+      "name": "部门管理页",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -494,9 +491,9 @@
       ]
     },
     "M02.F01.I02": {
-      "name": "查询组织树",
+      "name": "查询部门树",
       "status": "已上线",
-      "type": "查询",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -514,7 +511,7 @@
     "M02.F01.I03": {
       "name": "新增根部门",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -533,7 +530,7 @@
     "M02.F01.I04": {
       "name": "新增子部门",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -552,7 +549,7 @@
     "M02.F01.I05": {
       "name": "编辑部门",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -572,7 +569,7 @@
     "M02.F01.I06": {
       "name": "删除部门",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -602,9 +599,9 @@
       "entry": []
     },
     "M02.F01.I08": {
-      "name": "组织表单弹窗(独立组件)",
+      "name": "部门表单弹窗(独立组件)",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -620,7 +617,7 @@
       ]
     },
     "M02.F01.I09": {
-      "name": "组织资源契约(MSW)",
+      "name": "部门资源契约(MSW)",
       "status": "已上线",
       "type": "接口",
       "requirements": [],
@@ -638,7 +635,7 @@
     "M02.F02.I01": {
       "name": "用户管理页(列表)",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -656,7 +653,7 @@
     "M02.F02.I02": {
       "name": "查询用户列表(分页入页即触发)",
       "status": "已上线",
-      "type": "查询",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -674,7 +671,7 @@
     "M02.F02.I03": {
       "name": "搜索用户(关键字)",
       "status": "已上线",
-      "type": "查询",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -692,7 +689,7 @@
     "M02.F02.I04": {
       "name": "角色筛选",
       "status": "已上线",
-      "type": "查询",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -710,7 +707,7 @@
     "M02.F02.I05": {
       "name": "新增用户(user:create)",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -730,7 +727,7 @@
     "M02.F02.I06": {
       "name": "编辑用户(user:update)",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -750,7 +747,7 @@
     "M02.F02.I07": {
       "name": "删除用户(user:delete)",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -802,7 +799,7 @@
     "M02.F03.I01": {
       "name": "岗位管理页(列表)",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -820,7 +817,7 @@
     "M02.F03.I02": {
       "name": "查询岗位(mount 自动)",
       "status": "已上线",
-      "type": "查询",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -838,7 +835,7 @@
     "M02.F03.I03": {
       "name": "新建岗位",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -858,7 +855,7 @@
     "M02.F03.I04": {
       "name": "编辑岗位",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -878,7 +875,7 @@
     "M02.F03.I05": {
       "name": "删除岗位",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -897,7 +894,7 @@
     "M03.F01.I01": {
       "name": "角色列表页(容器与初始拉取)",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -915,7 +912,7 @@
     "M03.F01.I02": {
       "name": "角色列表查询(fetchRoles)",
       "status": "已上线",
-      "type": "查询",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -933,7 +930,7 @@
     "M03.F01.I03": {
       "name": "新建角色(按钮 + 表单提交)",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -955,7 +952,7 @@
     "M03.F01.I04": {
       "name": "编辑角色(行内编辑按钮 + 表单回填)",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -977,7 +974,7 @@
     "M03.F01.I05": {
       "name": "删除角色(行内按钮 + 确认)",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -995,7 +992,7 @@
     "M03.F01.I06": {
       "name": "角色表单校验(必填/取消/loading)",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1013,7 +1010,7 @@
     "M03.F01.I07": {
       "name": "角色菜单权限绑定(独立组件)",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1082,7 +1079,7 @@
     "M03.F02.I01": {
       "name": "权限组列表页(容器与初始拉取)",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1102,7 +1099,7 @@
     "M03.F02.I02": {
       "name": "新建权限组(顶部按钮打开表单)",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1123,7 +1120,7 @@
     "M03.F02.I03": {
       "name": "编辑权限组",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1143,7 +1140,7 @@
     "M03.F02.I04": {
       "name": "删除权限组",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1180,7 +1177,7 @@
     "M03.F03.I01": {
       "name": "用户组列表页(容器与初始拉取)",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1199,7 +1196,7 @@
     "M03.F03.I02": {
       "name": "新建用户组(顶部按钮打开表单)",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1219,7 +1216,7 @@
     "M03.F03.I03": {
       "name": "编辑用户组",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1239,7 +1236,7 @@
     "M03.F03.I04": {
       "name": "删除用户组",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1274,7 +1271,7 @@
     "M04.F01.I01": {
       "name": "应用列表页面",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1293,7 +1290,7 @@
     "M04.F01.I02": {
       "name": "搜索应用",
       "status": "已上线",
-      "type": "查询",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1311,7 +1308,7 @@
     "M04.F01.I03": {
       "name": "新建应用",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1331,7 +1328,7 @@
     "M04.F01.I04": {
       "name": "编辑应用",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1350,7 +1347,7 @@
     "M04.F01.I05": {
       "name": "删除应用",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1368,7 +1365,7 @@
     "M04.F01.I06": {
       "name": "跳转菜单管理",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1386,7 +1383,7 @@
     "M04.F01.I07": {
       "name": "菜单列表页面",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1405,7 +1402,7 @@
     "M04.F01.I08": {
       "name": "新建菜单",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1425,7 +1422,7 @@
     "M04.F01.I09": {
       "name": "新建子菜单",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1443,7 +1440,7 @@
     "M04.F01.I10": {
       "name": "编辑菜单",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1462,7 +1459,7 @@
     "M04.F01.I11": {
       "name": "删除菜单",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1496,7 +1493,7 @@
     "M04.F02.I01": {
       "name": "API Key 列表页面",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1514,7 +1511,7 @@
     "M04.F02.I02": {
       "name": "新建 API Key",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1534,7 +1531,7 @@
     "M04.F02.I03": {
       "name": "启用/禁用 API Key",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1552,7 +1549,7 @@
     "M04.F02.I04": {
       "name": "删除 API Key",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1571,7 +1568,7 @@
     "M05.F01.I01": {
       "name": "审计日志页面",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1590,7 +1587,7 @@
     "M05.F01.I02": {
       "name": "全部 Tab",
       "status": "已上线",
-      "type": "标签页",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1608,7 +1605,7 @@
     "M05.F01.I03": {
       "name": "登录日志 Tab",
       "status": "已上线",
-      "type": "标签页",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1627,7 +1624,7 @@
     "M05.F01.I04": {
       "name": "操作日志 Tab",
       "status": "已上线",
-      "type": "标签页",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1645,7 +1642,7 @@
     "M05.F01.I05": {
       "name": "安全日志 Tab",
       "status": "已上线",
-      "type": "标签页",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1663,7 +1660,7 @@
     "M05.F01.I06": {
       "name": "日志查询筛选",
       "status": "已上线",
-      "type": "查询",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1681,7 +1678,7 @@
     "M05.F01.I07": {
       "name": "导出 CSV",
       "status": "已上线",
-      "type": "报表",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1731,7 +1728,7 @@
     "M06.F01.I01": {
       "name": "登录安全策略页",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1749,7 +1746,7 @@
     "M06.F01.I02": {
       "name": "IP 白名单",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1767,7 +1764,7 @@
     "M06.F01.I03": {
       "name": "IP 黑名单",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1785,7 +1782,7 @@
     "M06.F01.I04": {
       "name": "启用登录失败锁定",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1804,7 +1801,7 @@
     "M06.F01.I05": {
       "name": "锁定阈值",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1822,7 +1819,7 @@
     "M06.F01.I06": {
       "name": "锁定时长",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1840,7 +1837,7 @@
     "M06.F01.I07": {
       "name": "启用地区限制",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1858,7 +1855,7 @@
     "M06.F01.I08": {
       "name": "允许地区",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1876,7 +1873,7 @@
     "M06.F02.I01": {
       "name": "登录方式配置页",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1894,7 +1891,7 @@
     "M06.F02.I02": {
       "name": "登录方式启用开关",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1915,7 +1912,7 @@
     "M06.F02.I03": {
       "name": "SSO 提供商启用开关",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1933,7 +1930,7 @@
     "M06.F02.I04": {
       "name": "OAuth2 提供商启用开关",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1951,7 +1948,7 @@
     "M06.F03.I01": {
       "name": "密码策略页",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1969,7 +1966,7 @@
     "M06.F03.I02": {
       "name": "启用密码策略",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -1988,7 +1985,7 @@
     "M06.F03.I03": {
       "name": "最小密码长度",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2006,7 +2003,7 @@
     "M06.F03.I04": {
       "name": "必须包含大写字母",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2024,7 +2021,7 @@
     "M06.F03.I05": {
       "name": "必须包含小写字母",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2042,7 +2039,7 @@
     "M06.F03.I06": {
       "name": "必须包含数字",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2060,7 +2057,7 @@
     "M06.F03.I07": {
       "name": "必须包含特殊字符",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2078,7 +2075,7 @@
     "M06.F03.I08": {
       "name": "密码过期天数",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2096,7 +2093,7 @@
     "M06.F03.I09": {
       "name": "历史密码数量",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2113,7 +2110,7 @@
     "M06.F04.I01": {
       "name": "Token 管理页",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2131,7 +2128,7 @@
     "M06.F04.I02": {
       "name": "访问令牌有效期",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2149,7 +2146,7 @@
     "M06.F04.I03": {
       "name": "Refresh Token 有效期",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2167,7 +2164,7 @@
     "M06.F04.I04": {
       "name": "开启 Refresh Token 续期",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2185,7 +2182,7 @@
     "M06.F04.I05": {
       "name": "开启 Token 主动失效",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2203,7 +2200,7 @@
     "M06.F05.I01": {
       "name": "消息通知页",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2221,7 +2218,7 @@
     "M06.F05.I02": {
       "name": "邮件通知",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2239,7 +2236,7 @@
     "M06.F05.I03": {
       "name": "短信通知",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2257,7 +2254,7 @@
     "M06.F05.I04": {
       "name": "站内信",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2275,7 +2272,7 @@
     "M06.F05.I05": {
       "name": "登录通知",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2293,7 +2290,7 @@
     "M06.F05.I06": {
       "name": "密码变更",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2311,7 +2308,7 @@
     "M06.F05.I07": {
       "name": "安全告警",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2329,7 +2326,7 @@
     "M06.F05.I08": {
       "name": "系统通知",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2347,7 +2344,7 @@
     "M06.F06.I01": {
       "name": "风险控制页",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2365,7 +2362,7 @@
     "M06.F06.I02": {
       "name": "异常登录检测",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2383,7 +2380,7 @@
     "M06.F06.I03": {
       "name": "异地登录告警",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2401,7 +2398,7 @@
     "M06.F06.I04": {
       "name": "设备指纹识别",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2419,7 +2416,7 @@
     "M06.F06.I05": {
       "name": "风险评分阈值",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2437,7 +2434,7 @@
     "M06.F07.I01": {
       "name": "开放平台页",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2455,7 +2452,7 @@
     "M06.F07.I02": {
       "name": "OpenAPI 开关",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2473,7 +2470,7 @@
     "M06.F07.I03": {
       "name": "Webhook 开关",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2491,7 +2488,7 @@
     "M06.F07.I04": {
       "name": "SDK 下载开关",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2509,7 +2506,7 @@
     "M06.F07.I05": {
       "name": "允许调用的 Scope",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2527,7 +2524,7 @@
     "M06.F07.I06": {
       "name": "回调地址白名单",
       "status": "已上线",
-      "type": "按钮",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
@@ -2545,7 +2542,7 @@
     "M06.F08.I01": {
       "name": "平台配置页",
       "status": "已上线",
-      "type": "页面",
+      "type": "接口",
       "requirements": [],
       "flows": [
         "docs\\design\\flow-function-map.md"
