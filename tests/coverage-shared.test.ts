@@ -90,7 +90,8 @@ fnTest(
     expect(ROLE_PERMISSIONS.length).toBeGreaterThan(0);
     ROLE_PERMISSIONS.forEach((r) => {
       expect(RoleSchema.safeParse(r).success, r.id).toBe(true);
-      r.menuPermissions.forEach((mp) => {
+      // v0.3.1.3：8 条 SaaS 角色 menuPermissions 已删（m-lab-01..22 FK 失败），仅 lab 角色带
+      (r.menuPermissions ?? []).forEach((mp) => {
         expect(RoleMenuPermissionSchema.safeParse(mp).success).toBe(true);
       });
     });

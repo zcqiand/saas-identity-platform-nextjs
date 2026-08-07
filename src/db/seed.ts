@@ -10,21 +10,18 @@ import {
   rolePermissions,
   roleMenuPermissions,
   userGroups,
+  userGroupMembers,
   permissionGroups,
   apps,
   appMenus,
   apiKeys,
   oauthScopes,
   menuTemplates,
+  platformSettings,
   loginMethods,
   ssoProviders,
   oauth2Providers,
-  tokenConfig,
-  loginSecurity,
-  passwordPolicy,
-  riskControl,
-  notificationConfig,
-  openPlatformConfig,
+  // 6 张单例 schema 仍定义（react/vue 仓 shared schema 一致性），但本仓不读不写
   auditLogs,
   healthCheck,
   tenantUsers,
@@ -45,12 +42,10 @@ import {
   SSO_PROVIDERS,
   OAUTH2_PROVIDERS,
   OAUTH_SCOPES,
-  TOKEN_CONFIG,
-  LOGIN_SECURITY,
-  PASSWORD_POLICY,
-  RISK_CONTROL,
-  NOTIFICATION_CONFIG,
-  OPEN_PLATFORM_CONFIG,
+  // 6 张单例（token_config / login_security / password_policy / risk_control /
+  // notification_config / open_platform_config）的 shared seed 不再灌 nextjs：
+  // v0.3.1 起 nextjs 端只走 platform_settings 单表 KV；6 张单例 schema 与 seed 保留
+  // 给 saas-react / saas-vue 仓用（它们各自实现这 6 张表的 typed 配置 UI）
   PLATFORM_SETTINGS,
   AUDIT_LOGS,
 } from "@saas/identity-platform-shared/seeds";
@@ -94,12 +89,7 @@ export async function seedDatabase(): Promise<void> {
   await tx.delete(loginMethods);
   await tx.delete(ssoProviders);
   await tx.delete(oauth2Providers);
-  await tx.delete(tokenConfig);
-  await tx.delete(loginSecurity);
-  await tx.delete(passwordPolicy);
-  await tx.delete(riskControl);
-  await tx.delete(notificationConfig);
-  await tx.delete(openPlatformConfig);
+  // 6 张单例 v0.3.1 不再 wipe（本仓不灌不删，保留空表供 react/vue schema 一致性）
   await tx.delete(auditLogs);
   await tx.delete(healthCheck);
 
@@ -307,74 +297,6 @@ export async function seedDatabase(): Promise<void> {
       category: s.category,
       riskLevel: s.riskLevel,
       enabled: s.enabled ?? true,
-    });
-  }
-  for (const c of TOKEN_CONFIG) {
-    await tx.insert(tokenConfig).values({
-      id: c.id,
-      accessTokenTtl: c.accessTokenTtl,
-      refreshTokenTtl: c.refreshTokenTtl,
-      refreshTokenEnabled: c.refreshTokenEnabled,
-      tokenRevocationEnabled: c.tokenRevocationEnabled,
-      updatedAt: isoToPg(undefined),
-    });
-  }
-  for (const c of LOGIN_SECURITY) {
-    await tx.insert(loginSecurity).values({
-      id: c.id,
-      ipWhitelist: (c.ipWhitelist ?? []) as string[],
-      ipBlacklist: (c.ipBlacklist ?? []) as string[],
-      regionRestrictionEnabled: c.regionRestrictionEnabled,
-      allowedRegions: (c.allowedRegions ?? []) as string[],
-      failedAttemptLockEnabled: c.failedAttemptLockEnabled,
-      lockThreshold: c.lockThreshold,
-      lockDuration: c.lockDuration,
-      updatedAt: isoToPg(undefined),
-    });
-  }
-  for (const c of PASSWORD_POLICY) {
-    await tx.insert(passwordPolicy).values({
-      id: c.id,
-      minLength: c.minLength,
-      requireUppercase: c.requireUppercase,
-      requireLowercase: c.requireLowercase,
-      requireDigit: c.requireDigit,
-      requireSpecial: c.requireSpecial,
-      expireDays: c.expireDays,
-      historyCount: c.historyCount,
-      enabled: c.enabled,
-      updatedAt: isoToPg(undefined),
-    });
-  }
-  for (const c of RISK_CONTROL) {
-    await tx.insert(riskControl).values({
-      id: c.id,
-      anomalyDetectionEnabled: c.anomalyDetectionEnabled,
-      crossRegionAlertEnabled: c.crossRegionAlertEnabled,
-      deviceFingerprintEnabled: c.deviceFingerprintEnabled,
-      riskScoreThreshold: c.riskScoreThreshold,
-      updatedAt: isoToPg(undefined),
-    });
-  }
-  for (const c of NOTIFICATION_CONFIG) {
-    await tx.insert(notificationConfig).values({
-      id: c.id,
-      emailEnabled: c.emailEnabled,
-      smsEnabled: c.smsEnabled,
-      inAppEnabled: c.inAppEnabled,
-      notifyOn: (c.notifyOn ?? []) as string[],
-      updatedAt: isoToPg(undefined),
-    });
-  }
-  for (const c of OPEN_PLATFORM_CONFIG) {
-    await tx.insert(openPlatformConfig).values({
-      id: c.id,
-      apiEnabled: c.apiEnabled,
-      webhookEnabled: c.webhookEnabled,
-      sdkEnabled: c.sdkEnabled,
-      openScopes: (c.openScopes ?? []) as string[],
-      callbackWhitelist: (c.callbackWhitelist ?? []) as string[],
-      updatedAt: isoToPg(undefined),
     });
   }
   for (const m of LOGIN_METHODS) {

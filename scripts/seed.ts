@@ -26,12 +26,10 @@ import {
   SSO_PROVIDERS,
   OAUTH2_PROVIDERS,
   OAUTH_SCOPES,
-  TOKEN_CONFIG,
-  LOGIN_SECURITY,
-  PASSWORD_POLICY,
-  RISK_CONTROL,
-  NOTIFICATION_CONFIG,
-  OPEN_PLATFORM_CONFIG,
+  // 6 张单例（token_config / login_security / password_policy / risk_control /
+  // notification_config / open_platform_config）的 shared seed 不再灌 nextjs：
+  // v0.3.1 起 nextjs 端只走 platform_settings 单表 KV；6 张单例 schema 与 seed 保留
+  // 给 saas-react / saas-vue 仓用（它们各自实现这 6 张表的 typed 配置 UI）
   PLATFORM_SETTINGS,
   AUDIT_LOGS,
 } from "@saas/identity-platform-shared/seeds";
@@ -92,12 +90,7 @@ async function seed(): Promise<void> {
   await db.delete(schema.loginMethods);
   await db.delete(schema.ssoProviders);
   await db.delete(schema.oauth2Providers);
-  await db.delete(schema.tokenConfig);
-  await db.delete(schema.loginSecurity);
-  await db.delete(schema.passwordPolicy);
-  await db.delete(schema.riskControl);
-  await db.delete(schema.notificationConfig);
-  await db.delete(schema.openPlatformConfig);
+  // 6 张单例不再 wipe（nextjs 端不灌不删；表保留供 future 6 个 store 使用 + react/vue 仓 shared schema 一致）
   await db.delete(schema.auditLogs);
   await db.delete(schema.platformSettings);
   await db.delete(schema.healthCheck);
@@ -323,75 +316,8 @@ async function seed(): Promise<void> {
     });
   }
 
-  // 6 张单例配置：shared 无 updatedAt，用 now()
-  for (const c of TOKEN_CONFIG) {
-    await db.insert(schema.tokenConfig).values({
-      id: c.id,
-      accessTokenTtl: c.accessTokenTtl,
-      refreshTokenTtl: c.refreshTokenTtl,
-      refreshTokenEnabled: c.refreshTokenEnabled,
-      tokenRevocationEnabled: c.tokenRevocationEnabled,
-      updatedAt: isoToPg(undefined),
-    });
-  }
-  for (const c of LOGIN_SECURITY) {
-    await db.insert(schema.loginSecurity).values({
-      id: c.id,
-      ipWhitelist: (c.ipWhitelist ?? []) as string[],
-      ipBlacklist: (c.ipBlacklist ?? []) as string[],
-      regionRestrictionEnabled: c.regionRestrictionEnabled,
-      allowedRegions: (c.allowedRegions ?? []) as string[],
-      failedAttemptLockEnabled: c.failedAttemptLockEnabled,
-      lockThreshold: c.lockThreshold,
-      lockDuration: c.lockDuration,
-      updatedAt: isoToPg(undefined),
-    });
-  }
-  for (const c of PASSWORD_POLICY) {
-    await db.insert(schema.passwordPolicy).values({
-      id: c.id,
-      minLength: c.minLength,
-      requireUppercase: c.requireUppercase,
-      requireLowercase: c.requireLowercase,
-      requireDigit: c.requireDigit,
-      requireSpecial: c.requireSpecial,
-      expireDays: c.expireDays,
-      historyCount: c.historyCount,
-      enabled: c.enabled,
-      updatedAt: isoToPg(undefined),
-    });
-  }
-  for (const c of RISK_CONTROL) {
-    await db.insert(schema.riskControl).values({
-      id: c.id,
-      anomalyDetectionEnabled: c.anomalyDetectionEnabled,
-      crossRegionAlertEnabled: c.crossRegionAlertEnabled,
-      deviceFingerprintEnabled: c.deviceFingerprintEnabled,
-      riskScoreThreshold: c.riskScoreThreshold,
-      updatedAt: isoToPg(undefined),
-    });
-  }
-  for (const c of NOTIFICATION_CONFIG) {
-    await db.insert(schema.notificationConfig).values({
-      id: c.id,
-      emailEnabled: c.emailEnabled,
-      smsEnabled: c.smsEnabled,
-      inAppEnabled: c.inAppEnabled,
-      notifyOn: (c.notifyOn ?? []) as string[],
-      updatedAt: isoToPg(undefined),
-    });
-  }
-  for (const c of OPEN_PLATFORM_CONFIG) {
-    await db.insert(schema.openPlatformConfig).values({
-      id: c.id,
-      apiEnabled: c.apiEnabled,
-      webhookEnabled: c.webhookEnabled,
-      sdkEnabled: c.sdkEnabled,
-      openScopes: (c.openScopes ?? []) as string[],
-      callbackWhitelist: (c.callbackWhitelist ?? []) as string[],
-      updatedAt: isoToPg(undefined),
-    });
-  }
+  // 6 张单例配置 v0.3.1 不再灌（nextjs 走 platform_settings 单表 KV；shared seed 保留供 react/vue）
+  // schema 仍存在（react/vue 仓需），但本仓不读不写
 
   for (const m of LOGIN_METHODS) {
     await db.insert(schema.loginMethods).values({
