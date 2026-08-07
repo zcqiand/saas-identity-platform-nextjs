@@ -1,7 +1,7 @@
 import "server-only";
 import { eq, like } from "drizzle-orm";
 import { db } from "@/db";
-import { platformSettings, type PlatformSetting } from "@/db/schema";
+import { platformSettings, type PlatformSetting, type NewPlatformSetting } from "@/db/schema";
 
 /** M06 平台运营 — 单表 key-value store（8 个功能域共用） */
 export async function listPlatformSettings(): Promise<PlatformSetting[]> {
@@ -37,7 +37,7 @@ export async function setPlatformSetting(
   }
   const [row] = await db
     .insert(platformSettings)
-    .values({ key, value, description: description ?? null })
+    .values({ id: key, key, value, description: description ?? null } satisfies Omit<NewPlatformSetting, "updatedAt">)
     .returning();
   return row!;
 }

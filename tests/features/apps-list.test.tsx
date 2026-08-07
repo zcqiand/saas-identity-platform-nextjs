@@ -19,8 +19,9 @@ beforeEach(() => {
 });
 
 const initialApps = [
-  { id: 1, code: "dashboard", name: "数据看板", type: "web", description: null, enabled: true, createdAt: "2026-01-01 00:00:00", updatedAt: "2026-01-01 00:00:00" },
-  { id: 2, code: "billing", name: "计费系统", type: "web", description: null, enabled: true, createdAt: "2026-01-01 00:00:00", updatedAt: "2026-01-01 00:00:00" },
+  { id: "app-lab", code: "lab-management", name: "建筑工程实验室管理系统", type: "web", description: null, enabled: true, createdAt: "2026-01-01 00:00:00", updatedAt: "2026-01-01 00:00:00" },
+  { id: "app-erp", code: "erp", name: "企业资源计划系统", type: "web", description: null, enabled: true, createdAt: "2026-01-01 00:00:00", updatedAt: "2026-01-01 00:00:00" },
+  { id: "app-finance", code: "finance", name: "财务系统", type: "web", description: null, enabled: true, createdAt: "2026-01-01 00:00:00", updatedAt: "2026-01-01 00:00:00" },
 ];
 
 describe("M04.F01 apps list page", () => {
@@ -29,14 +30,14 @@ describe("M04.F01 apps list page", () => {
     expect(getByTestId("apps-page").getAttribute("data-fn")).toBe("M04.F01.I01");
   });
 
-  fnTest(["M04.F01.I01"], "渲染 2 行", () => {
+  fnTest(["M04.F01.I01"], "渲染 3 行", () => {
     const { getAllByTestId } = render(<AppsClient initialApps={initialApps} />);
-    expect(getAllByTestId("app-row").length).toBe(2);
+    expect(getAllByTestId("app-row").length).toBe(3);
   });
 
   fnTest(["M04.F01.I02"], "I02 搜索框过滤", () => {
     const { getByTestId, getAllByTestId } = render(<AppsClient initialApps={initialApps} />);
-    fireEvent.change(getByTestId("app-search"), { target: { value: "bill" } });
+    fireEvent.change(getByTestId("app-search"), { target: { value: "erp" } });
     expect(getAllByTestId("app-row").length).toBe(1);
   });
 
@@ -53,7 +54,7 @@ describe("M04.F01 apps list page", () => {
 
   fnTest(["M04.F01.I03"], "I03 提交 Dialog 调 POST /api/apps 并把新应用加进列表", async () => {
     const created = {
-      id: 99,
+      id: "app-ci",
       code: "ci",
       name: "CI 系统",
       type: "web",
@@ -76,7 +77,7 @@ describe("M04.F01 apps list page", () => {
     expect(url).toBe("/api/apps");
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body as string)).toMatchObject({ code: "ci", name: "CI 系统" });
-    await waitFor(() => expect(getAllByTestId("app-row").length).toBe(3));
+    await waitFor(() => expect(getAllByTestId("app-row").length).toBe(4));
   });
 
   fnTest(["M04.F01.I04"], "I04 编辑按钮打开 EditAppDialog", async () => {
@@ -87,9 +88,9 @@ describe("M04.F01 apps list page", () => {
 
   fnTest(["M04.F01.I04"], "I04 提交 EditAppDialog 调 PUT /api/apps/[id]", async () => {
     const updated = {
-      id: 1,
-      code: "dashboard",
-      name: "数据看板 v2",
+      id: "app-lab",
+      code: "lab-management",
+      name: "建筑工程实验室管理系统 v2",
       type: "web",
       description: null,
       enabled: true,
@@ -102,11 +103,11 @@ describe("M04.F01 apps list page", () => {
     const { getAllByTestId, getByTestId } = render(<AppsClient initialApps={initialApps} />);
     fireEvent.click(getAllByTestId("edit-app-btn")[0]!);
     await waitFor(() => expect(getByTestId("edit-app-dialog")).toBeTruthy());
-    fireEvent.change(getByTestId("edit-app-name"), { target: { value: "数据看板 v2" } });
+    fireEvent.change(getByTestId("edit-app-name"), { target: { value: "建筑工程实验室管理系统 v2" } });
     fireEvent.click(getByTestId("edit-app-submit"));
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("/api/apps/1");
+    expect(url).toBe("/api/apps/app-lab");
     expect(init.method).toBe("PUT");
   });
 
@@ -124,14 +125,14 @@ describe("M04.F01 apps list page", () => {
     fireEvent.click(buttons[buttons.length - 1] as HTMLElement);
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("/api/apps/1");
+    expect(url).toBe("/api/apps/app-lab");
     expect(init.method).toBe("DELETE");
   });
 
   fnTest(["M04.F01.I06"], "I06 跳转菜单按钮是 Link，href 指向 /apps/[id]/menus", () => {
     const { getAllByTestId } = render(<AppsClient initialApps={initialApps} />);
     const btn = getAllByTestId("app-menus-btn")[0]!;
-    expect(btn.getAttribute("href")).toBe("/apps/1/menus");
+    expect(btn.getAttribute("href")).toBe("/apps/app-lab/menus");
     expect(btn.getAttribute("data-fn")).toBe("M04.F01.I06");
   });
 });

@@ -19,9 +19,9 @@ beforeEach(() => {
 });
 
 const initialLogs = [
-  { id: 1, action: "login", operator: "alice", resource: "session", resourceId: "s-1", ip: "127.0.0.1", detail: "", timestamp: "2026-07-18 10:00:00" },
-  { id: 2, action: "create", operator: "bob", resource: "role", resourceId: "r-1", ip: "127.0.0.1", detail: "new role", timestamp: "2026-07-18 10:01:00" },
-  { id: 3, action: "permission_change", operator: "admin", resource: "role", resourceId: "r-2", ip: "127.0.0.1", detail: "added user:read", timestamp: "2026-07-18 10:02:00" },
+  { id: "log-001", action: "login", operator: "admin@acme", resource: "auth", resourceId: "u-001", ip: "192.168.1.1", detail: "管理员登录", tenantId: "acme", timestamp: "2026-01-01 10:00:00" },
+  { id: "log-002", action: "create", operator: "admin@acme", resource: "user", resourceId: "u-002", ip: "192.168.1.1", detail: "新建用户 technician@acme", tenantId: "acme", timestamp: "2026-01-01 11:00:00" },
+  { id: "log-004", action: "permission_change", operator: "admin@acme", resource: "role", resourceId: "role-viewer", ip: "192.168.1.1", detail: "修改 viewer 角色权限", tenantId: "acme", timestamp: "2026-01-01 13:00:00" },
 ];
 
 describe("M05.F01 audit logs page", () => {
@@ -78,7 +78,7 @@ describe("M05.F01 audit logs page", () => {
     );
     const { getByTestId } = render(<AuditLogsClient initialLogs={initialLogs} />);
     fireEvent.change(getByTestId("audit-operator-search"), {
-      target: { value: "alice" },
+      target: { value: "admin@acme" },
     });
     // 点查询按钮（搜索框旁 Button，是 tabs 同级 Card 内的第二个 button）
     const buttons = Array.from(document.querySelectorAll("button"));
@@ -87,7 +87,7 @@ describe("M05.F01 audit logs page", () => {
     fireEvent.click(queryBtn!);
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
     const lastCall = fetchSpy.mock.calls[fetchSpy.mock.calls.length - 1] as [string];
-    expect(lastCall[0]).toContain("operator=alice");
+    expect(lastCall[0]).toContain("operator=admin%40acme");
   });
 
   fnTest(["M05.F01.I07"], "I07 导出按钮调 POST /api/audit-logs", async () => {

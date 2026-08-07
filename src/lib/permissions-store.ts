@@ -17,14 +17,17 @@ import { db } from "@/db";
  * 与具名 interface 不兼容）。
  *
  * 派生策略（D14 决策）：
- *   1. user global roles (users.roles JSON 数组里的 role code) → role 表查 code → permissions
+ *   1. user global roles (users.roles PG text[] 数组) → role 表查 code → permissions
  *   2. tenant_users.role（per-tenant role code）→ role 表查 code → permissions
  *   3. user_group 继承推到 M05
  *
  * 返回去重后的 permission code 列表。
+ *
+ * v0.3.0：userId/tenantId 改 text（PK 改 text 字符串）；users.roles 从 JSON 字符串
+ * 改为 PG text[] 原生数组，不再 JSON.parse。
  */
 interface RoleRow {
-  id: number;
+  id: string;
   code: string;
 }
 
@@ -32,22 +35,16 @@ interface PermissionRow {
   code: string;
 }
 
-export async function getCurrentUserPermissions(userId: number, tenantId: number): Promise<string[]> {
+export async function getCurrentUserPermissions(userId: string, tenantId: string): Promise<string[]> {
   const collected = new Set<string>();
 
-  // 1. user global roles
+  // 1. user global roles —— v0.3.0：roles 为 PG text[]，node-pg 已解析为 string[]
   const userResult = await db.execute(sql`SELECT roles FROM users WHERE id = ${userId}`);
-  const userRow = (userResult.rows[0] as { roles: string } | undefined) ?? undefined;
+  const userRow = (userResult.rows[0] as { roles: string[] } | undefined) ?? undefined;
   if (userRow) {
-    let userRoleCodes: string[] = [];
-    try {
-      const parsed: unknown = JSON.parse(userRow.roles);
-      if (Array.isArray(parsed)) {
-        userRoleCodes = parsed.filter((r): r is string => typeof r === "string");
-      }
-    } catch {
-      // ignore invalid JSON
-    }
+    const userRoleCodes: string[] = Array.isArray(userRow.roles)
+      ? userRow.roles.filter((r): r is string => typeof r === "string")
+      : [];
     if (userRoleCodes.length > 0) {
       // 查 roles 表拿 role.id
       for (const code of userRoleCodes) {

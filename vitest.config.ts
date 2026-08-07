@@ -36,8 +36,8 @@ export default defineConfig({
     globalSetup: ["tests/global-setup.ts"],
     // setup-db 必须排第一：它同步注入 VITEST_SCHEMA，store 文件 import @/db 时才能读到。
     setupFiles: ["tests/setup-db.ts", "tests/setup.ts"],
-    // beforeAll 里跑 pg 迁移到远端库，首次连接较慢；放宽 hook 超时。
-    hookTimeout: 60000,
+    // beforeAll 里跑 pg 迁移 + 26 表 seed 到远端库；v0.3.0 起 seed 涉及多张新表。
+    hookTimeout: 180000,
     env: {
       AUTH_JWT_SECRET: "test-secret-do-not-use-in-prod",
     },

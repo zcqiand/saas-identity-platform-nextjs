@@ -3,12 +3,7 @@ import * as permGroupStore from "@/lib/permission-group-store";
 
 /** M03.F02 权限组单条 CRUD */
 
-function parseId(id: string): number | null {
-  const n = Number(id);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
-function parsePerms(input: unknown): string[] {
+function parseStrings(input: unknown): string[] {
   if (!Array.isArray(input)) return [];
   return input.filter((p): p is string => typeof p === "string");
 }
@@ -17,8 +12,8 @@ export async function GET(
   _req: Request,
   { params }: { params: { id: string } },
 ) {
-  const id = parseId(params.id);
-  if (id === null) {
+  const id = params.id;
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
   const g = await permGroupStore.getPermissionGroup(id);
@@ -31,8 +26,8 @@ export async function PUT(
   req: Request,
   { params }: { params: { id: string } },
 ) {
-  const id = parseId(params.id);
-  if (id === null) {
+  const id = params.id;
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
   let raw: unknown;
@@ -48,6 +43,7 @@ export async function PUT(
     name?: unknown;
     description?: unknown;
     permissions?: unknown;
+    menuIds?: unknown;
     sort?: unknown;
     enabled?: unknown;
   };
@@ -55,12 +51,14 @@ export async function PUT(
     name?: string;
     description?: string;
     permissions?: string[];
+    menuIds?: string[];
     sort?: number;
     enabled?: boolean;
   } = {};
   if (typeof b.name === "string") patch.name = b.name;
   if (typeof b.description === "string") patch.description = b.description;
-  if (Array.isArray(b.permissions)) patch.permissions = parsePerms(b.permissions);
+  if (Array.isArray(b.permissions)) patch.permissions = parseStrings(b.permissions);
+  if (Array.isArray(b.menuIds)) patch.menuIds = parseStrings(b.menuIds);
   if (typeof b.sort === "number") patch.sort = b.sort;
   if (typeof b.enabled === "boolean") patch.enabled = b.enabled;
   try {
@@ -78,8 +76,8 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } },
 ) {
-  const id = parseId(params.id);
-  if (id === null) {
+  const id = params.id;
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
   const ok = await permGroupStore.deletePermissionGroup(id);

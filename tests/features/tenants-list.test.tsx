@@ -14,6 +14,8 @@ import { fnTest } from "../fn";
  *   - I03 新增租户（按钮挂 data-fn）
  *   - I04 查看详情（按钮挂 data-fn）
  *   - I05 删除租户（按钮点击触发 fetch DELETE）
+ *
+ * v0.3.0：shared seeds 只有 acme + tenant-lab（2 行）。
  */
 afterEach(() => {
   cleanup();
@@ -21,16 +23,15 @@ afterEach(() => {
 });
 
 beforeEach(() => {
-  tenantStore.setCurrentTenant(0);
+  tenantStore.setCurrentTenant("");
   // jsdom 默认 confirm/alert 是 noop；测试需要 confirm 返回 true
   vi.spyOn(window, "confirm").mockReturnValue(true);
   vi.spyOn(window, "alert").mockImplementation(() => undefined);
 });
 
 const initialTenants = [
-  { id: 1, code: "acme", name: "Acme Corp", theme: "default", createdAt: "2026-01-01 00:00:00" },
-  { id: 2, code: "globex", name: "Globex Inc", theme: "dark", createdAt: "2026-01-01 00:00:00" },
-  { id: 3, code: "initech", name: "Initech LLC", theme: "light", createdAt: "2026-01-01 00:00:00" },
+  { id: "acme", code: "acme", name: "ACME 集团", theme: "default", createdAt: "2026-01-01 00:00:00" },
+  { id: "tenant-lab", code: "tenant-lab", name: "中国建筑工程检测集团", theme: "default", createdAt: "2026-01-01 00:00:00" },
 ];
 
 describe("M01.F01 tenants list page", () => {
@@ -39,16 +40,16 @@ describe("M01.F01 tenants list page", () => {
     expect(getByTestId("tenants-page").getAttribute("data-fn")).toBe("M01.F01.I01");
   });
 
-  fnTest(["M01.F01.I01"], "渲染全部 3 行", () => {
+  fnTest(["M01.F01.I01"], "渲染全部 2 行", () => {
     const { getAllByTestId } = render(<TenantsClient initialTenants={initialTenants} />);
     const rows = getAllByTestId("tenant-row");
-    expect(rows.length).toBe(3);
+    expect(rows.length).toBe(2);
   });
 
   fnTest(["M01.F01.I02"], "I02 搜索框过滤租户", () => {
     const { getByTestId, getAllByTestId } = render(<TenantsClient initialTenants={initialTenants} />);
     const search = getByTestId("tenant-search");
-    fireEvent.change(search, { target: { value: "glob" } });
+    fireEvent.change(search, { target: { value: "tenant" } });
     expect(getAllByTestId("tenant-row").length).toBe(1);
   });
 
@@ -69,7 +70,7 @@ describe("M01.F01 tenants list page", () => {
 
   fnTest(["M01.F01.I03"], "I03 提交 Dialog 调 POST /api/tenants 并把新租户加进列表", async () => {
     const newTenant = {
-      id: 99,
+      id: "hooli",
       code: "hooli",
       name: "Hooli",
       theme: "default",
@@ -99,14 +100,14 @@ describe("M01.F01 tenants list page", () => {
       theme: "default",
     });
 
-    await waitFor(() => expect(getAllByTestId("tenant-row").length).toBe(4));
+    await waitFor(() => expect(getAllByTestId("tenant-row").length).toBe(3));
     await waitFor(() => expect(queryByTestId("new-tenant-dialog")).toBeNull());
   });
 
   fnTest(["M01.F01.I04"], "I04 查看按钮是 Link，href 指向 /tenants/[id]", () => {
     const { getAllByTestId } = render(<TenantsClient initialTenants={initialTenants} />);
     const viewBtn = getAllByTestId("view-tenant-btn")[0]!;
-    expect(viewBtn.getAttribute("href")).toBe("/tenants/1");
+    expect(viewBtn.getAttribute("href")).toBe("/tenants/acme");
     expect(viewBtn.getAttribute("data-fn")).toBe("M01.F01.I04");
   });
 
@@ -120,21 +121,20 @@ describe("M01.F01 tenants list page", () => {
     expect(alertSpy).not.toHaveBeenCalled();
   });
 
-  fnTest(["M01.F01.I09"], "I09 切换 Dialog 含租户 select 选项（3 个）", async () => {
+  fnTest(["M01.F01.I09"], "I09 切换 Dialog 含租户 select 选项（2 个）", async () => {
     const { getByTestId } = render(<TenantsClient initialTenants={initialTenants} />);
     fireEvent.click(getByTestId("switch-tenant-btn"));
     await waitFor(() => expect(getByTestId("switch-tenant-dialog")).toBeTruthy());
     // 用 getAllByRole 拿 select 内 option
     const select = getByTestId("switch-tenant-select") as HTMLSelectElement;
-    expect(select.options.length).toBe(3);
-    expect(select.options[0]!.text).toContain("Acme");
-    expect(select.options[1]!.text).toContain("Globex");
-    expect(select.options[2]!.text).toContain("Initech");
+    expect(select.options.length).toBe(2);
+    expect(select.options[0]!.text).toContain("ACME");
+    expect(select.options[1]!.text).toContain("建筑工程检测");
   });
 
   fnTest(["M01.F01.I09"], "I09 提交切换调 POST /api/tenants/switch", async () => {
     const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ currentTenantId: 2 }), { status: 200 }),
+      new Response(JSON.stringify({ currentTenantId: "tenant-lab" }), { status: 200 }),
     );
     const { getByTestId, queryByTestId } = render(
       <TenantsClient initialTenants={initialTenants} />,
@@ -143,14 +143,14 @@ describe("M01.F01 tenants list page", () => {
     await waitFor(() => expect(getByTestId("switch-tenant-dialog")).toBeTruthy());
 
     const select = getByTestId("switch-tenant-select") as HTMLSelectElement;
-    fireEvent.change(select, { target: { value: "2" } });
+    fireEvent.change(select, { target: { value: "tenant-lab" } });
     fireEvent.click(getByTestId("switch-tenant-submit"));
 
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("/api/tenants/switch");
     expect(init.method).toBe("POST");
-    expect(JSON.parse(init.body as string)).toEqual({ tenantId: 2 });
+    expect(JSON.parse(init.body as string)).toEqual({ tenantId: "tenant-lab" });
     await waitFor(() => expect(queryByTestId("switch-tenant-dialog")).toBeNull());
   });
 
@@ -174,7 +174,7 @@ describe("M01.F01 tenants list page", () => {
       expect(fetchSpy).toHaveBeenCalled();
     });
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("/api/tenants/1");
+    expect(url).toBe("/api/tenants/acme");
     expect(init.method).toBe("DELETE");
   });
 });

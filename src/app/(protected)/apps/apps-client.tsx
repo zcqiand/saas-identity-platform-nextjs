@@ -36,7 +36,7 @@ import { Field } from "@/components/app/field";
  *   - I06 跳转菜单管理 → 行内 Link href=/apps/[id]/menus data-fn="M04.F01.I06"
  */
 export interface AppRow extends Record<string, unknown> {
-  id: number;
+  id: string;
   code: string;
   name: string;
   type: string;

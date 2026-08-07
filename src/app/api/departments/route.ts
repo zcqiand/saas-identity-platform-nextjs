@@ -7,6 +7,8 @@ import * as departmentStore from "@/lib/department-store";
  */
 
 interface CreateDepartmentBody {
+  id?: unknown;
+  tenantId?: unknown;
   name?: unknown;
   parentId?: unknown;
   sort?: unknown;
@@ -28,12 +30,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "body must be object" }, { status: 400 });
   }
   const b = raw as CreateDepartmentBody;
-  if (typeof b.name !== "string") {
-    return NextResponse.json({ error: "missing required field: name" }, { status: 400 });
+  if (
+    typeof b.id !== "string" ||
+    typeof b.tenantId !== "string" ||
+    typeof b.name !== "string"
+  ) {
+    return NextResponse.json(
+      { error: "missing required fields: id, tenantId, name" },
+      { status: 400 },
+    );
   }
   const created = await departmentStore.createDepartment({
+    id: b.id,
+    tenantId: b.tenantId,
     name: b.name,
-    parentId: b.parentId === null || b.parentId === undefined ? null : Number(b.parentId),
+    parentId: typeof b.parentId === "string" ? b.parentId : null,
     sort: typeof b.sort === "number" ? b.sort : 0,
     enabled: typeof b.enabled === "boolean" ? b.enabled : true,
   });

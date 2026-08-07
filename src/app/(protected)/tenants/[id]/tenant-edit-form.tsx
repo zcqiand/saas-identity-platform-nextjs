@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
  * code 字段不可编辑（unique + ref 引用），只允许改 name / theme。
  */
 interface TenantRow {
-  id: number;
+  id: string;
   code: string;
   name: string;
   theme: string;

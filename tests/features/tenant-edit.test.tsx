@@ -14,14 +14,14 @@ afterEach(() => {
 });
 
 beforeEach(() => {
-  tenantStore.setCurrentTenant(0);
+  tenantStore.setCurrentTenant("acme");
   vi.spyOn(window, "alert").mockImplementation(() => undefined);
 });
 
 const acme = {
-  id: 1,
+  id: "acme",
   code: "acme",
-  name: "Acme Corp",
+  name: "ACME 集团",
   theme: "default",
   createdAt: "2026-01-01 00:00:00",
 };
@@ -34,7 +34,7 @@ describe("M01.F01 tenant edit page", () => {
 
   it("表单预填 tenant 字段（name / theme）", () => {
     const { getByTestId } = render(<TenantEditForm tenant={acme} />);
-    expect((getByTestId("name-input") as HTMLInputElement).value).toBe("Acme Corp");
+    expect((getByTestId("name-input") as HTMLInputElement).value).toBe("ACME 集团");
     expect((getByTestId("theme-input") as HTMLInputElement).value).toBe("default");
   });
 
@@ -62,7 +62,7 @@ describe("M01.F01 tenant edit page", () => {
       expect(fetchSpy).toHaveBeenCalled();
     });
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("/api/tenants/1");
+    expect(url).toBe("/api/tenants/acme");
     expect(init.method).toBe("PUT");
     const body = JSON.parse(init.body as string);
     expect(body.name).toBe("Acme Updated");

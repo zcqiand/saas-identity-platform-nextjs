@@ -18,8 +18,7 @@ export async function PUT(
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id } = await ctx.params;
-  const numId = Number(id);
-  if (!Number.isInteger(numId) || numId <= 0) {
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
   let raw: unknown;
@@ -32,9 +31,9 @@ export async function PUT(
     return NextResponse.json({ error: "body must be object" }, { status: 400 });
   }
   const b = raw as UpdateDepartmentBody;
-  const updated = await departmentStore.updateDepartment(numId, {
+  const updated = await departmentStore.updateDepartment(id, {
     name: typeof b.name === "string" ? b.name : undefined,
-    parentId: b.parentId === null || b.parentId === undefined ? undefined : Number(b.parentId),
+    parentId: b.parentId === null ? null : typeof b.parentId === "string" ? b.parentId : undefined,
     sort: typeof b.sort === "number" ? b.sort : undefined,
     enabled: typeof b.enabled === "boolean" ? b.enabled : undefined,
   });
@@ -47,11 +46,10 @@ export async function DELETE(
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id } = await ctx.params;
-  const numId = Number(id);
-  if (!Number.isInteger(numId) || numId <= 0) {
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
-  const ok = await departmentStore.deleteDepartment(numId);
+  const ok = await departmentStore.deleteDepartment(id);
   if (!ok) return NextResponse.json({ error: "not found" }, { status: 404 });
   return NextResponse.json({ deleted: true });
 }

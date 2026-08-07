@@ -33,10 +33,10 @@ import { Field } from "@/components/app/field";
  *   - I04 删除 → 行内按钮 + ConfirmDialog 二次确认后 DELETE
  */
 export interface ApiKeyRow extends Record<string, unknown> {
-  id: number;
+  id: string;
   name: string;
   key: string;
-  appId: number;
+  appId: string;
   enabled: boolean;
   expiresAt: string;
   createdAt: string;
@@ -44,7 +44,7 @@ export interface ApiKeyRow extends Record<string, unknown> {
 
 export interface ApiKeysClientProps {
   initialKeys: ApiKeyRow[];
-  apps: Array<{ id: number; code: string; name: string }>;
+  apps: Array<{ id: string; code: string; name: string }>;
 }
 
 export function ApiKeysClient({ initialKeys, apps }: ApiKeysClientProps) {
@@ -92,7 +92,7 @@ export function ApiKeysClient({ initialKeys, apps }: ApiKeysClientProps) {
     }
   }
 
-  function appLabel(id: number): string {
+  function appLabel(id: string): string {
     const a = apps.find((x) => x.id === id);
     return a ? `${a.name} (${a.code})` : `#${id}`;
   }
@@ -191,7 +191,7 @@ export function ApiKeysClient({ initialKeys, apps }: ApiKeysClientProps) {
 interface NewApiKeyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  apps: Array<{ id: number; code: string; name: string }>;
+  apps: Array<{ id: string; code: string; name: string }>;
   submitting: boolean;
   setSubmitting: (v: boolean) => void;
   onCreated: (k: ApiKeyRow) => void;
@@ -218,8 +218,7 @@ function NewApiKeyDialog({
   }
 
   async function handleSubmit() {
-    const id = Number(appId);
-    if (!name.trim() || !Number.isInteger(id) || id <= 0) {
+    if (!name.trim() || !appId) {
       toast.error("名称 和 应用 都必填");
       return;
     }
@@ -228,7 +227,7 @@ function NewApiKeyDialog({
       const res = await fetch("/api/api-keys", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), appId: id, enabled }),
+        body: JSON.stringify({ name: name.trim(), appId, enabled }),
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };

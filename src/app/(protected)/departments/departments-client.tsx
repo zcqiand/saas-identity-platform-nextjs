@@ -39,9 +39,9 @@ import { Field } from "@/components/app/field";
  *   - I08 部门表单弹窗（独立组件 NewDepartmentDialog + EditDepartmentDialog）—— 本文件内
  */
 export interface DepartmentNode extends Record<string, unknown> {
-  id: number;
+  id: string;
   name: string;
-  parentId: number | null;
+  parentId: string | null;
   sort: number;
   enabled: boolean;
   createdAt: string;
@@ -55,7 +55,7 @@ export interface DepartmentsClientProps {
 
 export function DepartmentsClient({ initialTree }: DepartmentsClientProps) {
   const [tree, setTree] = useState<DepartmentNode[]>(initialTree);
-  const [creating, setCreating] = useState<{ parentId: number | null } | null>(null);
+  const [creating, setCreating] = useState<{ parentId: string | null } | null>(null);
   const [editing, setEditing] = useState<DepartmentNode | null>(null);
   const [deleting, setDeleting] = useState<DepartmentNode | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -211,7 +211,7 @@ export function DepartmentsClient({ initialTree }: DepartmentsClientProps) {
 interface NewDepartmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  parentId: number | null;
+  parentId: string | null;
   tree: DepartmentNode[];
   submitting: boolean;
   setSubmitting: (v: boolean) => void;
@@ -229,14 +229,14 @@ function NewDepartmentDialog({
 }: NewDepartmentDialogProps) {
   const [name, setName] = useState("");
   const [pickedParentId, setPickedParentId] = useState<string>(
-    () => (parentId === null ? "" : String(parentId)),
+    () => (parentId === null ? "" : parentId),
   );
   const [sort, setSort] = useState("0");
   const [enabled, setEnabled] = useState(true);
 
   function reset() {
     setName("");
-    setPickedParentId(parentId === null ? "" : String(parentId));
+    setPickedParentId(parentId === null ? "" : parentId);
     setSort("0");
     setEnabled(true);
   }
@@ -254,7 +254,7 @@ function NewDepartmentDialog({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          parentId: pickedParentId === "" ? null : Number(pickedParentId),
+          parentId: pickedParentId === "" ? null : pickedParentId,
           sort: Number.isFinite(sortNum) ? sortNum : 0,
           enabled,
         }),
@@ -377,7 +377,7 @@ function EditDepartmentDialog({
 }: EditDepartmentDialogProps) {
   const [name, setName] = useState(department.name);
   const [pickedParentId, setPickedParentId] = useState<string>(
-    () => (department.parentId === null ? "" : String(department.parentId)),
+    () => (department.parentId === null ? "" : department.parentId),
   );
   const [sort, setSort] = useState(String(department.sort));
   const [enabled, setEnabled] = useState(department.enabled);
@@ -395,7 +395,7 @@ function EditDepartmentDialog({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          parentId: pickedParentId === "" ? null : Number(pickedParentId),
+          parentId: pickedParentId === "" ? null : pickedParentId,
           sort: Number.isFinite(sortNum) ? sortNum : 0,
           enabled,
         }),

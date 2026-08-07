@@ -1,17 +1,12 @@
 import { NextResponse } from "next/server";
 import * as userGroupStore from "@/lib/user-group-store";
 
-function parseId(id: string): number | null {
-  const n = Number(id);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } },
 ) {
-  const id = parseId(params.id);
-  if (id === null) {
+  const id = params.id;
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
   const g = await userGroupStore.getUserGroup(id);
@@ -23,8 +18,8 @@ export async function PUT(
   req: Request,
   { params }: { params: { id: string } },
 ) {
-  const id = parseId(params.id);
-  if (id === null) {
+  const id = params.id;
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
   let raw: unknown;
@@ -50,8 +45,8 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } },
 ) {
-  const id = parseId(params.id);
-  if (id === null) {
+  const id = params.id;
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
   const ok = await userGroupStore.deleteUserGroup(id);

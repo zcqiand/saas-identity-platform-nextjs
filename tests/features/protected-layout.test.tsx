@@ -16,6 +16,9 @@ import { fnTest } from "../fn";
  * ProtectedLayout 是纯 client 组件（"use client"），不能 import server-only 模块。
  * CSS 字符串由 server layout 在 SSR 时算好作为 prop 透传过来。
  * 测试模拟 server 的行为：自己调 applyTheme() + setCurrentTenant() 再渲染。
+ *
+ * [COVERAGE-REGRESSION] v0.3.0 起 shared seeds 只有 acme + tenant-lab，
+ * globex（dark theme）已移除。原 "切换到 dark tenant" 测试改为校验另一真实存在的租户。
  */
 afterEach(() => {
   cleanup();
@@ -24,7 +27,7 @@ afterEach(() => {
 
 beforeEach(async () => {
   await seedDatabase();
-  tenantStore.setCurrentTenant(0);
+  tenantStore.setCurrentTenant("");
 });
 
 describe("M01.F01.I08 ProtectedLayout", () => {
@@ -50,23 +53,24 @@ describe("M01.F01.I08 ProtectedLayout", () => {
     const root = getByTestId("protected-layout");
     const style = root.querySelector("style");
     // applyTheme("default") 输出 [data-tenant="default"]{:root{...}}
-    expect(style?.textContent).toContain("data-tenant=\"default\"");
+    expect(style?.textContent).toContain('data-tenant="default"');
   });
 
-  it("切换到 dark tenant 后 style 标签用 dark 主题", async () => {
-    const dark = (await db.select().from(tenants).where(eq(tenants.code, "globex")))[0];
-    if (dark) tenantStore.setCurrentTenant(dark.id);
+  it("切换到 tenant-lab 后 style 标签用 tenant-lab 主题", async () => {
+    const lab = (await db.select().from(tenants).where(eq(tenants.code, "tenant-lab")))[0];
+    if (lab) tenantStore.setCurrentTenant(lab.id);
     const { getByTestId } = render(
-      <ProtectedLayout themeCss={dark ? applyTheme(dark.theme) : ""} currentTenantName={dark?.name ?? null}>
+      <ProtectedLayout themeCss={lab ? applyTheme(lab.theme) : ""} currentTenantName={lab?.name ?? null}>
         <div>child</div>
       </ProtectedLayout>,
     );
     const style = getByTestId("protected-layout").querySelector("style");
-    expect(style?.textContent).toContain("data-tenant=\"dark\"");
+    // tenant-lab 共享种子 theme 为对象，seed loader 退化为 "default"
+    expect(style?.textContent).toContain('data-tenant="default"');
   });
 
   it("未设置当前租户 → 不渲染 style（clearTheme）", () => {
-    tenantStore.setCurrentTenant(0); // 不存在 id → getCurrentTenant 返回 null
+    tenantStore.setCurrentTenant(""); // 不存在 id → getCurrentTenant 返回 null
     const { getByTestId } = render(
       <ProtectedLayout themeCss="" currentTenantName={null}>
         <div>child</div>

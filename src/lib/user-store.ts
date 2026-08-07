@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users, type NewUser, type User } from "@/db/schema";
 
-/** M02.F02.I08 用户 store — CRUD + JSON roles 解析 */
+/** M02.F02.I08 用户 store — CRUD + roles (text[]) 透传 */
 
 export interface ListUsersFilter {
   keyword?: string;
@@ -27,7 +27,7 @@ export async function listUsers(filter: ListUsersFilter = {}): Promise<User[]> {
   return result;
 }
 
-export async function getUser(id: number): Promise<User | null> {
+export async function getUser(id: string): Promise<User | null> {
   const [row] = await db.select().from(users).where(eq(users.id, id));
   return row ?? null;
 }
@@ -38,9 +38,12 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 }
 
 export async function createUser(input: {
+  id: string;
   username: string;
   displayName: string;
   email: string;
+  tenantId: string;
+  departmentId?: string;
   roles?: string[];
   status?: string;
 }): Promise<User> {
@@ -48,22 +51,26 @@ export async function createUser(input: {
   const [row] = await db
     .insert(users)
     .values({
+      id: input.id,
       username: input.username,
       displayName: input.displayName,
       email: input.email,
-      roles: JSON.stringify(roles),
+      tenantId: input.tenantId,
+      departmentId: input.departmentId,
+      roles,
       status: input.status ?? "active",
-    } satisfies NewUser)
+    } satisfies Omit<NewUser, "createdAt" | "updatedAt">)
     .returning();
   return row!;
 }
 
 export async function updateUser(
-  id: number,
+  id: string,
   patch: {
     displayName?: string;
     email?: string;
     roles?: string[];
+    departmentId?: string;
     status?: string;
   },
 ): Promise<User | null> {
@@ -73,7 +80,8 @@ export async function updateUser(
     ...existing,
     displayName: patch.displayName ?? existing.displayName,
     email: patch.email ?? existing.email,
-    roles: patch.roles ? JSON.stringify(patch.roles) : existing.roles,
+    roles: patch.roles ?? existing.roles,
+    departmentId: patch.departmentId ?? existing.departmentId,
     status: patch.status ?? existing.status,
   };
   await db.update(users)
@@ -81,13 +89,14 @@ export async function updateUser(
       displayName: merged.displayName,
       email: merged.email,
       roles: merged.roles,
+      departmentId: merged.departmentId,
       status: merged.status,
     })
     .where(eq(users.id, id));
   return getUser(id);
 }
 
-export async function deleteUser(id: number): Promise<boolean> {
+export async function deleteUser(id: string): Promise<boolean> {
   const result = await db.delete(users).where(eq(users.id, id));
   return (result.rowCount ?? 0) > 0;
 }

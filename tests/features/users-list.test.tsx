@@ -9,6 +9,8 @@ import { fnTest } from "../fn";
  *
  * 覆盖：I01 页面 / I02 列表查询 / I03 关键字 / I04 角色筛选 /
  *       I05 新增 / I06 编辑 / I07 删除
+ *
+ * v0.3.0：id 改字符串；users.roles 由 JSON 字符串改 text[] 原生数组；新增 tenantId required。
  */
 afterEach(() => {
   cleanup();
@@ -21,9 +23,9 @@ beforeEach(() => {
 });
 
 const initialUsers = [
-  { id: 1, username: "alice", displayName: "Alice Admin", email: "alice@x.com", roles: '["admin"]', status: "active", createdAt: "2026-01-01 00:00:00", updatedAt: "2026-01-01 00:00:00" },
-  { id: 2, username: "bob", displayName: "Bob Manager", email: "bob@x.com", roles: '["manager"]', status: "active", createdAt: "2026-01-01 00:00:00", updatedAt: "2026-01-01 00:00:00" },
-  { id: 3, username: "carol", displayName: "Carol Member", email: "carol@x.com", roles: '["member"]', status: "active", createdAt: "2026-01-01 00:00:00", updatedAt: "2026-01-01 00:00:00" },
+  { id: "u-001", username: "admin@acme", displayName: "SaaS 管理员", email: "admin@acme.com", tenantId: "acme", roles: ["admin"], status: "active", createdAt: "2026-01-01 00:00:00", updatedAt: "2026-01-01 00:00:00" },
+  { id: "u-lab-01", username: "labadmin", displayName: "实验室管理员", email: "labadmin@lab.example.com", tenantId: "tenant-lab", roles: ["role-lab-admin"], status: "active", createdAt: "2026-01-15 00:00:00", updatedAt: "2026-01-15 00:00:00" },
+  { id: "u-lab-02", username: "technician", displayName: "检测员", email: "technician@lab.example.com", tenantId: "tenant-lab", roles: ["role-lab-tech"], status: "active", createdAt: "2026-01-15 00:00:00", updatedAt: "2026-01-15 00:00:00" },
 ];
 
 describe("M02.F02 users list page", () => {
@@ -39,7 +41,7 @@ describe("M02.F02 users list page", () => {
 
   fnTest(["M02.F02.I03"], "关键字搜索过滤", () => {
     const { getByTestId, getAllByTestId } = render(<UsersClient initialUsers={initialUsers} />);
-    fireEvent.change(getByTestId("user-search"), { target: { value: "alice" } });
+    fireEvent.change(getByTestId("user-search"), { target: { value: "labadmin" } });
     expect(getAllByTestId("user-row").length).toBe(1);
   });
 
@@ -64,11 +66,12 @@ describe("M02.F02 users list page", () => {
 
   fnTest(["M02.F02.I05"], "I05 提交 Dialog 调 POST /api/users 并把新用户加进列表", async () => {
     const created = {
-      id: 99,
+      id: "u-100",
       username: "dave",
       displayName: "Dave Viewer",
       email: "dave@x.com",
-      roles: '["viewer"]',
+      tenantId: "acme",
+      roles: ["viewer"],
       status: "active",
       createdAt: "2026-07-17 12:00:00",
       updatedAt: "2026-07-17 12:00:00",
@@ -113,11 +116,12 @@ describe("M02.F02 users list page", () => {
 
   fnTest(["M02.F02.I06"], "I06 提交 EditUserDialog 调 PUT /api/users/[id]", async () => {
     const updated = {
-      id: 1,
-      username: "alice",
+      id: "u-001",
+      username: "admin@acme",
       displayName: "Alice Super",
-      email: "alice@x.com",
-      roles: '["admin","manager"]',
+      email: "admin@acme.com",
+      tenantId: "acme",
+      roles: ["admin", "manager"],
       status: "active",
       createdAt: "2026-01-01 00:00:00",
       updatedAt: "2026-07-17 12:00:00",
@@ -135,7 +139,7 @@ describe("M02.F02 users list page", () => {
     fireEvent.click(getByTestId("edit-user-submit"));
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("/api/users/1");
+    expect(url).toBe("/api/users/u-001");
     expect(init.method).toBe("PUT");
     const body = JSON.parse(init.body as string);
     expect(body.displayName).toBe("Alice Super");
@@ -158,7 +162,7 @@ describe("M02.F02 users list page", () => {
     fireEvent.click(buttons[buttons.length - 1] as HTMLElement);
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("/api/users/1");
+    expect(url).toBe("/api/users/u-001");
     expect(init.method).toBe("DELETE");
   });
 

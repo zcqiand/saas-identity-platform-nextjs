@@ -9,7 +9,7 @@ export async function listApps(): Promise<App[]> {
   return db.select().from(apps);
 }
 
-export async function getApp(id: number): Promise<App | null> {
+export async function getApp(id: string): Promise<App | null> {
   const [row] = await db.select().from(apps).where(eq(apps.id, id));
   return row ?? null;
 }
@@ -20,6 +20,7 @@ export async function getAppByCode(code: string): Promise<App | null> {
 }
 
 export async function createApp(input: {
+  id: string;
   code: string;
   name: string;
   type?: string;
@@ -29,18 +30,19 @@ export async function createApp(input: {
   const [row] = await db
     .insert(apps)
     .values({
+      id: input.id,
       code: input.code,
       name: input.name,
       type: input.type ?? "web",
       description: input.description,
       enabled: input.enabled ?? true,
-    } satisfies NewApp)
+    } satisfies Omit<NewApp, "createdAt" | "updatedAt">)
     .returning();
   return row!;
 }
 
 export async function updateApp(
-  id: number,
+  id: string,
   patch: Partial<Pick<NewApp, "name" | "type" | "description" | "enabled">>,
 ): Promise<App | null> {
   const existing = await getApp(id);
@@ -63,7 +65,7 @@ export async function updateApp(
   return getApp(id);
 }
 
-export async function deleteApp(id: number): Promise<boolean> {
+export async function deleteApp(id: string): Promise<boolean> {
   const result = await db.delete(apps).where(eq(apps.id, id));
   return (result.rowCount ?? 0) > 0;
 }

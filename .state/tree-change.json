@@ -1,18 +1,243 @@
 {
   "schema": 1,
   "approved": true,
-  "base_sha": "ec37516c2cd4110f",
-  "summary": "M01.F05.I03 描述 doc 同步：原提案写「跳 /audit-logs」，实现调研发现 /audit-logs 路由不存在（M05.F01 整组规划中），改为跳 /orgs（最近似的『用户活动』语义已上线页面）。仅改描述文本，ID 不动。",
+  "base_sha": "48d8b2eee5c3be5c",
+  "summary": "Stage 0 of shared v0.3.0 字段合同对齐：nextjs 端 PK 全量改 text、5 张表加 tenantId/appId required、orgs 重命名为 departments、补齐 11 张 shared 新表（含 5 张单例配置 + role_menu_permissions）。38 条新增条目直接落 function-tree.md（不再走 extension.md；现 7 条 M01 nextjs-only 也将一并迁入 function-tree.md 追加段）。A 类「字段合同更新」在 schema.ts 的 @entry 注释中体现，不进 tree 行（base 已同步自 shared，名称/类型/状态列不承载字段合同）。同步脚本 sync_function_tree.mjs 同步去掉 extension.md 写入、改为在覆写后追加 nextjs 段（sentinel marker 包裹）。落点：shared v0.3.0 manifest 切片（tenants 13→2 / users 20→13 / apps 11→3 / menus 98→41）。",
   "changes": [
     {
-      "id": "M01.F05.I03",
-      "action": "变更",
-      "name": "卡片点击跳转",
-      "reason": "原描述 /audit-logs 不存在（M05.F01 整组规划），改 /orgs；M05 上线后另起 tree-change 回链"
+      "id": "M01.F06",
+      "action": "新增",
+      "name": "shared-seed-loader",
+      "reason": "shared v0.3.0 字段合同对齐：scripts/seed.ts + src/db/seed.ts 改读 shared，统一入口"
+    },
+    {
+      "id": "M03.F04",
+      "action": "新增",
+      "name": "role menu permissions",
+      "reason": "shared v0.3.0 新增 role_menu_permissions 表（Role.menuPermissions[] 落库）"
+    },
+    {
+      "id": "M03.F04.I01",
+      "action": "新增",
+      "name": "按角色查询菜单权限",
+      "reason": "store listByRole"
+    },
+    {
+      "id": "M03.F04.I02",
+      "action": "新增",
+      "name": "新增角色菜单权限",
+      "reason": "store create"
+    },
+    {
+      "id": "M03.F04.I03",
+      "action": "新增",
+      "name": "编辑角色菜单权限",
+      "reason": "store update"
+    },
+    {
+      "id": "M03.F04.I04",
+      "action": "新增",
+      "name": "删除角色菜单权限",
+      "reason": "store delete"
+    },
+    {
+      "id": "M03.F04.I05",
+      "action": "新增",
+      "name": "角色菜单权限 store 内部接口",
+      "reason": "store 内部"
+    },
+    {
+      "id": "M06.F09",
+      "action": "新增",
+      "name": "平台配置 singletons",
+      "reason": "shared v0.3.0 新增 6 张单例表（token_config/login_security/password_policy/risk_control/notification_config/open_platform_config）"
+    },
+    {
+      "id": "M06.F09.I01",
+      "action": "新增",
+      "name": "token-config 单例 CRUD",
+      "reason": "store upsert"
+    },
+    {
+      "id": "M06.F09.I02",
+      "action": "新增",
+      "name": "login-security 单例 CRUD",
+      "reason": "store upsert"
+    },
+    {
+      "id": "M06.F09.I03",
+      "action": "新增",
+      "name": "password-policy 单例 CRUD",
+      "reason": "store upsert"
+    },
+    {
+      "id": "M06.F09.I04",
+      "action": "新增",
+      "name": "risk-control 单例 CRUD",
+      "reason": "store upsert"
+    },
+    {
+      "id": "M06.F09.I05",
+      "action": "新增",
+      "name": "notification-config 单例 CRUD",
+      "reason": "store upsert + 替代 notifications/page.tsx 旧 4 个 notify.event.* 硬编码"
+    },
+    {
+      "id": "M06.F09.I06",
+      "action": "新增",
+      "name": "open-platform-config 单例 CRUD",
+      "reason": "store upsert"
+    },
+    {
+      "id": "M06.F10",
+      "action": "新增",
+      "name": "OAuth scope 注册表",
+      "reason": "shared v0.3.0 新增 oauth_scopes 表（/api/auth/permissions 路由强依赖）"
+    },
+    {
+      "id": "M06.F10.I01",
+      "action": "新增",
+      "name": "OAuth scope 列表",
+      "reason": "store list"
+    },
+    {
+      "id": "M06.F10.I02",
+      "action": "新增",
+      "name": "按 app 查询 scope",
+      "reason": "store listByApp"
+    },
+    {
+      "id": "M06.F10.I03",
+      "action": "新增",
+      "name": "新增 OAuth scope",
+      "reason": "store create"
+    },
+    {
+      "id": "M06.F10.I04",
+      "action": "新增",
+      "name": "编辑 OAuth scope",
+      "reason": "store update"
+    },
+    {
+      "id": "M06.F10.I05",
+      "action": "新增",
+      "name": "删除 OAuth scope",
+      "reason": "store delete"
+    },
+    {
+      "id": "M06.F11",
+      "action": "新增",
+      "name": "登录方式",
+      "reason": "shared v0.3.0 新增 login_methods 表（6 种登录方式开关）"
+    },
+    {
+      "id": "M06.F11.I01",
+      "action": "新增",
+      "name": "登录方式列表",
+      "reason": "store list"
+    },
+    {
+      "id": "M06.F11.I02",
+      "action": "新增",
+      "name": "查询单个登录方式",
+      "reason": "store get"
+    },
+    {
+      "id": "M06.F11.I03",
+      "action": "新增",
+      "name": "启用/禁用登录方式",
+      "reason": "store update toggle"
+    },
+    {
+      "id": "M06.F11.I04",
+      "action": "新增",
+      "name": "登录方式 store 内部接口",
+      "reason": "store 内部"
+    },
+    {
+      "id": "M06.F12",
+      "action": "新增",
+      "name": "SSO 提供商",
+      "reason": "shared v0.3.0 新增 sso_providers 表（oidc/saml/cas）"
+    },
+    {
+      "id": "M06.F12.I01",
+      "action": "新增",
+      "name": "SSO 提供商列表",
+      "reason": "store list"
+    },
+    {
+      "id": "M06.F12.I02",
+      "action": "新增",
+      "name": "新增 SSO 提供商",
+      "reason": "store create"
+    },
+    {
+      "id": "M06.F12.I03",
+      "action": "新增",
+      "name": "编辑 SSO 提供商",
+      "reason": "store update"
+    },
+    {
+      "id": "M06.F12.I04",
+      "action": "新增",
+      "name": "删除 SSO 提供商",
+      "reason": "store delete"
+    },
+    {
+      "id": "M06.F13",
+      "action": "新增",
+      "name": "OAuth2 提供商",
+      "reason": "shared v0.3.0 新增 oauth2_providers 表"
+    },
+    {
+      "id": "M06.F13.I01",
+      "action": "新增",
+      "name": "OAuth2 提供商列表",
+      "reason": "store list"
+    },
+    {
+      "id": "M06.F13.I02",
+      "action": "新增",
+      "name": "新增 OAuth2 提供商",
+      "reason": "store create"
+    },
+    {
+      "id": "M06.F13.I03",
+      "action": "新增",
+      "name": "编辑 OAuth2 提供商",
+      "reason": "store update"
+    },
+    {
+      "id": "M06.F13.I04",
+      "action": "新增",
+      "name": "删除 OAuth2 提供商",
+      "reason": "store delete"
+    },
+    {
+      "id": "M06.F14",
+      "action": "新增",
+      "name": "菜单模板",
+      "reason": "shared v0.3.0 新增 menu_templates 表（每 app 单例）"
+    },
+    {
+      "id": "M06.F14.I01",
+      "action": "新增",
+      "name": "按 app 查询菜单模板",
+      "reason": "store getByApp"
+    },
+    {
+      "id": "M06.F14.I02",
+      "action": "新增",
+      "name": "upsert 菜单模板",
+      "reason": "store upsert"
     }
   ],
   "sync_files": [
     "docs/functions/function-tree.md",
-    "docs/design/design-function-map.md"
+    "scripts/sync_function_tree.mjs",
+    "src/db/schema.ts",
+    "src/db/seed.ts",
+    "scripts/seed.ts"
   ]
 }

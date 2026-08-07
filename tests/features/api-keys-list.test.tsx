@@ -19,13 +19,14 @@ beforeEach(() => {
 });
 
 const initialKeys = [
-  { id: 1, name: "ci-deploy", key: "abcdef1234567890abcdef1234567890", appId: 1, enabled: true, expiresAt: "never", createdAt: "2026-01-01 00:00:00" },
-  { id: 2, name: "metric-bot", key: "00000000000000000000000000000000", appId: 2, enabled: true, expiresAt: "never", createdAt: "2026-01-01 00:00:00" },
+  { id: "ak-001", name: "内部服务 Key", key: "abcdef1234567890abcdef1234567890", appId: "app-lab", enabled: true, expiresAt: "never", createdAt: "2026-01-01 00:00:00" },
+  { id: "ak-002", name: "合作伙伴 Key", key: "00000000000000000000000000000000", appId: "app-erp", enabled: true, expiresAt: "never", createdAt: "2026-01-01 00:00:00" },
 ];
 
 const apps = [
-  { id: 1, code: "dashboard", name: "数据看板" },
-  { id: 2, code: "billing", name: "计费系统" },
+  { id: "app-lab", code: "lab-management", name: "建筑工程实验室管理系统" },
+  { id: "app-erp", code: "erp", name: "企业资源计划系统" },
+  { id: "app-finance", code: "finance", name: "财务系统" },
 ];
 
 describe("M04.F02 api keys page", () => {
@@ -53,10 +54,10 @@ describe("M04.F02 api keys page", () => {
 
   fnTest(["M04.F02.I02"], "I02 提交 Dialog 调 POST /api/api-keys 并把新 Key 加进列表", async () => {
     const created = {
-      id: 99,
+      id: "ak-003",
       name: "alerting",
       key: "ffffffffffffffffffffffffffffffff",
-      appId: 1,
+      appId: "app-lab",
       enabled: true,
       expiresAt: "never",
       createdAt: "2026-07-18 12:00:00",
@@ -75,7 +76,7 @@ describe("M04.F02 api keys page", () => {
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("/api/api-keys");
     expect(init.method).toBe("POST");
-    expect(JSON.parse(init.body as string)).toMatchObject({ name: "alerting", appId: 1 });
+    expect(JSON.parse(init.body as string)).toMatchObject({ name: "alerting", appId: "app-lab" });
     await waitFor(() => expect(getAllByTestId("api-key-row").length).toBe(3));
   });
 
@@ -92,7 +93,7 @@ describe("M04.F02 api keys page", () => {
     fireEvent.click(toggleBtn);
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("/api/api-keys/1");
+    expect(url).toBe("/api/api-keys/ak-001");
     expect(init.method).toBe("PATCH");
   });
 
@@ -112,7 +113,7 @@ describe("M04.F02 api keys page", () => {
     fireEvent.click(buttons[buttons.length - 1] as HTMLElement);
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("/api/api-keys/1");
+    expect(url).toBe("/api/api-keys/ak-001");
     expect(init.method).toBe("DELETE");
   });
 });

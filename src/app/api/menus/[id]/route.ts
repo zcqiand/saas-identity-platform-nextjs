@@ -3,17 +3,12 @@ import * as menuStore from "@/lib/menu-store";
 
 /** M04.F01 菜单单条 CRUD */
 
-function parseId(id: string): number | null {
-  const n = Number(id);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } },
 ) {
-  const id = parseId(params.id);
-  if (id === null) {
+  const id = params.id;
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
   const m = await menuStore.getMenu(id);
@@ -25,8 +20,8 @@ export async function PUT(
   req: Request,
   { params }: { params: { id: string } },
 ) {
-  const id = parseId(params.id);
-  if (id === null) {
+  const id = params.id;
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
   let raw: unknown;
@@ -42,20 +37,28 @@ export async function PUT(
     name?: unknown;
     path?: unknown;
     parentId?: unknown;
+    icon?: unknown;
+    permission?: unknown;
     sort?: unknown;
     enabled?: unknown;
   };
   const patch: {
     name?: string;
     path?: string;
-    parentId?: number | null;
+    parentId?: string | null;
+    icon?: string | null;
+    permission?: string | null;
     sort?: number;
     enabled?: boolean;
   } = {};
   if (typeof b.name === "string") patch.name = b.name;
   if (typeof b.path === "string") patch.path = b.path;
   if (b.parentId === null) patch.parentId = null;
-  else if (typeof b.parentId === "number") patch.parentId = b.parentId;
+  else if (typeof b.parentId === "string") patch.parentId = b.parentId;
+  if (b.icon === null) patch.icon = null;
+  else if (typeof b.icon === "string") patch.icon = b.icon;
+  if (b.permission === null) patch.permission = null;
+  else if (typeof b.permission === "string") patch.permission = b.permission;
   if (typeof b.sort === "number") patch.sort = b.sort;
   if (typeof b.enabled === "boolean") patch.enabled = b.enabled;
   const u = await menuStore.updateMenu(id, patch);
@@ -67,8 +70,8 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } },
 ) {
-  const id = parseId(params.id);
-  if (id === null) {
+  const id = params.id;
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
   const ok = await menuStore.deleteMenu(id);

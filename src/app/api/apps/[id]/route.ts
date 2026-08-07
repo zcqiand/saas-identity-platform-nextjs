@@ -3,17 +3,12 @@ import * as appStore from "@/lib/app-store";
 
 /** M04.F01 应用单条 CRUD */
 
-function parseId(id: string): number | null {
-  const n = Number(id);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } },
 ) {
-  const id = parseId(params.id);
-  if (id === null) {
+  const id = params.id;
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
   const a = await appStore.getApp(id);
@@ -25,8 +20,8 @@ export async function PUT(
   req: Request,
   { params }: { params: { id: string } },
 ) {
-  const id = parseId(params.id);
-  if (id === null) {
+  const id = params.id;
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
   let raw: unknown;
@@ -63,8 +58,8 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } },
 ) {
-  const id = parseId(params.id);
-  if (id === null) {
+  const id = params.id;
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
   const ok = await appStore.deleteApp(id);

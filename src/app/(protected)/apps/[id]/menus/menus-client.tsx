@@ -34,9 +34,9 @@ import { Field } from "@/components/app/field";
  *   - I11 删除菜单 → 行内按钮 + ConfirmDialog 二次确认后 DELETE
  */
 export interface MenuRow extends Record<string, unknown> {
-  id: number;
-  appId: number;
-  parentId: number | null;
+  id: string;
+  appId: string;
+  parentId: string | null;
   code: string;
   name: string;
   path: string;
@@ -48,14 +48,14 @@ export interface MenuRow extends Record<string, unknown> {
 }
 
 export interface MenusClientProps {
-  appId: number;
+  appId: string;
   appName: string;
   initialMenus: MenuRow[];
 }
 
 export function MenusClient({ appId, appName, initialMenus }: MenusClientProps) {
   const [menus, setMenus] = useState<MenuRow[]>(initialMenus);
-  const [creating, setCreating] = useState<{ parentId: number | null } | null>(null);
+  const [creating, setCreating] = useState<{ parentId: string | null } | null>(null);
   const [editing, setEditing] = useState<MenuRow | null>(null);
   const [deleting, setDeleting] = useState<MenuRow | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -209,8 +209,8 @@ export function MenusClient({ appId, appName, initialMenus }: MenusClientProps) 
 interface NewMenuDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  appId: number;
-  parentId: number | null;
+  appId: string;
+  parentId: string | null;
   tree: MenuRow[];
   submitting: boolean;
   setSubmitting: (v: boolean) => void;
@@ -261,7 +261,7 @@ function NewMenuDialog({
           code: code.trim(),
           name: name.trim(),
           path: path.trim(),
-          parentId: pickedParentId === "" ? null : Number(pickedParentId),
+          parentId: pickedParentId === "" ? null : pickedParentId,
           sort: Number.isFinite(sortNum) ? sortNum : 0,
           enabled,
         }),
@@ -419,7 +419,7 @@ function EditMenuDialog({
         body: JSON.stringify({
           name: name.trim(),
           path: path.trim(),
-          parentId: pickedParentId === "" ? null : Number(pickedParentId),
+          parentId: pickedParentId === "" ? null : pickedParentId,
           sort: Number.isFinite(sortNum) ? sortNum : 0,
           enabled,
         }),

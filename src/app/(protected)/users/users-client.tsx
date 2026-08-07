@@ -40,12 +40,14 @@ import { Field } from "@/components/app/field";
 // @entry M02.F02.I04 角色筛选（role-filter select）
 // @entry M02.F02.I08 错误清错（client 端 catch 后 toast.error，不动本地状态）
 export interface UserRow extends Record<string, unknown> {
-  id: number;
+  id: string;
   username: string;
   displayName: string;
   email: string;
-  roles: string;
+  /** v0.3.0：PG text[] 原生数组（不是 JSON 字符串） */
+  roles: string[];
   status: string;
+  tenantId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -57,16 +59,10 @@ export interface UsersClientProps {
 const ALL_ROLES = ["admin", "manager", "member", "viewer"] as const;
 type RoleLiteral = (typeof ALL_ROLES)[number];
 
-function parseUserRoles(rolesJson: string): RoleLiteral[] {
-  try {
-    const parsed: unknown = JSON.parse(rolesJson);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((r): r is RoleLiteral =>
-      (ALL_ROLES as readonly string[]).includes(r as string),
-    );
-  } catch {
-    return [];
-  }
+function parseUserRoles(roles: string[]): RoleLiteral[] {
+  return roles.filter((r): r is RoleLiteral =>
+    (ALL_ROLES as readonly string[]).includes(r),
+  );
 }
 
 export function UsersClient({ initialUsers }: UsersClientProps) {
@@ -83,7 +79,7 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
       !search ||
       u.username.toLowerCase().includes(search.toLowerCase()) ||
       u.displayName.toLowerCase().includes(search.toLowerCase());
-    const matchRole = !role || u.roles.includes(`"${role}"`);
+    const matchRole = !role || u.roles.includes(role);
     return matchKw && matchRole;
   });
 

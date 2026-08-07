@@ -29,7 +29,8 @@ type Tab = "all" | "login" | "operation" | "security";
  *   - I07 导出 CSV → 顶部按钮 data-fn="M05.F01.I07" 调 POST /api/audit-logs 下载
  */
 export interface AuditLogRow extends Record<string, unknown> {
-  id: number;
+  id: string;
+  tenantId?: string;
   action: string;
   operator: string;
   resource: string;

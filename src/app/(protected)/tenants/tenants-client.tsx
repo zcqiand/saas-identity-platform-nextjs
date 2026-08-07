@@ -36,7 +36,7 @@ import { ConfirmDialog } from "@/components/app/confirm-dialog";
  *   - I09 切换租户 → 顶部按钮 + Dialog 调 POST /api/tenants/switch
  */
 interface TenantRow {
-  id: number;
+  id: string;
   code: string;
   name: string;
   theme: string;
@@ -337,8 +337,7 @@ function SwitchTenantDialog({
   );
 
   async function handleSubmit() {
-    const id = Number(targetId);
-    if (!Number.isInteger(id) || id <= 0) {
+    if (!targetId) {
       toast.error("请选择目标租户");
       return;
     }
@@ -347,15 +346,15 @@ function SwitchTenantDialog({
       const res = await fetch("/api/tenants/switch", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ tenantId: id }),
+        body: JSON.stringify({ tenantId: targetId }),
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         toast.error(err.error ?? `切换失败 (${res.status})`);
         return;
       }
-      const t = tenants.find((x) => x.id === id);
-      toast.success(`已切换到 ${t?.name ?? id}`);
+      const t = tenants.find((x) => x.id === targetId);
+      toast.success(`已切换到 ${t?.name ?? targetId}`);
       onOpenChange(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "网络错误");

@@ -23,13 +23,13 @@ export default async function ProtectedGroupLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = await cookies();
-  const cookieVal = cookieStore.get("saas_current_tenant")?.value;
-  const cookieId = cookieVal ? Number(cookieVal) : null;
+  // v0.3.0：tenants.id 从 serial 改 text，cookie 存的就是 text id（如 "acme"），原样透传
+  const cookieId = cookieStore.get("saas_current_tenant")?.value ?? null;
 
   let css: string | null = null;
   let tenantName: string | null = null;
 
-  if (cookieId && Number.isInteger(cookieId) && cookieId > 0) {
+  if (cookieId) {
     setCurrentTenant(cookieId);
     const t = await getCurrentTenant();
     if (t) {
@@ -37,7 +37,7 @@ export default async function ProtectedGroupLayout({
       css = applyTheme(t.theme);
     }
   }
-  // 没 cookie / cookie 解析失败 → 不渲染 <style>（保持默认主题）
+  // 没 cookie / 该 id 查无租户 → 不渲染 <style>（保持默认主题）
   if (css === null) css = clearTheme();
 
   return (

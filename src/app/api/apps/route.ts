@@ -4,6 +4,7 @@ import * as appStore from "@/lib/app-store";
 /** M04.F01.I12 应用 store actions 内部接口 — 应用 CRUD route handlers */
 
 interface CreateAppBody {
+  id?: unknown;
   code?: unknown;
   name?: unknown;
   type?: unknown;
@@ -26,13 +27,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "body must be object" }, { status: 400 });
   }
   const b = raw as CreateAppBody;
-  if (typeof b.code !== "string" || typeof b.name !== "string") {
+  if (
+    typeof b.id !== "string" ||
+    typeof b.code !== "string" ||
+    typeof b.name !== "string"
+  ) {
     return NextResponse.json(
-      { error: "missing required fields: code, name" },
+      { error: "missing required fields: id, code, name" },
       { status: 400 },
     );
   }
   const created = await appStore.createApp({
+    id: b.id,
     code: b.code,
     name: b.name,
     type: typeof b.type === "string" ? b.type : undefined,

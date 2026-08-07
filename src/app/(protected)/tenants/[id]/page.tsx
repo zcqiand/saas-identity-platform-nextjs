@@ -11,11 +11,10 @@ export default async function TenantEditPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const numericId = Number(id);
-  if (!Number.isInteger(numericId) || numericId <= 0) {
+  if (!id) {
     notFound();
   }
-  const tenant = await getTenant(numericId);
+  const tenant = await getTenant(id);
   if (!tenant) {
     notFound();
   }

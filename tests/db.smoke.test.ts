@@ -9,9 +9,12 @@ import { healthCheck } from "@/db/schema";
 
 describe("DB smoke", () => {
   it("can insert + select from health_check", async () => {
-    const inserted = (await db.insert(healthCheck).values({ ok: 1 }).returning())[0];
+    const inserted = (await db
+      .insert(healthCheck)
+      .values({ id: "smoke-1", ok: 1 })
+      .returning())[0];
     if (!inserted) throw new Error("insert returned no row");
-    expect(inserted.id).toBeGreaterThan(0);
+    expect(inserted.id).toBe("smoke-1");
     expect(inserted.checkedAt).toBeTruthy();
   });
 });

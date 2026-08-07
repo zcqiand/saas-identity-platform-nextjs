@@ -13,24 +13,24 @@ import { db } from "@/db";
 import { tenants, type NewTenant, type Tenant } from "@/db/schema";
 
 /** 当前租户的进程内缓存。SSR 启动时由 (protected)/layout.tsx 从 cookie 灌入 */
-let currentTenantId: number | null = null;
+let currentTenantId: string | null = null;
 
 export async function listTenants(): Promise<Tenant[]> {
   return db.select().from(tenants);
 }
 
-export async function getTenant(id: number): Promise<Tenant | null> {
+export async function getTenant(id: string): Promise<Tenant | null> {
   const [row] = await db.select().from(tenants).where(eq(tenants.id, id));
   return row ?? null;
 }
 
-export async function createTenant(input: Omit<NewTenant, "id" | "createdAt">): Promise<Tenant> {
+export async function createTenant(input: Omit<NewTenant, "createdAt">): Promise<Tenant> {
   const [row] = await db.insert(tenants).values(input).returning();
   return row!;
 }
 
 export async function updateTenant(
-  id: number,
+  id: string,
   patch: Partial<Pick<NewTenant, "name" | "theme">>,
 ): Promise<Tenant | null> {
   const existing = await getTenant(id);
@@ -42,12 +42,12 @@ export async function updateTenant(
   return getTenant(id);
 }
 
-export async function deleteTenant(id: number): Promise<boolean> {
+export async function deleteTenant(id: string): Promise<boolean> {
   const result = await db.delete(tenants).where(eq(tenants.id, id));
   return (result.rowCount ?? 0) > 0;
 }
 
-export function setCurrentTenant(id: number): void {
+export function setCurrentTenant(id: string): void {
   currentTenantId = id;
 }
 

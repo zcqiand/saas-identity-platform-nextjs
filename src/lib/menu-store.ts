@@ -13,42 +13,25 @@ export async function listMenus(): Promise<AppMenu[]> {
   return db.select().from(appMenus);
 }
 
-export async function listMenusByApp(appId: number): Promise<AppMenu[]> {
+export async function listMenusByApp(appId: string): Promise<AppMenu[]> {
   return db.select().from(appMenus).where(eq(appMenus.appId, appId));
 }
 
-export async function getMenu(id: number): Promise<AppMenu | null> {
+export async function getMenu(id: string): Promise<AppMenu | null> {
   const [row] = await db.select().from(appMenus).where(eq(appMenus.id, id));
   return row ?? null;
 }
 
-export async function createMenu(input: {
-  appId: number;
-  code: string;
-  name: string;
-  path: string;
-  parentId?: number | null;
-  sort?: number;
-  enabled?: boolean;
-}): Promise<AppMenu> {
-  const [row] = await db
-    .insert(appMenus)
-    .values({
-      appId: input.appId,
-      code: input.code,
-      name: input.name,
-      path: input.path,
-      parentId: input.parentId ?? null,
-      sort: input.sort ?? 0,
-      enabled: input.enabled ?? true,
-    } satisfies NewAppMenu)
-    .returning();
+export async function createMenu(
+  input: Omit<NewAppMenu, "createdAt" | "updatedAt">,
+): Promise<AppMenu> {
+  const [row] = await db.insert(appMenus).values(input).returning();
   return row!;
 }
 
 export async function updateMenu(
-  id: number,
-  patch: Partial<Pick<NewAppMenu, "name" | "path" | "parentId" | "sort" | "enabled">>,
+  id: string,
+  patch: Partial<Pick<NewAppMenu, "name" | "path" | "parentId" | "sort" | "enabled" | "icon" | "permission">>,
 ): Promise<AppMenu | null> {
   const existing = await getMenu(id);
   if (!existing) return null;
@@ -59,6 +42,8 @@ export async function updateMenu(
     parentId: patch.parentId === undefined ? existing.parentId : patch.parentId,
     sort: patch.sort ?? existing.sort,
     enabled: patch.enabled ?? existing.enabled,
+    icon: patch.icon === undefined ? existing.icon : patch.icon,
+    permission: patch.permission === undefined ? existing.permission : patch.permission,
   };
   await db.update(appMenus)
     .set({
@@ -67,18 +52,20 @@ export async function updateMenu(
       parentId: merged.parentId,
       sort: merged.sort,
       enabled: merged.enabled,
+      icon: merged.icon,
+      permission: merged.permission,
     })
     .where(eq(appMenus.id, id));
   return getMenu(id);
 }
 
-export async function deleteMenu(id: number): Promise<boolean> {
+export async function deleteMenu(id: string): Promise<boolean> {
   const result = await db.delete(appMenus).where(eq(appMenus.id, id));
   return (result.rowCount ?? 0) > 0;
 }
 
 /** 递归 CTE：用 db.execute 跑原生 SQL，返回树形节点（depth 缩进用）。列别名 camelCase。 */
-export async function getMenuTree(appId: number): Promise<MenuTreeNode[]> {
+export async function getMenuTree(appId: string): Promise<MenuTreeNode[]> {
   const result = await db.execute(sql`
     WITH RECURSIVE menu_tree(id, app_id, parent_id, code, name, path, sort, enabled, created_at, updated_at, depth) AS (
       SELECT id, app_id, parent_id, code, name, path, sort, enabled, created_at, updated_at, 0

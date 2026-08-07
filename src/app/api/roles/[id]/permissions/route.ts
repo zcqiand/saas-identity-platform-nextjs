@@ -3,17 +3,12 @@ import * as roleStore from "@/lib/role-store";
 
 /** M03.F01.I07 — 角色菜单权限绑定 route handler */
 
-function parseId(id: string): number | null {
-  const n = Number(id);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } },
 ) {
-  const id = parseId(params.id);
-  if (id === null) {
+  const id = params.id;
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
   const role = await roleStore.getRole(id);
@@ -26,8 +21,8 @@ export async function PUT(
   req: Request,
   { params }: { params: { id: string } },
 ) {
-  const id = parseId(params.id);
-  if (id === null) {
+  const id = params.id;
+  if (!id) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
   let raw: unknown;

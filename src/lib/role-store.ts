@@ -8,18 +8,22 @@ import { rolePermissions, roles, type NewRole, type Role } from "@/db/schema";
 // @entry M03.F02.I05 — 权限组 store actions 内部接口（同文件，role_permissions 关联操作）
 // @entry M03.F03.I05 — 用户组 store actions 内部接口（listRoles 用于跨组权限推导，待 M05）
 
-/** M03.F01.I08 — 角色 store（CRUD + role_permissions 关联） */
+/** M03.F01.I08 — 角色 store（CRUD + role_permissions 关联）
+ *  v0.3.0：PK 改 text；tenantId required
+ */
 
 export async function listRoles(): Promise<Role[]> {
   return db.select().from(roles);
 }
 
-export async function getRole(id: number): Promise<Role | null> {
+export async function getRole(id: string): Promise<Role | null> {
   const [row] = await db.select().from(roles).where(eq(roles.id, id));
   return row ?? null;
 }
 
 export async function createRole(input: {
+  id: string;
+  tenantId: string;
   code: string;
   name: string;
   description?: string;
@@ -28,17 +32,19 @@ export async function createRole(input: {
   const [row] = await db
     .insert(roles)
     .values({
+      id: input.id,
+      tenantId: input.tenantId,
       code: input.code,
       name: input.name,
       description: input.description,
       enabled: input.enabled ?? true,
-    })
+    } satisfies Omit<NewRole, "createdAt" | "updatedAt">)
     .returning();
   return row!;
 }
 
 export async function updateRole(
-  id: number,
+  id: string,
   patch: { name?: string; description?: string; enabled?: boolean },
 ): Promise<Role | null> {
   const existing = await getRole(id);
@@ -55,12 +61,12 @@ export async function updateRole(
   return getRole(id);
 }
 
-export async function deleteRole(id: number): Promise<boolean> {
+export async function deleteRole(id: string): Promise<boolean> {
   const result = await db.delete(roles).where(eq(roles.id, id));
   return (result.rowCount ?? 0) > 0;
 }
 
-export async function getRolePermissions(roleId: number): Promise<string[]> {
+export async function getRolePermissions(roleId: string): Promise<string[]> {
   const rows = await db
     .select({ code: rolePermissions.permissionCode })
     .from(rolePermissions)
@@ -69,7 +75,7 @@ export async function getRolePermissions(roleId: number): Promise<string[]> {
 }
 
 /** D18 决策：setRoleMenuPermissions 占位 MVP；UI 留 M04 */
-export async function setRolePermissions(roleId: number, perms: string[]): Promise<void> {
+export async function setRolePermissions(roleId: string, perms: string[]): Promise<void> {
   // CASCADE 删旧的
   await db.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId));
   for (const code of perms) {
@@ -87,7 +93,7 @@ export function clearErrors(): void {
 }
 
 // 验证 roleId 存在（用于 D14 auth-store 集成）
-export async function roleHasPermission(roleId: number, code: string): Promise<boolean> {
+export async function roleHasPermission(roleId: string, code: string): Promise<boolean> {
   const [row] = await db
     .select()
     .from(rolePermissions)
