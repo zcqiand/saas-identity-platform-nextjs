@@ -51,6 +51,7 @@ import {
   RISK_CONTROL,
   NOTIFICATION_CONFIG,
   OPEN_PLATFORM_CONFIG,
+  PLATFORM_SETTINGS,
   AUDIT_LOGS,
 } from "@saas/identity-platform-shared/seeds";
 
@@ -206,6 +207,14 @@ export async function seedDatabase(): Promise<void> {
       createdAt: isoToPg(g.createdAt),
       updatedAt: isoToPg(g.updatedAt ?? g.createdAt),
     });
+    // v0.3.1：shared user-groups.json 加 userIds，灌 user_group_members 中间表
+    for (const userId of g.userIds ?? []) {
+      await tx.insert(userGroupMembers).values({
+        groupId: g.id,
+        userId,
+        joinedAt: isoToPg(g.createdAt),
+      });
+    }
   }
   for (const a of APPS) {
     await tx.insert(apps).values({
@@ -395,6 +404,16 @@ export async function seedDatabase(): Promise<void> {
       provider: p.provider,
       clientId: p.clientId ?? null,
       enabled: p.enabled,
+    });
+  }
+
+  // v0.3.1：灌 platform_settings 表（M06 7 个 settings/* 页用；与 6 张单例并存）
+  for (const ps of PLATFORM_SETTINGS) {
+    await tx.insert(platformSettings).values({
+      id: ps.id,
+      key: ps.id,
+      value: ps.value,
+      description: ps.description ?? null,
     });
   }
   for (const a of AUDIT_LOGS) {

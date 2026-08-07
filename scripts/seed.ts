@@ -32,6 +32,7 @@ import {
   RISK_CONTROL,
   NOTIFICATION_CONFIG,
   OPEN_PLATFORM_CONFIG,
+  PLATFORM_SETTINGS,
   AUDIT_LOGS,
 } from "@saas/identity-platform-shared/seeds";
 import * as schema from "../src/db/schema";
@@ -209,6 +210,14 @@ async function seed(): Promise<void> {
       createdAt: isoToPg(g.createdAt),
       updatedAt: isoToPg(g.updatedAt ?? g.createdAt),
     });
+    // v0.3.1：shared user-groups.json 加 userIds，灌 user_group_members 中间表
+    for (const userId of g.userIds ?? []) {
+      await db.insert(schema.userGroupMembers).values({
+        groupId: g.id,
+        userId,
+        joinedAt: isoToPg(g.createdAt),
+      });
+    }
   }
 
   // shared APPS 无 type 字段，让 schema 默认 'web'
@@ -414,6 +423,16 @@ async function seed(): Promise<void> {
     });
   }
 
+  // v0.3.1：灌 platform_settings 表（M06 7 个 settings/* 页用；与 6 张单例并存）
+  for (const ps of PLATFORM_SETTINGS) {
+    await db.insert(schema.platformSettings).values({
+      id: ps.id,
+      key: ps.id,
+      value: ps.value,
+      description: ps.description ?? null,
+    });
+  }
+
   // shared AUDIT_LOGS 无 tenantId，可选 → null
   for (const a of AUDIT_LOGS) {
     await db.insert(schema.auditLogs).values({
@@ -444,6 +463,7 @@ async function seed(): Promise<void> {
     role_permissions: (await db.select().from(schema.rolePermissions)).length,
     role_menu_permissions: (await db.select().from(schema.roleMenuPermissions)).length,
     user_groups: (await db.select().from(schema.userGroups)).length,
+    user_group_members: (await db.select().from(schema.userGroupMembers)).length,
     permission_groups: (await db.select().from(schema.permissionGroups)).length,
     apps: (await db.select().from(schema.apps)).length,
     app_menus: (await db.select().from(schema.appMenus)).length,
@@ -453,6 +473,7 @@ async function seed(): Promise<void> {
     login_methods: (await db.select().from(schema.loginMethods)).length,
     sso_providers: (await db.select().from(schema.ssoProviders)).length,
     oauth2_providers: (await db.select().from(schema.oauth2Providers)).length,
+    platform_settings: (await db.select().from(schema.platformSettings)).length,
     audit_logs: (await db.select().from(schema.auditLogs)).length,
   };
   console.log("[seed] done — saas_dev populated from shared:");
