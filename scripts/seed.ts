@@ -1,22 +1,39 @@
 /**
  * saas_dev 灌种子数据入口（PostgreSQL 版）。
  *
+ * v0.3.0：完全改读 @saas/identity-platform-shared/seeds。
+ * shared 是契约真理源，本脚本做字段适配（shared 字段名 → drizzle 列名/类型转换）。
+ *
  * 用法：
  *   DATABASE_URL='postgresql://…' npm run db:seed
  *   DATABASE_URL='postgresql://…' npx tsx scripts/seed.ts
- *
- * 这个脚本**不**走 src/db/index.ts（它有 `import "server-only"`，tsx 没有 next bundler
- * 上下文会抛），而是自己开 pg.Pool + drizzle 直连 DATABASE_URL。fixture 与 src/db/seed.ts
- * 的精简版互补——这里更全（5 user / 4 org / 完整 platform_settings 等），用于 saas_dev
- * 端到端联调；src/db/seed.ts 是测试用精简版（11 表 + 4 关联表的最小集）。
- *
- * 覆盖表：tenants / users / orgs / positions / roles / role_permissions /
- *        user_groups / permission_groups / apps / app_menus / api_keys /
- *        platform_settings / sso_states / audit_logs / tenant_users 等。
  */
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq } from "drizzle-orm";
+import {
+  TENANTS,
+  USERS,
+  DEPARTMENTS,
+  POSITIONS,
+  ROLE_PERMISSIONS,
+  USER_GROUPS,
+  PERMISSION_GROUPS,
+  APPS,
+  APP_MENUS,
+  API_KEYS,
+  MENU_TEMPLATES,
+  LOGIN_METHODS,
+  SSO_PROVIDERS,
+  OAUTH2_PROVIDERS,
+  OAUTH_SCOPES,
+  TOKEN_CONFIG,
+  LOGIN_SECURITY,
+  PASSWORD_POLICY,
+  RISK_CONTROL,
+  NOTIFICATION_CONFIG,
+  OPEN_PLATFORM_CONFIG,
+  AUDIT_LOGS,
+} from "@saas/identity-platform-shared/seeds";
 import * as schema from "../src/db/schema";
 
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -28,290 +45,418 @@ if (!DATABASE_URL) {
 const pool = new Pool({ connectionString: DATABASE_URL });
 const db = drizzle(pool, { schema });
 
-// ---------------------------------------------------------------------------
-// seed fixtures
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────
+// 字段适配 helpers
+// ─────────────────────────────────────────────────────────────────────────
 
-const TENANT_SEED = [
-  { code: "acme", name: "Acme Corp", theme: "default" },
-  { code: "globex", name: "Globex Inc", theme: "dark" },
-  { code: "initech", name: "Initech LLC", theme: "light" },
-] as const;
+function isoToPg(iso: string | undefined, fallback?: string): string {
+  if (iso) return iso.replace("T", " ").slice(0, 19);
+  if (fallback) return fallback;
+  return new Date().toISOString().replace("T", " ").slice(0, 19);
+}
 
-const USER_SEED = [
-  { username: "alice", displayName: "Alice Admin", email: "alice@acme.com", roles: '["admin"]', status: "active" },
-  { username: "bob", displayName: "Bob Manager", email: "bob@acme.com", roles: '["manager"]', status: "active" },
-  { username: "carol", displayName: "Carol Member", email: "carol@acme.com", roles: '["member"]', status: "active" },
-  { username: "dave", displayName: "Dave Viewer", email: "dave@acme.com", roles: '["viewer"]', status: "active" },
-  { username: "eve", displayName: "Eve Pending", email: "eve@acme.com", roles: '["member"]', status: "pending" },
-] as const;
+function themeString(theme: unknown): string {
+  return typeof theme === "string" ? theme : "default";
+}
 
-const ORG_SEED = [
-  // id 顺序：parent 必须先于 child
-  { id: 1, name: "Acme 总公司", parentId: null, sort: 0, enabled: true },
-  { id: 2, name: "技术中心", parentId: 1, sort: 0, enabled: true },
-  { id: 3, name: "Web 组", parentId: 2, sort: 0, enabled: true },
-  { id: 4, name: "运营中心", parentId: 1, sort: 1, enabled: true },
-] as const;
+function apiKeyFullKey(keyPrefix: string): string {
+  return `${keyPrefix}${"0".repeat(24)}`;
+}
 
-const POSITION_SEED = [
-  { code: "ceo", name: "CEO", description: "首席执行官", sort: 1, enabled: true },
-  { code: "eng", name: "工程经理", description: null, sort: 10, enabled: true },
-  { code: "qa", name: "QA", description: null, sort: 20, enabled: true },
-] as const;
+// ─────────────────────────────────────────────────────────────────────────
+// 本地补充：shared 无的派生数据
+// ─────────────────────────────────────────────────────────────────────────
+const HEALTH_CHECK_SEED = [{ id: "hc-001", ok: 1 }];
 
-const ROLE_SEED = [
-  { code: "admin", name: "Administrator", description: "All perms", enabled: true },
-  { code: "manager", name: "Manager", description: null, enabled: true },
-  { code: "member", name: "Member", description: null, enabled: true },
-  { code: "viewer", name: "Viewer", description: null, enabled: true },
-] as const;
-
-// 给 admin 角色预置 4 个权限；manager 给 2 个；member/viewer 给 1 个
-const ROLE_PERMISSION_SEED: Array<{ roleCode: string; permissionCode: string }> = [
-  { roleCode: "admin", permissionCode: "user:read" },
-  { roleCode: "admin", permissionCode: "user:write" },
-  { roleCode: "admin", permissionCode: "role:read" },
-  { roleCode: "admin", permissionCode: "role:write" },
-  { roleCode: "manager", permissionCode: "user:read" },
-  { roleCode: "manager", permissionCode: "user:write" },
-  { roleCode: "member", permissionCode: "user:read" },
-  { roleCode: "viewer", permissionCode: "user:read" },
-];
-
-const USER_GROUP_SEED = [
-  { id: 1, name: "Engineering Team", description: "All eng", enabled: true },
-  { id: 2, name: "All Users", description: null, enabled: true },
-] as const;
-
-const PERMISSION_GROUP_SEED = [
-  {
-    name: "admin-pack",
-    description: "管理员全部权限",
-    permissions: ["user:read", "user:write", "role:read", "role:write", "tenant:read", "tenant:write", "audit:read", "platform:admin"],
-    sort: 0,
-    enabled: true,
-  },
-  {
-    name: "read-pack",
-    description: "只读权限集合",
-    permissions: ["user:read", "role:read", "tenant:read"],
-    sort: 1,
-    enabled: true,
-  },
-] as const;
-
-const APP_SEED = [
-  { code: "dashboard", name: "数据看板", type: "web", description: null, enabled: true },
-  { code: "billing", name: "计费系统", type: "web", description: null, enabled: true },
-] as const;
-
-const APP_MENU_SEED = [
-  // dashboard 的菜单
-  { appCode: "dashboard", code: "overview", name: "总览", path: "/dashboard", parentCode: null, sort: 0, enabled: true },
-  { appCode: "dashboard", code: "metrics", name: "指标", path: "/dashboard/metrics", parentCode: "overview", sort: 0, enabled: true },
-  { appCode: "dashboard", code: "alerts", name: "告警", path: "/dashboard/alerts", parentCode: "overview", sort: 1, enabled: true },
-  // billing 的菜单
-  { appCode: "billing", code: "invoices", name: "账单", path: "/billing/invoices", parentCode: null, sort: 0, enabled: true },
-] as const;
-
-const API_KEY_SEED = [
-  { name: "ci-deploy", key: "abcdef1234567890abcdef1234567890", appCode: "dashboard", expiresAt: "never", enabled: true },
-  { name: "metric-bot", key: "00000000000000000000000000000000", appCode: "billing", expiresAt: "never", enabled: true },
-] as const;
-
-const SSO_STATE_SEED = [
-  { state: "seed-state-1", expiresAt: "2099-12-31 23:59:59" },
-  { state: "seed-state-2", expiresAt: "2099-12-31 23:59:59" },
-] as const;
-
-const AUDIT_LOG_SEED: Array<{ action: string; operator: string; resource: string; resourceId: string; detail: string; ip: string; timestamp: string }> = (() => {
-  const now = Date.now();
-  const day = 86_400_000;
-  const iso = (offsetDays: number) => new Date(now - offsetDays * day).toISOString().replace("T", " ").slice(0, 19);
-  return [
-    { action: "login", operator: "alice", resource: "auth", resourceId: "alice", detail: "登录成功", ip: "192.168.1.10", timestamp: iso(0) },
-    { action: "login", operator: "bob", resource: "auth", resourceId: "bob", detail: "登录成功", ip: "192.168.1.11", timestamp: iso(0) },
-    { action: "create", operator: "alice", resource: "tenant", resourceId: "acme", detail: "新建租户 acme", ip: "192.168.1.10", timestamp: iso(1) },
-    { action: "update", operator: "alice", resource: "user", resourceId: "carol", detail: "更新 carol roles", ip: "192.168.1.10", timestamp: iso(2) },
-    { action: "permission_change", operator: "alice", resource: "role", resourceId: "admin", detail: "调整 admin 权限", ip: "192.168.1.10", timestamp: iso(3) },
-    { action: "delete", operator: "alice", resource: "api_key", resourceId: "ak_test_rw_002", detail: "删除 API Key", ip: "192.168.1.10", timestamp: iso(4) },
-  ];
-})();
-
-const PLATFORM_SETTING_SEED = [
-  // 安全策略
-  { key: "security.ip_whitelist", value: "[]", description: "IP 白名单" },
-  { key: "security.ip_blacklist", value: "[]", description: "IP 黑名单" },
-  { key: "security.lockout_enabled", value: "true", description: "启用登录失败锁定" },
-  { key: "security.lockout_threshold", value: "5", description: "锁定阈值" },
-  { key: "security.lockout_duration_min", value: "30", description: "锁定时长（分钟）" },
-  { key: "security.region_lock_enabled", value: "false", description: "启用地区限制" },
-  { key: "security.allowed_regions", value: "[]", description: "允许地区" },
-  // 登录方式
-  { key: "login_method.password_enabled", value: "true", description: "密码登录启用" },
-  { key: "login_method.sso_enabled", value: "true", description: "SSO 启用" },
-  { key: "login_method.oauth2_enabled", value: "true", description: "OAuth2 启用" },
-  // 密码策略
-  { key: "password.enabled", value: "true", description: "启用密码策略" },
-  { key: "password.min_length", value: "8", description: "最小长度" },
-  { key: "password.require_uppercase", value: "true", description: "需大写" },
-  { key: "password.require_lowercase", value: "true", description: "需小写" },
-  { key: "password.require_digit", value: "true", description: "需数字" },
-  { key: "password.require_special", value: "false", description: "需特殊字符" },
-  { key: "password.expiry_days", value: "90", description: "过期天数" },
-  { key: "password.history_count", value: "5", description: "历史密码数量" },
-  // Token
-  { key: "token.access_ttl_sec", value: "3600", description: "access token TTL 秒" },
-  { key: "token.refresh_ttl_sec", value: "2592000", description: "refresh token TTL 秒" },
-  { key: "token.rotate_on_refresh", value: "true", description: "refresh 时轮换" },
-  // 通知
-  { key: "notify.email_enabled", value: "true", description: "邮件通知" },
-  { key: "notify.sms_enabled", value: "false", description: "短信通知" },
-  { key: "notify.webhook_enabled", value: "true", description: "Webhook 通知" },
-  { key: "notify.event_user_invite", value: "true", description: "用户邀请事件" },
-  { key: "notify.event_password_change", value: "true", description: "密码变更事件" },
-  { key: "notify.event_permission_change", value: "true", description: "权限变更事件" },
-  // 开放 API
-  { key: "openapi.enabled", value: "true", description: "开放 API 启用" },
-  { key: "openapi.rate_limit_per_min", value: "600", description: "每分钟限流" },
-  { key: "openapi.require_signature", value: "true", description: "强制签名" },
-  // 风险
-  { key: "risk.max_failed_logins", value: "5", description: "风险：最大失败登录" },
-  { key: "risk.suspicious_ip_alert", value: "true", description: "可疑 IP 告警" },
-  { key: "risk.unusual_time_alert", value: "true", description: "非常规时间告警" },
-  { key: "risk.geo_anomaly_alert", value: "false", description: "地理异常告警" },
-  // 平台
-  { key: "platform.name", value: "SaaS 统一身份管理", description: "平台名" },
-  { key: "platform.copyright", value: "© 2026 Acme Corp", description: "版权" },
-  { key: "platform.support_email", value: "support@acme.com", description: "支持邮箱" },
-  { key: "platform.privacy_url", value: "https://acme.com/privacy", description: "隐私政策链接" },
-  { key: "platform.terms_url", value: "https://acme.com/terms", description: "服务条款链接" },
-  { key: "platform.maintenance_mode", value: "false", description: "维护模式" },
-  { key: "platform.announcement", value: "", description: "平台公告" },
-] as const;
-
+// ─────────────────────────────────────────────────────────────────────────
+// 灌库主流程
+// ─────────────────────────────────────────────────────────────────────────
 async function seed(): Promise<void> {
-  // Wipe in FK-safe order (children first)
-  await db.delete(schema.userGroupMembers);
-  await db.delete(schema.userGroups);
-  await db.delete(schema.positionMembers);
-  await db.delete(schema.positions);
+  // Wipe children first
+  await db.delete(schema.roleMenuPermissions);
   await db.delete(schema.rolePermissions);
-  await db.delete(schema.roles);
+  await db.delete(schema.userGroupMembers);
   await db.delete(schema.permissionGroups);
-  await db.delete(schema.orgs);
-  await db.delete(schema.tenantUsers);
-  await db.delete(schema.users);
+  await db.delete(schema.userGroups);
   await db.delete(schema.appMenus);
-  await db.delete(schema.apps);
   await db.delete(schema.apiKeys);
+  await db.delete(schema.menuTemplates);
+  await db.delete(schema.oauthScopes);
+  await db.delete(schema.tenantUsers);
+  await db.delete(schema.positions);
+  await db.delete(schema.users);
+  await db.delete(schema.departments);
+  await db.delete(schema.apps);
+  await db.delete(schema.tenants);
+  await db.delete(schema.loginMethods);
+  await db.delete(schema.ssoProviders);
+  await db.delete(schema.oauth2Providers);
+  await db.delete(schema.tokenConfig);
+  await db.delete(schema.loginSecurity);
+  await db.delete(schema.passwordPolicy);
+  await db.delete(schema.riskControl);
+  await db.delete(schema.notificationConfig);
+  await db.delete(schema.openPlatformConfig);
   await db.delete(schema.auditLogs);
   await db.delete(schema.platformSettings);
-  await db.delete(schema.ssoStates);
-  await db.delete(schema.tenants);
+  await db.delete(schema.healthCheck);
 
-  // Insert in FK-safe order (parents first)
-  for (const t of TENANT_SEED) await db.insert(schema.tenants).values(t);
-  for (const u of USER_SEED) await db.insert(schema.users).values(u);
-
-  // 给每个 user 配 tenant_users 关联（默认 acme + member）
-  for (const u of USER_SEED) {
-    const [userRow] = await db.select().from(schema.users).where(eq(schema.users.username, u.username));
-    const [tenantRow] = await db.select().from(schema.tenants).where(eq(schema.tenants.code, "acme"));
-    if (userRow && tenantRow) {
-      await db.insert(schema.tenantUsers).values({ tenantId: tenantRow.id, userId: userRow.id, role: u.username === "alice" ? "admin" : "member" });
-    }
-  }
-
-  for (const o of ORG_SEED) await db.insert(schema.orgs).values(o);
-  for (const p of POSITION_SEED) await db.insert(schema.positions).values(p);
-  for (const r of ROLE_SEED) await db.insert(schema.roles).values(r);
-
-  // role_permissions 需要 role.id
-  for (const rp of ROLE_PERMISSION_SEED) {
-    const [roleRow] = await db.select().from(schema.roles).where(eq(schema.roles.code, rp.roleCode));
-    if (roleRow) {
-      await db.insert(schema.rolePermissions).values({ roleId: roleRow.id, permissionCode: rp.permissionCode });
-    }
-  }
-  for (const g of USER_GROUP_SEED) await db.insert(schema.userGroups).values(g);
-  for (const pg of PERMISSION_GROUP_SEED) {
-    await db.insert(schema.permissionGroups).values({
-      name: pg.name,
-      description: pg.description,
-      permissions: JSON.stringify(pg.permissions),
-      sort: pg.sort,
-      enabled: pg.enabled,
+  // ── Insert parents first ────────────────────────────────────────────
+  // tenants: shared TENANTS 无 createdAt/code，用 id 充 code，UTC now 充 createdAt
+  for (const t of TENANTS) {
+    await db.insert(schema.tenants).values({
+      id: t.id,
+      code: t.id,
+      name: t.name,
+      theme: themeString(t.theme),
+      createdAt: isoToPg(undefined),
     });
   }
-  for (const a of APP_SEED) await db.insert(schema.apps).values(a);
-  // app_menus 需要 app.id 和（parent）menu.id
-  const menuIdByCode = new Map<string, number>();
-  for (const m of APP_MENU_SEED) {
-    const [appRow] = await db.select().from(schema.apps).where(eq(schema.apps.code, m.appCode));
-    if (!appRow) continue;
-    const parentId = m.parentCode ? menuIdByCode.get(`${m.appCode}:${m.parentCode}`) ?? null : null;
-    const [inserted] = await db.insert(schema.appMenus).values({
-      appId: appRow.id,
-      code: m.code,
-      name: m.name,
-      path: m.path,
-      parentId,
-      sort: m.sort,
-      enabled: m.enabled,
-    }).returning();
-    menuIdByCode.set(`${m.appCode}:${m.code}`, inserted.id);
+
+  for (const d of DEPARTMENTS) {
+    await db.insert(schema.departments).values({
+      id: d.id,
+      tenantId: d.tenantId,
+      name: d.name,
+      parentId: d.parentId ?? null,
+      sort: d.sort ?? 0,
+      enabled: d.enabled ?? true,
+      createdAt: isoToPg(d.createdAt),
+      updatedAt: isoToPg(d.updatedAt ?? d.createdAt),
+    });
   }
-  for (const k of API_KEY_SEED) {
-    const [appRow] = await db.select().from(schema.apps).where(eq(schema.apps.code, k.appCode));
-    if (appRow) {
-      await db.insert(schema.apiKeys).values({
-        name: k.name,
-        key: k.key,
-        appId: appRow.id,
-        expiresAt: k.expiresAt,
-        enabled: k.enabled,
+
+  for (const u of USERS) {
+    await db.insert(schema.users).values({
+      id: u.id,
+      username: u.username,
+      displayName: u.displayName,
+      email: u.email,
+      tenantId: u.tenantId,
+      departmentId: u.departmentId ?? null,
+      roles: u.roles as string[],
+      status: u.status,
+      createdAt: isoToPg(u.createdAt),
+      updatedAt: isoToPg(u.updatedAt ?? u.createdAt),
+    });
+  }
+
+  for (const u of USERS) {
+    await db.insert(schema.tenantUsers).values({
+      tenantId: u.tenantId,
+      userId: u.id,
+      role: (u.roles[0] ?? "member") as string,
+      joinedAt: isoToPg(u.createdAt),
+    });
+  }
+
+  for (const p of POSITIONS) {
+    await db.insert(schema.positions).values({
+      id: p.id,
+      tenantId: p.tenantId,
+      code: p.code,
+      name: p.name,
+      description: p.description ?? null,
+      sort: p.sort ?? 0,
+      enabled: p.enabled ?? true,
+      createdAt: isoToPg(p.createdAt),
+      updatedAt: isoToPg(p.updatedAt ?? p.createdAt),
+    });
+  }
+
+  // shared ROLE_PERMISSIONS 用 `permissions[]`（不是 `permissionCodes[]`）
+  for (const r of ROLE_PERMISSIONS) {
+    await db.insert(schema.roles).values({
+      id: r.id,
+      tenantId: r.tenantId,
+      code: r.code,
+      name: r.name,
+      description: r.description ?? null,
+      sort: r.sort ?? 0,
+      enabled: r.enabled ?? true,
+      createdAt: isoToPg(r.createdAt),
+      updatedAt: isoToPg(r.updatedAt ?? r.createdAt),
+    });
+    for (const perm of r.menuPermissions ?? []) {
+      try {
+        await db.insert(schema.roleMenuPermissions).values({
+          roleId: r.id,
+          menuId: perm.menuId,
+          actions: (perm.actions ?? ["view"]) as string[],
+          createdAt: isoToPg(r.createdAt),
+        });
+      } catch (e) {
+        const msg = (e as Error).message;
+        if (!msg.includes("foreign key constraint")) throw e;
+      }
+    }
+    for (const code of r.permissions ?? []) {
+      await db.insert(schema.rolePermissions).values({
+        roleId: r.id,
+        permissionCode: code,
+        createdAt: isoToPg(r.createdAt),
       });
     }
   }
-  for (const s of SSO_STATE_SEED) await db.insert(schema.ssoStates).values(s);
-  for (const log of AUDIT_LOG_SEED) await db.insert(schema.auditLogs).values(log);
-  for (const setting of PLATFORM_SETTING_SEED) await db.insert(schema.platformSettings).values(setting);
 
-  // Stats
-  const tenantsN = (await db.select().from(schema.tenants)).length;
-  const usersN = (await db.select().from(schema.users)).length;
-  const orgsN = (await db.select().from(schema.orgs)).length;
-  const positionsN = (await db.select().from(schema.positions)).length;
-  const rolesN = (await db.select().from(schema.roles)).length;
-  const rolePermsN = (await db.select().from(schema.rolePermissions)).length;
-  const userGroupsN = (await db.select().from(schema.userGroups)).length;
-  const permGroupsN = (await db.select().from(schema.permissionGroups)).length;
-  const appsN = (await db.select().from(schema.apps)).length;
-  const appMenusN = (await db.select().from(schema.appMenus)).length;
-  const apiKeysN = (await db.select().from(schema.apiKeys)).length;
-  const auditLogsN = (await db.select().from(schema.auditLogs)).length;
-  const platformSettingsN = (await db.select().from(schema.platformSettings)).length;
-
-  console.log("[seed] done — saas_dev populated:");
-  for (const [table, n] of Object.entries({
-    tenants: tenantsN,
-    users: usersN,
-    orgs: orgsN,
-    positions: positionsN,
-    roles: rolesN,
-    role_permissions: rolePermsN,
-    user_groups: userGroupsN,
-    permission_groups: permGroupsN,
-    apps: appsN,
-    app_menus: appMenusN,
-    api_keys: apiKeysN,
-    audit_logs: auditLogsN,
-    platform_settings: platformSettingsN,
-  })) {
-    console.log(`  ${table}: ${n}`);
+  for (const g of USER_GROUPS) {
+    await db.insert(schema.userGroups).values({
+      id: g.id,
+      tenantId: g.tenantId,
+      name: g.name,
+      description: g.description ?? null,
+      enabled: g.enabled ?? true,
+      createdAt: isoToPg(g.createdAt),
+      updatedAt: isoToPg(g.updatedAt ?? g.createdAt),
+    });
   }
+
+  // shared APPS 无 type 字段，让 schema 默认 'web'
+  for (const a of APPS) {
+    await db.insert(schema.apps).values({
+      id: a.id,
+      code: a.code,
+      name: a.name,
+      type: a.type ?? "web",
+      description: a.description ?? null,
+      theme: a.theme ?? null,
+      sort: a.sort ?? 0,
+      enabled: a.enabled ?? true,
+      createdAt: isoToPg(a.createdAt),
+      updatedAt: isoToPg(a.updatedAt ?? a.createdAt),
+    });
+  }
+
+  // shared APP_MENUS 无 code/icon，用 id 充 code
+  // shared 父菜单（grp-*）sort 高于子菜单：必须先插根（parentId=null）再插子，否则 FK 挂
+  const sortedMenus = [...APP_MENUS].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+  for (const m of sortedMenus.filter((x) => !x.parentId)) {
+    await db.insert(schema.appMenus).values({
+      id: m.id,
+      appId: m.appId,
+      parentId: null,
+      code: m.code ?? m.id,
+      name: m.name,
+      path: m.path,
+      icon: m.icon ?? null,
+      permission: m.permission ?? null,
+      sort: m.sort ?? 0,
+      enabled: m.enabled ?? true,
+      createdAt: isoToPg(m.createdAt),
+      updatedAt: isoToPg(m.updatedAt ?? m.createdAt),
+    });
+  }
+  for (const m of sortedMenus.filter((x) => x.parentId)) {
+    await db.insert(schema.appMenus).values({
+      id: m.id,
+      appId: m.appId,
+      parentId: m.parentId ?? null,
+      code: m.code ?? m.id,
+      name: m.name,
+      path: m.path,
+      icon: m.icon ?? null,
+      permission: m.permission ?? null,
+      sort: m.sort ?? 0,
+      enabled: m.enabled ?? true,
+      createdAt: isoToPg(m.createdAt),
+      updatedAt: isoToPg(m.updatedAt ?? m.createdAt),
+    });
+  }
+
+  for (const pg of PERMISSION_GROUPS) {
+    await db.insert(schema.permissionGroups).values({
+      id: pg.id,
+      appId: pg.appId,
+      name: pg.name,
+      description: pg.description ?? null,
+      permissions: (pg.permissions ?? []) as string[],
+      menuIds: (pg.menuIds ?? []) as string[],
+      sort: pg.sort ?? 0,
+      enabled: pg.enabled ?? true,
+      createdAt: isoToPg(pg.createdAt),
+      updatedAt: isoToPg(pg.updatedAt ?? pg.createdAt),
+    });
+  }
+
+  for (const k of API_KEYS) {
+    await db.insert(schema.apiKeys).values({
+      id: k.id,
+      name: k.name,
+      key: apiKeyFullKey(k.keyPrefix),
+      keyPrefix: k.keyPrefix,
+      appId: k.appId,
+      scopes: (k.scopes ?? ["read"]) as string[],
+      lastUsedAt: k.lastUsedAt ?? null,
+      enabled: k.enabled ?? true,
+      expiresAt: k.expiresAt ?? "never",
+      createdAt: isoToPg(k.createdAt),
+    });
+  }
+
+  // shared MENU_TEMPLATES 用 `app-id`（非 appId），无 updatedAt/createdAt
+  for (const mt of MENU_TEMPLATES) {
+    await db.insert(schema.menuTemplates).values({
+      appId: (mt as unknown as { "app-id": string })["app-id"] ?? (mt as unknown as { appId: string }).appId,
+      menus: JSON.stringify(mt.menus ?? []),
+      updatedAt: isoToPg(undefined),
+    });
+  }
+
+  for (const s of OAUTH_SCOPES) {
+    await db.insert(schema.oauthScopes).values({
+      id: s.id,
+      appId: s.appId,
+      name: s.name,
+      description: s.description,
+      category: s.category,
+      riskLevel: s.riskLevel,
+      enabled: s.enabled ?? true,
+    });
+  }
+
+  // 6 张单例配置：shared 无 updatedAt，用 now()
+  for (const c of TOKEN_CONFIG) {
+    await db.insert(schema.tokenConfig).values({
+      id: c.id,
+      accessTokenTtl: c.accessTokenTtl,
+      refreshTokenTtl: c.refreshTokenTtl,
+      refreshTokenEnabled: c.refreshTokenEnabled,
+      tokenRevocationEnabled: c.tokenRevocationEnabled,
+      updatedAt: isoToPg(undefined),
+    });
+  }
+  for (const c of LOGIN_SECURITY) {
+    await db.insert(schema.loginSecurity).values({
+      id: c.id,
+      ipWhitelist: (c.ipWhitelist ?? []) as string[],
+      ipBlacklist: (c.ipBlacklist ?? []) as string[],
+      regionRestrictionEnabled: c.regionRestrictionEnabled,
+      allowedRegions: (c.allowedRegions ?? []) as string[],
+      failedAttemptLockEnabled: c.failedAttemptLockEnabled,
+      lockThreshold: c.lockThreshold,
+      lockDuration: c.lockDuration,
+      updatedAt: isoToPg(undefined),
+    });
+  }
+  for (const c of PASSWORD_POLICY) {
+    await db.insert(schema.passwordPolicy).values({
+      id: c.id,
+      minLength: c.minLength,
+      requireUppercase: c.requireUppercase,
+      requireLowercase: c.requireLowercase,
+      requireDigit: c.requireDigit,
+      requireSpecial: c.requireSpecial,
+      expireDays: c.expireDays,
+      historyCount: c.historyCount,
+      enabled: c.enabled,
+      updatedAt: isoToPg(undefined),
+    });
+  }
+  for (const c of RISK_CONTROL) {
+    await db.insert(schema.riskControl).values({
+      id: c.id,
+      anomalyDetectionEnabled: c.anomalyDetectionEnabled,
+      crossRegionAlertEnabled: c.crossRegionAlertEnabled,
+      deviceFingerprintEnabled: c.deviceFingerprintEnabled,
+      riskScoreThreshold: c.riskScoreThreshold,
+      updatedAt: isoToPg(undefined),
+    });
+  }
+  for (const c of NOTIFICATION_CONFIG) {
+    await db.insert(schema.notificationConfig).values({
+      id: c.id,
+      emailEnabled: c.emailEnabled,
+      smsEnabled: c.smsEnabled,
+      inAppEnabled: c.inAppEnabled,
+      notifyOn: (c.notifyOn ?? []) as string[],
+      updatedAt: isoToPg(undefined),
+    });
+  }
+  for (const c of OPEN_PLATFORM_CONFIG) {
+    await db.insert(schema.openPlatformConfig).values({
+      id: c.id,
+      apiEnabled: c.apiEnabled,
+      webhookEnabled: c.webhookEnabled,
+      sdkEnabled: c.sdkEnabled,
+      openScopes: (c.openScopes ?? []) as string[],
+      callbackWhitelist: (c.callbackWhitelist ?? []) as string[],
+      updatedAt: isoToPg(undefined),
+    });
+  }
+
+  for (const m of LOGIN_METHODS) {
+    await db.insert(schema.loginMethods).values({
+      id: m.id,
+      method: m.method,
+      name: m.name,
+      description: m.description ?? null,
+      enabled: m.enabled,
+      sort: m.sort,
+    });
+  }
+  for (const p of SSO_PROVIDERS) {
+    await db.insert(schema.ssoProviders).values({
+      id: p.id,
+      name: p.name,
+      type: p.type,
+      clientId: p.clientId ?? null,
+      issuerUrl: p.issuerUrl ?? null,
+      enabled: p.enabled,
+    });
+  }
+  for (const p of OAUTH2_PROVIDERS) {
+    await db.insert(schema.oauth2Providers).values({
+      id: p.id,
+      name: p.name,
+      provider: p.provider,
+      clientId: p.clientId ?? null,
+      enabled: p.enabled,
+    });
+  }
+
+  // shared AUDIT_LOGS 无 tenantId，可选 → null
+  for (const a of AUDIT_LOGS) {
+    await db.insert(schema.auditLogs).values({
+      id: a.id,
+      tenantId: (a as unknown as { tenantId?: string }).tenantId ?? null,
+      action: a.action,
+      operator: a.operator,
+      resource: a.resource,
+      resourceId: a.resourceId,
+      ip: a.ip ?? "127.0.0.1",
+      detail: a.detail ?? "",
+      timestamp: isoToPg(a.timestamp),
+    });
+  }
+
+  for (const h of HEALTH_CHECK_SEED) {
+    await db.insert(schema.healthCheck).values({ id: h.id, ok: h.ok });
+  }
+
+  // ── Stats ────────────────────────────────────────────────────────────
+  const stats = {
+    tenants: (await db.select().from(schema.tenants)).length,
+    departments: (await db.select().from(schema.departments)).length,
+    users: (await db.select().from(schema.users)).length,
+    tenant_users: (await db.select().from(schema.tenantUsers)).length,
+    positions: (await db.select().from(schema.positions)).length,
+    roles: (await db.select().from(schema.roles)).length,
+    role_permissions: (await db.select().from(schema.rolePermissions)).length,
+    role_menu_permissions: (await db.select().from(schema.roleMenuPermissions)).length,
+    user_groups: (await db.select().from(schema.userGroups)).length,
+    permission_groups: (await db.select().from(schema.permissionGroups)).length,
+    apps: (await db.select().from(schema.apps)).length,
+    app_menus: (await db.select().from(schema.appMenus)).length,
+    api_keys: (await db.select().from(schema.apiKeys)).length,
+    oauth_scopes: (await db.select().from(schema.oauthScopes)).length,
+    menu_templates: (await db.select().from(schema.menuTemplates)).length,
+    login_methods: (await db.select().from(schema.loginMethods)).length,
+    sso_providers: (await db.select().from(schema.ssoProviders)).length,
+    oauth2_providers: (await db.select().from(schema.oauth2Providers)).length,
+    audit_logs: (await db.select().from(schema.auditLogs)).length,
+  };
+  console.log("[seed] done — saas_dev populated from shared:");
+  for (const [k, n] of Object.entries(stats)) console.log(`  ${k}: ${n}`);
 }
 
 seed()

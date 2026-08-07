@@ -113,7 +113,9 @@
     "  - roles-list.test.tsx: 加 fnTest(M03.F01.I06)（表单校验：必填 + loading）",
     "  - orgs-client / users-client / positions-client 加 // @entry 注释覆盖 I02/I04/I08（已上线子项 UI 入口）",
     "  - function-tree.md 43 个「规划」sub-items 一键翻「已上线」",
-    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、371 tests pass、164 功能条目、0 软告警"
+    "saas-identity-platform-nextjs 单项目 gate exit 0：L0..L5 全绿、371 tests pass、164 功能条目、0 软告警",
+    "(2026-08-07) scripts/seed.ts 重写：完全改读 @saas/identity-platform-shared/seeds，消除本地 TENANT_SEED/USER_SEED/ORG_SEED/ROLE_SEED/... 共 8 套 fixture（200+ 行），改读 shared 22 个常量 + 22 表 wipe→insert。HEALTH_CHECK_SEED 1 行作为 shared 无的派生数据保留。结果：npm run db:seed 灌出来的库与 shared v0.3.0 真正对齐（之前 3 租户/5 用户/4 部门是 v0.2.0 mock 时代数据）。src/db/seed.ts 早于本轮已是 shared 版本，本次保持一致",
+    "(2026-08-07) app_menus 插入顺序 bug 修复：shared app-menus.json 父菜单（grp-res/grp-biz/grp-master/grp-insp/grp-stat）sort 值高于子菜单（m-contracts/m-receipts/...），原插入循环按 sort 顺序排导致子菜单 parent FK 失败（src/db/seed.ts:225 FK violation 报 5 个孤儿对）。拆成两轮：先插 parentId=null 根菜单，再插 parentId!=null 子菜单。scripts/seed.ts + src/db/seed.ts 同改。最大嵌套深度=1，二轮足够"
   ],
   "next": [
     "(2026-08-01 新) lab-nextjs 端到端验证后决定:(A) saas 仓补 CORS middleware(Access-Control-Allow-Origin: http://localhost:3001)支持 lab 跨源 dev 调 saas;(B) saas 仓改 mock 鉴权为真实 OAuth(加 PKCE + state HMAC 签名)后才上 prod;(C) SSO 用户本地 sync-on-first-login 调 saas /auth/me 拉真实 user 信息",
@@ -128,7 +130,11 @@
     "scripts/seed.ts 与 src/db/seed.ts 重复（4 张表 + 8 张表 seed 数据）。要不要立刻抽到 lib/seed-data.ts 让两边都 import？还是先 commit 当前状态下次再清？",
     "lab-management-system-nextjs 一堆 dirty 来自历史会话（M04+M05 推完成遗留），git status 里能看到但本会话没碰。要不要本会话顺手清掉？",
     "saas-identity-platform 也有脏 state，pre-existing，与本次无关",
-    "M01.F05 用 Link 实现 I03 跳转（声明式）。后续如果需要 pre-routing 前做权限/埋点/确认弹窗，可能要改回 useRouter+onClick 以接入。提前知道"
+    "M01.F05 用 Link 实现 I03 跳转（声明式）。后续如果需要 pre-routing 前做权限/埋点/确认弹窗，可能要改回 useRouter+onClick 以接入。提前知道",
+    "Q4：scripts/seed.ts refactor 后 `user_group_members` 表 wipe 但无 insert 数据 —— shared `user-groups.json` 无 members 字段。本表在 v0.3.0 仍存在（drizzle 0002 CREATE），但 PG 库里此表始终为空。属于抽取期遗留，v0.4.0 评估消化（选项：A 扩 shared seeds 加 members 字段 / B 改 userGroups 1:N 反范化为 JSON / C 保持空表等业务侧首次 insert）",
+    "Q5：scripts/seed.ts refactor 后 `platform_settings` 表 wipe 但无 insert 数据 —— v0.3.0 起概念被拆为 6 张单例（token_config / login_security / password_policy / risk_control / notification_config / open_platform_config），platform_settings 表仍存在但 PG 库始终为空。v0.4.0 评估是否 DROP 该表",
+    "Q6：role_menu_permissions 表第 1-8 条 SaaS 通用角色的 menuPermissions 引用 m-lab-01..m-lab-22 旧菜单 id，与 app-menus.json 现有 m-contracts/m-receipts/... 对不上 —— scripts/seed.ts 用 try/catch + src/db/seed.ts 用 SAVEPOINT 静默吞 FK 异常。shared manifest.json 第 10 条已记，属抽取期遗留 v0.4.0 评估消化",
+    "Q7：TenantSchema.theme shared seed 仍是 {primary, sidebar, logoText} 对象，schema 是单字符串；scripts/seed.ts themeString() helper 强制 \"default\" 兜底（丢失所有主题细节）。shared manifest.json 第 11 条已记。v0.4.0 选项：A schema 改成接受对象 + 字符串 union / B shared seed 全部改字符串"
   ],
   "dont": [
     "不要改 .harness/stack.json 让门变松",
@@ -152,7 +158,8 @@
     "(2026-08-01 新) saas IdP mock 鉴权不安全(code 任意通过+无 PKCE/state HMAC),只 dev 用,prod 必须改 PKCE + state 签名 + 真实 user 表",
     "(2026-08-01 新) saas /api/auth/oauth/callback 当前 clientId 强校 'lab-management' 才签 token,其他 clientId 直接 401;prod 应改成查 saas apps 表验证 clientId 是否注册",
     "(2026-08-01 新) saas /api/auth/permissions 当前只接 org-lab-root(1:1 lab),其他 orgId 一律 403;若要支持 saas 自家其他租户,需在路由加分支(用 saas 内部 perms 库)",
-    "(2026-08-01 新) 不要让 saas-react MSW 介入 saas-nextjs IdP:用户拍板 saas-react 与 saas-nextjs 隔离,saas-react 的 msw/handlers.ts 不参与本轮 IdP 契约"
+    "(2026-08-01 新) 不要让 saas-react MSW 介入 saas-nextjs IdP:用户拍板 saas-react 与 saas-nextjs 隔离,saas-react 的 msw/handlers.ts 不参与本轮 IdP 契约",
+    "(2026-08-07 新) 本轮 scripts/seed.ts refactor 不解决 Q4-Q7 四个数据空缺（user_group_members / platform_settings / role_menu_permissions m-lab 旧 id / tenant.theme 对象）。这 4 项需改 shared seeds/schemas 跨 3 仓消费方影响，单独立项"
   ],
   "last_gate_passed_at": "2026-08-01 gate.py -p saas-identity-platform-nextjs exit 0（22 files / 160 tests, L0..L5 全绿, 33 软告警 M01.F01-F03 类型遗留）；M01.F04 SSO IdP 4 路由 + lab 业务数据种子 落地后"
 }

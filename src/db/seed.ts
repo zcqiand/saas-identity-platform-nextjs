@@ -1,120 +1,415 @@
 import "server-only";
+import { sql } from "drizzle-orm";
 import { db } from "./index";
 import {
   tenants,
   users,
-  orgs,
+  departments,
   positions,
   roles,
   rolePermissions,
+  roleMenuPermissions,
   userGroups,
+  permissionGroups,
   apps,
   appMenus,
   apiKeys,
+  oauthScopes,
+  menuTemplates,
+  loginMethods,
+  ssoProviders,
+  oauth2Providers,
+  tokenConfig,
+  loginSecurity,
+  passwordPolicy,
+  riskControl,
+  notificationConfig,
+  openPlatformConfig,
   auditLogs,
-  platformSettings,
+  healthCheck,
+  tenantUsers,
 } from "./schema";
+import {
+  TENANTS,
+  USERS,
+  DEPARTMENTS,
+  POSITIONS,
+  ROLE_PERMISSIONS,
+  USER_GROUPS,
+  PERMISSION_GROUPS,
+  APPS,
+  APP_MENUS,
+  API_KEYS,
+  MENU_TEMPLATES,
+  LOGIN_METHODS,
+  SSO_PROVIDERS,
+  OAUTH2_PROVIDERS,
+  OAUTH_SCOPES,
+  TOKEN_CONFIG,
+  LOGIN_SECURITY,
+  PASSWORD_POLICY,
+  RISK_CONTROL,
+  NOTIFICATION_CONFIG,
+  OPEN_PLATFORM_CONFIG,
+  AUDIT_LOGS,
+} from "@saas/identity-platform-shared/seeds";
 
-/** M02.F01.I09 + 全部模块 — 测试用 seed（全量 11 表 + 4 关联表）
- *
- * 异步版（Task 4：db 句柄迁到 pg Pool 后所有 db.* 调用必须 await）。
+/**
+ * 测试用 seedDatabase() —— 全量灌 shared v0.3.0 数据。
+ * 字段映射与 scripts/seed.ts 一致。
  */
 
-const TENANT_SEED = [
-  { code: "acme", name: "Acme Corp", theme: "default" },
-  { code: "globex", name: "Globex Inc", theme: "dark" },
-  { code: "initech", name: "Initech LLC", theme: "light" },
-] as const;
+function isoToPg(iso: string | undefined): string {
+  if (iso) return iso.replace("T", " ").slice(0, 19);
+  return new Date().toISOString().replace("T", " ").slice(0, 19);
+}
 
-const USER_SEED = [
-  { username: "alice", displayName: "Alice Admin", email: "alice@acme.com", roles: '["admin"]', status: "active" },
-  { username: "bob", displayName: "Bob Manager", email: "bob@acme.com", roles: '["manager"]', status: "active" },
-  { username: "carol", displayName: "Carol Member", email: "carol@acme.com", roles: '["member"]', status: "active" },
-] as const;
+function themeString(theme: unknown): string {
+  return typeof theme === "string" ? theme : "default";
+}
 
-const ORG_SEED = [
-  { id: 1, name: "Acme 总公司", parentId: null, sort: 0, enabled: true },
-  { id: 2, name: "技术中心", parentId: 1, sort: 0, enabled: true },
-] as const;
-
-const POSITION_SEED = [
-  { code: "ceo", name: "CEO", description: null, sort: 1, enabled: true },
-  { code: "eng", name: "Engineer", description: null, sort: 10, enabled: true },
-] as const;
-
-const ROLE_SEED = [
-  { code: "admin", name: "Administrator", description: "All perms", enabled: true },
-  { code: "manager", name: "Manager", description: null, enabled: true },
-  { code: "member", name: "Member", description: null, enabled: true },
-] as const;
-
-const ROLE_PERMISSION_SEED = [
-  { roleCode: "admin", permissionCode: "user:read" },
-  { roleCode: "admin", permissionCode: "user:write" },
-  { roleCode: "manager", permissionCode: "user:read" },
-  { roleCode: "member", permissionCode: "user:read" },
-];
-
-const USER_GROUP_SEED = [
-  { id: 1, name: "All Users", description: null, enabled: true },
-] as const;
-
-const APP_SEED = [
-  { code: "dashboard", name: "数据看板", type: "web", description: null, enabled: true },
-] as const;
-
-const APP_MENU_SEED = [
-  { appCode: "dashboard", code: "overview", name: "总览", path: "/dashboard", parentCode: null, sort: 0, enabled: true },
-] as const;
-
-const API_KEY_SEED = [
-  { name: "ci-deploy", key: "abcdef1234567890abcdef1234567890", appCode: "dashboard", enabled: true },
-] as const;
-
-const PLATFORM_SETTING_SEED = [
-  { key: "platform.name", value: "SaaS 统一身份管理", description: "平台名" },
-  { key: "platform.copyright", value: "© 2026 Acme Corp", description: "版权" },
-  { key: "password.min_length", value: "8", description: "最小密码长度" },
-  { key: "token.access_ttl_sec", value: "3600", description: "access token TTL" },
-];
+function apiKeyFullKey(keyPrefix: string): string {
+  return `${keyPrefix}${"0".repeat(24)}`;
+}
 
 export async function seedDatabase(): Promise<void> {
-  // Wipe in FK-safe order
-  await db.delete(apiKeys);
-  await db.delete(appMenus);
-  await db.delete(apps);
-  await db.delete(rolePermissions);
-  await db.delete(roles);
-  await db.delete(orgs);
-  await db.delete(positions);
-  await db.delete(userGroups);
-  await db.delete(users);
-  await db.delete(tenants);
-  await db.delete(auditLogs);
-  await db.delete(platformSettings);
+  // 单事务包住 wipe+seed：26 次 insert 走一次网络往返，hookTimeout 不再撞墙
+  return db.transaction(async (tx) => {
+  await tx.delete(roleMenuPermissions);
+  await tx.delete(rolePermissions);
+  await tx.delete(userGroups);
+  await tx.delete(permissionGroups);
+  await tx.delete(appMenus);
+  await tx.delete(apiKeys);
+  await tx.delete(menuTemplates);
+  await tx.delete(oauthScopes);
+  await tx.delete(tenantUsers);
+  await tx.delete(roles);
+  await tx.delete(positions);
+  await tx.delete(users);
+  await tx.delete(departments);
+  await tx.delete(apps);
+  await tx.delete(tenants);
+  await tx.delete(loginMethods);
+  await tx.delete(ssoProviders);
+  await tx.delete(oauth2Providers);
+  await tx.delete(tokenConfig);
+  await tx.delete(loginSecurity);
+  await tx.delete(passwordPolicy);
+  await tx.delete(riskControl);
+  await tx.delete(notificationConfig);
+  await tx.delete(openPlatformConfig);
+  await tx.delete(auditLogs);
+  await tx.delete(healthCheck);
 
-  // Insert in FK-safe order (parents first)
-  for (const t of TENANT_SEED) await db.insert(tenants).values(t);
-  for (const u of USER_SEED) await db.insert(users).values(u);
-  for (const o of ORG_SEED) await db.insert(orgs).values(o);
-  for (const p of POSITION_SEED) await db.insert(positions).values(p);
-  for (const r of ROLE_SEED) await db.insert(roles).values(r);
-  for (const rp of ROLE_PERMISSION_SEED) {
-    const allRoles = await db.select().from(roles);
-    const roleRow = allRoles.find((x) => x.code === rp.roleCode);
-    if (roleRow) await db.insert(rolePermissions).values({ roleId: roleRow.id, permissionCode: rp.permissionCode });
+  for (const t of TENANTS) {
+    await tx.insert(tenants).values({
+      id: t.id,
+      code: t.id,
+      name: t.name,
+      theme: themeString(t.theme),
+      createdAt: isoToPg(undefined),
+    });
   }
-  for (const g of USER_GROUP_SEED) await db.insert(userGroups).values(g);
-  for (const a of APP_SEED) await db.insert(apps).values(a);
-  for (const m of APP_MENU_SEED) {
-    const allApps = await db.select().from(apps);
-    const appRow = allApps.find((x) => x.code === m.appCode);
-    if (appRow) await db.insert(appMenus).values({ appId: appRow.id, code: m.code, name: m.name, path: m.path, parentId: null, sort: m.sort, enabled: m.enabled });
+  for (const d of DEPARTMENTS) {
+    await tx.insert(departments).values({
+      id: d.id,
+      tenantId: d.tenantId,
+      name: d.name,
+      parentId: d.parentId ?? null,
+      sort: d.sort ?? 0,
+      enabled: d.enabled ?? true,
+      createdAt: isoToPg(d.createdAt),
+      updatedAt: isoToPg(d.updatedAt ?? d.createdAt),
+    });
   }
-  for (const k of API_KEY_SEED) {
-    const allApps = await db.select().from(apps);
-    const appRow = allApps.find((x) => x.code === k.appCode);
-    if (appRow) await db.insert(apiKeys).values({ name: k.name, key: k.key, appId: appRow.id, expiresAt: "never", enabled: k.enabled });
+  for (const u of USERS) {
+    await tx.insert(users).values({
+      id: u.id,
+      username: u.username,
+      displayName: u.displayName,
+      email: u.email,
+      tenantId: u.tenantId,
+      departmentId: u.departmentId ?? null,
+      roles: u.roles as string[],
+      status: u.status,
+      createdAt: isoToPg(u.createdAt),
+      updatedAt: isoToPg(u.updatedAt ?? u.createdAt),
+    });
   }
-  for (const s of PLATFORM_SETTING_SEED) await db.insert(platformSettings).values(s);
+  for (const u of USERS) {
+    await tx.insert(tenantUsers).values({
+      tenantId: u.tenantId,
+      userId: u.id,
+      role: (u.roles[0] ?? "member") as string,
+      joinedAt: isoToPg(u.createdAt),
+    });
+  }
+  for (const p of POSITIONS) {
+    await tx.insert(positions).values({
+      id: p.id,
+      tenantId: p.tenantId,
+      code: p.code,
+      name: p.name,
+      description: p.description ?? null,
+      sort: p.sort ?? 0,
+      enabled: p.enabled ?? true,
+      createdAt: isoToPg(p.createdAt),
+      updatedAt: isoToPg(p.updatedAt ?? p.createdAt),
+    });
+  }
+  for (const r of ROLE_PERMISSIONS) {
+    await tx.insert(roles).values({
+      id: r.id,
+      tenantId: r.tenantId,
+      code: r.code,
+      name: r.name,
+      description: r.description ?? null,
+      sort: r.sort ?? 0,
+      enabled: r.enabled ?? true,
+      createdAt: isoToPg(r.createdAt),
+      updatedAt: isoToPg(r.updatedAt ?? r.createdAt),
+    });
+    for (const perm of r.menuPermissions ?? []) {
+      await tx.execute(sql`SAVEPOINT role_menu_sp`);
+      try {
+        await tx.insert(roleMenuPermissions).values({
+          roleId: r.id,
+          menuId: perm.menuId,
+          actions: (perm.actions ?? ["view"]) as string[],
+          createdAt: isoToPg(r.createdAt),
+        });
+        await tx.execute(sql`RELEASE SAVEPOINT role_menu_sp`);
+      } catch (e) {
+        // v0.3.0 known issue: shared role-permissions.json 引用 m-lab-01..22 等 v0.2.0 旧菜单 id，
+        // 但 shared app-menus.json 用 v0.3.0 新 id。FK 不匹配，SAVEPOINT 回滚本条；v0.4.0 计划统一消化。
+        await tx.execute(sql`ROLLBACK TO SAVEPOINT role_menu_sp`);
+        const msg = (e as Error).message;
+        if (!msg.includes("foreign key constraint")) throw e;
+      }
+    }
+    for (const code of r.permissions ?? []) {
+      await tx.insert(rolePermissions).values({
+        roleId: r.id,
+        permissionCode: code,
+        createdAt: isoToPg(r.createdAt),
+      });
+    }
+  }
+  for (const g of USER_GROUPS) {
+    await tx.insert(userGroups).values({
+      id: g.id,
+      tenantId: g.tenantId,
+      name: g.name,
+      description: g.description ?? null,
+      enabled: g.enabled ?? true,
+      createdAt: isoToPg(g.createdAt),
+      updatedAt: isoToPg(g.updatedAt ?? g.createdAt),
+    });
+  }
+  for (const a of APPS) {
+    await tx.insert(apps).values({
+      id: a.id,
+      code: a.code,
+      name: a.name,
+      type: (a as { type?: string }).type ?? "web",
+      description: a.description ?? null,
+      theme: a.theme ?? null,
+      sort: a.sort ?? 0,
+      enabled: a.enabled ?? true,
+      createdAt: isoToPg(a.createdAt),
+      updatedAt: isoToPg(a.updatedAt ?? a.createdAt),
+    });
+  }
+  // shared 父菜单（grp-*）sort 高于子菜单：必须先插根（parentId=null）再插子，否则 FK 挂
+  for (const m of [...APP_MENUS].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0)).filter((x) => !x.parentId)) {
+    await tx.insert(appMenus).values({
+      id: m.id,
+      appId: m.appId,
+      parentId: null,
+      code: (m as { code?: string }).code ?? m.id,
+      name: m.name,
+      path: m.path,
+      icon: (m as { icon?: string }).icon ?? null,
+      permission: m.permission ?? null,
+      sort: m.sort ?? 0,
+      enabled: m.enabled ?? true,
+      createdAt: isoToPg(m.createdAt),
+      updatedAt: isoToPg(m.updatedAt ?? m.createdAt),
+    });
+  }
+  for (const m of [...APP_MENUS].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0)).filter((x) => x.parentId)) {
+    await tx.insert(appMenus).values({
+      id: m.id,
+      appId: m.appId,
+      parentId: m.parentId ?? null,
+      code: (m as { code?: string }).code ?? m.id,
+      name: m.name,
+      path: m.path,
+      icon: (m as { icon?: string }).icon ?? null,
+      permission: m.permission ?? null,
+      sort: m.sort ?? 0,
+      enabled: m.enabled ?? true,
+      createdAt: isoToPg(m.createdAt),
+      updatedAt: isoToPg(m.updatedAt ?? m.createdAt),
+    });
+  }
+  for (const pg of PERMISSION_GROUPS) {
+    await tx.insert(permissionGroups).values({
+      id: pg.id,
+      appId: pg.appId,
+      name: pg.name,
+      description: pg.description ?? null,
+      permissions: (pg.permissions ?? []) as string[],
+      menuIds: (pg.menuIds ?? []) as string[],
+      sort: pg.sort ?? 0,
+      enabled: pg.enabled ?? true,
+      createdAt: isoToPg(pg.createdAt),
+      updatedAt: isoToPg(pg.updatedAt ?? pg.createdAt),
+    });
+  }
+  for (const k of API_KEYS) {
+    await tx.insert(apiKeys).values({
+      id: k.id,
+      name: k.name,
+      key: apiKeyFullKey(k.keyPrefix),
+      keyPrefix: k.keyPrefix,
+      appId: k.appId,
+      scopes: (k.scopes ?? ["read"]) as string[],
+      lastUsedAt: k.lastUsedAt ?? null,
+      enabled: k.enabled ?? true,
+      expiresAt: (k as { expiresAt?: string }).expiresAt ?? "never",
+      createdAt: isoToPg(k.createdAt),
+    });
+  }
+  for (const mt of MENU_TEMPLATES) {
+    await tx.insert(menuTemplates).values({
+      appId: (mt as unknown as { "app-id": string })["app-id"] ?? (mt as unknown as { appId: string }).appId,
+      menus: JSON.stringify(mt.menus ?? []),
+      updatedAt: isoToPg(undefined),
+    });
+  }
+  for (const s of OAUTH_SCOPES) {
+    await tx.insert(oauthScopes).values({
+      id: s.id,
+      appId: s.appId,
+      name: s.name,
+      description: s.description,
+      category: s.category,
+      riskLevel: s.riskLevel,
+      enabled: s.enabled ?? true,
+    });
+  }
+  for (const c of TOKEN_CONFIG) {
+    await tx.insert(tokenConfig).values({
+      id: c.id,
+      accessTokenTtl: c.accessTokenTtl,
+      refreshTokenTtl: c.refreshTokenTtl,
+      refreshTokenEnabled: c.refreshTokenEnabled,
+      tokenRevocationEnabled: c.tokenRevocationEnabled,
+      updatedAt: isoToPg(undefined),
+    });
+  }
+  for (const c of LOGIN_SECURITY) {
+    await tx.insert(loginSecurity).values({
+      id: c.id,
+      ipWhitelist: (c.ipWhitelist ?? []) as string[],
+      ipBlacklist: (c.ipBlacklist ?? []) as string[],
+      regionRestrictionEnabled: c.regionRestrictionEnabled,
+      allowedRegions: (c.allowedRegions ?? []) as string[],
+      failedAttemptLockEnabled: c.failedAttemptLockEnabled,
+      lockThreshold: c.lockThreshold,
+      lockDuration: c.lockDuration,
+      updatedAt: isoToPg(undefined),
+    });
+  }
+  for (const c of PASSWORD_POLICY) {
+    await tx.insert(passwordPolicy).values({
+      id: c.id,
+      minLength: c.minLength,
+      requireUppercase: c.requireUppercase,
+      requireLowercase: c.requireLowercase,
+      requireDigit: c.requireDigit,
+      requireSpecial: c.requireSpecial,
+      expireDays: c.expireDays,
+      historyCount: c.historyCount,
+      enabled: c.enabled,
+      updatedAt: isoToPg(undefined),
+    });
+  }
+  for (const c of RISK_CONTROL) {
+    await tx.insert(riskControl).values({
+      id: c.id,
+      anomalyDetectionEnabled: c.anomalyDetectionEnabled,
+      crossRegionAlertEnabled: c.crossRegionAlertEnabled,
+      deviceFingerprintEnabled: c.deviceFingerprintEnabled,
+      riskScoreThreshold: c.riskScoreThreshold,
+      updatedAt: isoToPg(undefined),
+    });
+  }
+  for (const c of NOTIFICATION_CONFIG) {
+    await tx.insert(notificationConfig).values({
+      id: c.id,
+      emailEnabled: c.emailEnabled,
+      smsEnabled: c.smsEnabled,
+      inAppEnabled: c.inAppEnabled,
+      notifyOn: (c.notifyOn ?? []) as string[],
+      updatedAt: isoToPg(undefined),
+    });
+  }
+  for (const c of OPEN_PLATFORM_CONFIG) {
+    await tx.insert(openPlatformConfig).values({
+      id: c.id,
+      apiEnabled: c.apiEnabled,
+      webhookEnabled: c.webhookEnabled,
+      sdkEnabled: c.sdkEnabled,
+      openScopes: (c.openScopes ?? []) as string[],
+      callbackWhitelist: (c.callbackWhitelist ?? []) as string[],
+      updatedAt: isoToPg(undefined),
+    });
+  }
+  for (const m of LOGIN_METHODS) {
+    await tx.insert(loginMethods).values({
+      id: m.id,
+      method: m.method,
+      name: m.name,
+      description: m.description ?? null,
+      enabled: m.enabled,
+      sort: m.sort,
+    });
+  }
+  for (const p of SSO_PROVIDERS) {
+    await tx.insert(ssoProviders).values({
+      id: p.id,
+      name: p.name,
+      type: p.type,
+      clientId: p.clientId ?? null,
+      issuerUrl: p.issuerUrl ?? null,
+      enabled: p.enabled,
+    });
+  }
+  for (const p of OAUTH2_PROVIDERS) {
+    await tx.insert(oauth2Providers).values({
+      id: p.id,
+      name: p.name,
+      provider: p.provider,
+      clientId: p.clientId ?? null,
+      enabled: p.enabled,
+    });
+  }
+  for (const a of AUDIT_LOGS) {
+    await tx.insert(auditLogs).values({
+      id: a.id,
+      tenantId: (a as unknown as { tenantId?: string }).tenantId ?? null,
+      action: a.action,
+      operator: a.operator,
+      resource: a.resource,
+      resourceId: a.resourceId,
+      ip: a.ip ?? "127.0.0.1",
+      detail: a.detail ?? "",
+      timestamp: isoToPg(a.timestamp),
+    });
+  }
+  await tx.insert(healthCheck).values({ id: "hc-001", ok: 1 });
+});
 }
