@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     sub: user.id,
     username: user.username,
     displayName: user.displayName,
-    orgId: user.orgId,
+    departmentId: user.orgId,
     tenantId: user.tenantId,
     appId: APP_LAB_ID,
     roles: [role.id],
@@ -73,6 +73,8 @@ export async function POST(req: Request) {
       id: user.id,
       username: user.username,
       displayName: user.displayName,
+      departmentId: user.orgId,
+      // v0.3.0 重命名过渡：仍回传旧 orgId 字段以兼容 lab 端
       orgId: user.orgId,
       tenantId: user.tenantId,
     },

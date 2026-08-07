@@ -15,7 +15,7 @@
  * built=false 项带「规划」badge）。
  */
 import { NextResponse } from "next/server";
-import { LAB_MENUS, APP_LAB_ID } from "@/lib/lab-seed";
+import { APP_LAB_ID, labMenus } from "@/lib/lab-seed";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -25,12 +25,12 @@ export async function GET(req: Request) {
     return NextResponse.json({ message: "appId 必填且仅支持 app-lab" }, { status: 400 });
   }
 
-  const items = LAB_MENUS.filter((m) => m.appId === appId).map((m) => ({
+  const items = labMenus().map((m) => ({
     id: m.id,
     name: m.name,
     path: m.path,
     appId: m.appId,
-    parentId: m.parentId,
+    parentId: m.parentId ?? null,
     sort: m.sort,
     enabled: m.enabled,
     ...(m.permission ? { permission: m.permission } : {}),

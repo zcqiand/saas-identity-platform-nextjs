@@ -5,13 +5,14 @@
  * 拿完整角色/权限集，写入 lab_session cookie 的 payload（避免 lab 端再回查 saas）。
  *
  * Header：Authorization: Bearer <sso-jwt>（必填）
- * Query：orgId（必填，按 1:1 决策只接 org-lab-root）
+ * Query：departmentId（必填，按 1:1 决策只接 org-lab-root）
+ *   注：v0.3.0 重命名 orgId → departmentId；仍兼容旧 orgId 查询参数
  *
  * 响应：{ roles: [{id, name, permissions}], permissions: string[] }
  */
 import { NextResponse } from "next/server";
 import { verifySsoToken, type SsoPayload } from "@/lib/sso-jwt";
-import { LAB_ROLES, LAB_ORG_ROOT } from "@/lib/lab-seed";
+import { LAB_ROLES, LAB_DEPARTMENT_ROOT_ID } from "@/lib/lab-seed";
 
 export async function GET(req: Request) {
   const auth = req.headers.get("authorization") ?? "";
@@ -26,11 +27,12 @@ export async function GET(req: Request) {
   }
 
   const url = new URL(req.url);
-  const orgId = url.searchParams.get("orgId") ?? "";
+  // v0.3.0 重命名过渡：departmentId 优先，旧 orgId 兼容
+  const departmentId = url.searchParams.get("departmentId") ?? url.searchParams.get("orgId") ?? "";
 
   // 仅支持 lab 仓（org-lab-root 1:1 对应 tenant-lab）
-  if (orgId !== LAB_ORG_ROOT.id) {
-    return NextResponse.json({ message: "未注册的 orgId" }, { status: 403 });
+  if (departmentId !== LAB_DEPARTMENT_ROOT_ID) {
+    return NextResponse.json({ message: "未注册的 departmentId" }, { status: 403 });
   }
 
   // 从 token 的 roles 字段查 lab 角色定义

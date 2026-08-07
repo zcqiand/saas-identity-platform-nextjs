@@ -20,7 +20,10 @@
     "incremental": true,
     "plugins": [{ "name": "next" }],
     "types": ["vitest/globals", "node"],
-    "paths": { "@/*": ["./src/*"] }
+    "paths": {
+      "@/*": ["./src/*"],
+      "@saas/identity-platform-shared/*": ["../saas-identity-platform-shared/*"]
+    }
   },
   "include": [
     "next-env.d.ts",

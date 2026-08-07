@@ -6,8 +6,9 @@ import { GET } from "@/app/api/auth/permissions/route";
 import { signSsoToken } from "@/lib/sso-jwt";
 import { fnTest } from "../fn";
 
-async function makeAuthedRequest(orgId: string, token?: string): Promise<Request> {
-  const url = `http://localhost/api/auth/permissions?orgId=${encodeURIComponent(orgId)}`;
+async function makeAuthedRequest(departmentId: string, token?: string): Promise<Request> {
+  // v0.3.0 重命名：orgId → departmentId（仍兼容旧 orgId 查询参数）
+  const url = `http://localhost/api/auth/permissions?departmentId=${encodeURIComponent(departmentId)}`;
   const headers: Record<string, string> = {};
   if (token) headers.authorization = `Bearer ${token}`;
   return new Request(url, { method: "GET", headers });
@@ -28,13 +29,13 @@ describe("M01.F04.I08 GET /api/auth/permissions", () => {
     })();
   });
 
-  fnTest(["M01.F04.I08"], "orgId 非 org-lab-root → 403", () => {
+  fnTest(["M01.F04.I08"], "departmentId 非 org-lab-root → 403", () => {
     return (async () => {
       const token = await signSsoToken({
         sub: "u-test",
         username: "test",
         displayName: "Test",
-        orgId: "org-lab-root",
+        departmentId: "org-lab-root",
         tenantId: "tenant-lab",
         appId: "app-lab",
         roles: ["role-lab-admin"],
@@ -51,7 +52,7 @@ describe("M01.F04.I08 GET /api/auth/permissions", () => {
         sub: "u-lab-admin",
         username: "labadmin",
         displayName: "Lab Admin",
-        orgId: "org-lab-root",
+        departmentId: "org-lab-root",
         tenantId: "tenant-lab",
         appId: "app-lab",
         roles: ["role-lab-admin"],

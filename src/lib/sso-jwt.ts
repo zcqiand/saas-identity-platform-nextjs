@@ -25,8 +25,8 @@ export interface SsoClaims {
   username: string;
   /** 用户显示名（lab UI 展示用） */
   displayName: string;
-  /** 组织 ID（lab 机构 = org-lab-root，1:1 对应 tenant-lab） */
-  orgId: string;
+  /** 部门 ID（v0.3.0 重命名：原 orgId → departmentId；lab 部门根 = org-lab-root，1:1 对应 tenant-lab） */
+  departmentId: string;
   /** 租户 ID */
   tenantId: string;
   /** 登录来源应用 ID（lab = 'app-lab'） */
@@ -54,7 +54,7 @@ export async function signSsoToken(claims: SsoClaims): Promise<string> {
     sub: claims.sub,
     username: claims.username,
     displayName: claims.displayName,
-    orgId: claims.orgId,
+    departmentId: claims.departmentId,
     tenantId: claims.tenantId,
     appId: claims.appId,
     roles: claims.roles,

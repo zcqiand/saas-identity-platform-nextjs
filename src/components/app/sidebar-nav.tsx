@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
  * 菜单项（保持稳定顺序，跟 APP_MENU_SEED 同步——但 UI 直接硬编码避免多一次 DB 读）：
  *   仪表盘 /           M01.F05
  *   租户管理 /tenants  M01.F01
- *   组织架构 /orgs     M02.F01
+ *   组织架构 /departments     M02.F01
  *   用户管理 /users    M02.F02
  *   岗位管理 /positions M02.F03
  *   角色管理 /roles    M03.F01
@@ -36,7 +36,7 @@ interface NavItem {
 const NAV_ITEMS: readonly NavItem[] = [
   { href: "/", label: "仪表盘", exact: true },
   { href: "/tenants", label: "租户管理" },
-  { href: "/orgs", label: "组织架构" },
+  { href: "/departments", label: "部门管理" },
   { href: "/users", label: "用户管理" },
   { href: "/positions", label: "岗位管理" },
   { href: "/roles", label: "角色管理" },

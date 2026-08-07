@@ -13,6 +13,7 @@
  */
 import { sql } from "drizzle-orm";
 import { boolean, foreignKey, integer, pgTable, serial, text } from "drizzle-orm/pg-core";
+import { TenantSchema } from "@saas/identity-platform-shared/schemas/tenant";
 
 export const healthCheck = pgTable("health_check", {
   id: serial().primaryKey(),
@@ -79,9 +80,13 @@ export type NewSsoState = typeof ssoStates.$inferInsert;
 // ─────────────────────────────────────────────────────────────────────────
 // M02 schema：users / orgs / positions / position_members
 // ─────────────────────────────────────────────────────────────────────────
-// @entry M02.F01.I09 组织管理 — 组织资源契约(MSW) — schema 表挂此处
+// @entry M02.F01.I09 组织管理 — 部门资源契约(MSW) — schema 表挂此处
 // @entry M02.F02.I09 用户管理 — 用户资源契约(MSW) — schema 表挂此处
 // @entry M02.F03.I05 岗位管理 — 删除岗位按钮 — schema 表挂此处（岗位列表底层表）
+
+/** Tenant 字段契约（shared TenantSchema）—— 文档锚点，确保 shared 是字段真相源；
+ *  drizzle 字段保持原状以避免 migration churn（SQL 真名切换留待 6.x 主版本）。 */
+export type _SharedTenantContract = typeof TenantSchema.shape;
 
 export const users = pgTable("users", {
   id: serial().primaryKey(),

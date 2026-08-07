@@ -62,17 +62,19 @@ describe("M01.F04.I07 POST /api/auth/oauth/callback", () => {
       expect(res.status).toBe(200);
       const body = (await res.json()) as {
         token: string;
-        user: { id: string; orgId: string };
+        user: { id: string; departmentId: string; orgId?: string };
       };
       expect(body.token).toBeTruthy();
-      expect(body.user.id).toBe("u-lab-admin");
+      expect(body.user.id).toBe("u-lab-01");
+      expect(body.user.departmentId).toBe("org-lab-root");
+      // v0.3.0 过渡：仍兼容旧 orgId 字段
       expect(body.user.orgId).toBe("org-lab-root");
 
       const payload = await verifySsoToken(body.token);
       expect(payload).not.toBeNull();
       expect(payload?.appId).toBe("app-lab");
       expect(payload?.tenantId).toBe("tenant-lab");
-      expect(payload?.orgId).toBe("org-lab-root");
+      expect(payload?.departmentId).toBe("org-lab-root");
       expect(payload?.roles).toContain("role-lab-admin");
       expect(payload?.permissions).toContain("project:read");
     })();

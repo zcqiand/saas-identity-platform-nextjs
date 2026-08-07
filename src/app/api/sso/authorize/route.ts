@@ -13,8 +13,15 @@
  *   不一致），故本路由也走 /api/sso/authorize，与 oauth-url.ts 拼出的 URL 对齐。
  */
 import { NextResponse } from "next/server";
+import { labTenant } from "@saas/identity-platform-shared/seeds";
 
 export async function GET(req: Request) {
+  // shared 派生校验：lab 租户必须存在（启动期 sanity check）
+  const tenant = labTenant();
+  if (!tenant) {
+    return NextResponse.json({ message: "lab 租户未配置" }, { status: 500 });
+  }
+
   const url = new URL(req.url);
   const clientId = url.searchParams.get("client_id");
   const redirectUri = url.searchParams.get("redirect_uri");

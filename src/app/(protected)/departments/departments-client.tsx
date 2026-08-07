@@ -23,22 +23,22 @@ import {
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { Field } from "@/components/app/field";
 
-// @entry M02.F01.I02 树形查询（getOrgTree 走 SQLite CTE 一次拉整棵树）
-// @entry M02.F01.I08 组织表单弹窗（NewOrgDialog + EditOrgDialog 独立组件）
+// @entry M02.F01.I02 树形查询（getDepartmentTree 走 PG CTE 一次拉整棵树）
+// @entry M02.F01.I08 部门表单弹窗（NewDepartmentDialog + EditDepartmentDialog 独立组件）
 
 /**
- * M02.F01 组织管理（client table + 树形）
+ * M02.F01 部门管理（client table + 树形）
  *
- * fn-ID 覆盖：
- *   - I01 页面根 → data-testid="orgs-page" data-fn="M02.F01.I01"
- *   - I02 树形查询 → 渲染整棵 OrgTreeNode[]
+ * v0.3.0 重命名（原 Org → Department，URL /api/orgs → /api/departments）：
+ *   - I01 页面根 → data-testid="departments-page" data-fn="M02.F01.I01"
+ *   - I02 树形查询 → 渲染整棵 DepartmentTreeNode[]
  *   - I03 新增根部门 → 顶部按钮 + Dialog，parentId=null
  *   - I04 新增子部门 → 顶部按钮 + Dialog，预填 parentId（pickable）
- *   - I05 编辑 → 行内按钮 + EditOrgDialog 调 PUT /api/orgs/[id]
+ *   - I05 编辑 → 行内按钮 + EditDepartmentDialog 调 PUT /api/departments/[id]
  *   - I06 删除 → 行内按钮 + ConfirmDialog 二次确认后调 DELETE
- *   - I08 组织表单弹窗（独立组件 NewOrgDialog + EditOrgDialog）—— 本文件内
+ *   - I08 部门表单弹窗（独立组件 NewDepartmentDialog + EditDepartmentDialog）—— 本文件内
  */
-export interface OrgNode extends Record<string, unknown> {
+export interface DepartmentNode extends Record<string, unknown> {
   id: number;
   name: string;
   parentId: number | null;
@@ -49,22 +49,22 @@ export interface OrgNode extends Record<string, unknown> {
   depth?: number;
 }
 
-export interface OrgsClientProps {
-  initialTree: OrgNode[];
+export interface DepartmentsClientProps {
+  initialTree: DepartmentNode[];
 }
 
-export function OrgsClient({ initialTree }: OrgsClientProps) {
-  const [tree, setTree] = useState<OrgNode[]>(initialTree);
+export function DepartmentsClient({ initialTree }: DepartmentsClientProps) {
+  const [tree, setTree] = useState<DepartmentNode[]>(initialTree);
   const [creating, setCreating] = useState<{ parentId: number | null } | null>(null);
-  const [editing, setEditing] = useState<OrgNode | null>(null);
-  const [deleting, setDeleting] = useState<OrgNode | null>(null);
+  const [editing, setEditing] = useState<DepartmentNode | null>(null);
+  const [deleting, setDeleting] = useState<DepartmentNode | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleConfirmDelete() {
     if (!deleting) return;
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/orgs/${deleting.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/departments/${deleting.id}`, { method: "DELETE" });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         toast.error(err.error ?? `删除失败 (${res.status})`);
@@ -82,16 +82,16 @@ export function OrgsClient({ initialTree }: OrgsClientProps) {
 
   return (
     <div
-      data-testid="orgs-page"
+      data-testid="departments-page"
       data-fn="M02.F01.I01"
       className="container mx-auto space-y-6 py-8"
     >
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>组织管理</CardTitle>
+          <CardTitle>部门管理</CardTitle>
           <div className="space-x-2">
             <Button
-              data-testid="new-org-btn"
+              data-testid="new-department-btn"
               data-fn="M02.F01.I03"
               size="sm"
               onClick={() => setCreating({ parentId: null })}
@@ -99,7 +99,7 @@ export function OrgsClient({ initialTree }: OrgsClientProps) {
               新增根部门
             </Button>
             <Button
-              data-testid="new-org-btn"
+              data-testid="new-department-btn"
               data-fn="M02.F01.I04"
               size="sm"
               variant="outline"
@@ -127,7 +127,7 @@ export function OrgsClient({ initialTree }: OrgsClientProps) {
               {tree.map((o) => (
                 <TableRow
                   key={o.id}
-                  data-testid="org-row"
+                  data-testid="department-row"
                   className={o.depth ? `ml-${(o.depth ?? 0) * 8}` : ""}
                 >
                   <TableCell className="font-medium">{o.name}</TableCell>
@@ -135,7 +135,7 @@ export function OrgsClient({ initialTree }: OrgsClientProps) {
                   <TableCell>{o.enabled ? "✓" : "✗"}</TableCell>
                   <TableCell className="space-x-2 text-right">
                     <Button
-                      data-testid="edit-org-btn"
+                      data-testid="edit-department-btn"
                       data-fn="M02.F01.I05"
                       size="sm"
                       variant="outline"
@@ -144,7 +144,7 @@ export function OrgsClient({ initialTree }: OrgsClientProps) {
                       编辑
                     </Button>
                     <Button
-                      data-testid="delete-org-btn"
+                      data-testid="delete-department-btn"
                       data-fn="M02.F01.I06"
                       size="sm"
                       variant="destructive"
@@ -161,7 +161,7 @@ export function OrgsClient({ initialTree }: OrgsClientProps) {
       </Card>
 
       {creating ? (
-        <NewOrgDialog
+        <NewDepartmentDialog
           parentId={creating.parentId}
           tree={tree}
           open
@@ -176,8 +176,8 @@ export function OrgsClient({ initialTree }: OrgsClientProps) {
       ) : null}
 
       {editing ? (
-        <EditOrgDialog
-          org={editing}
+        <EditDepartmentDialog
+          department={editing}
           tree={tree}
           open
           onOpenChange={(o) => !o && setEditing(null)}
@@ -208,17 +208,17 @@ export function OrgsClient({ initialTree }: OrgsClientProps) {
 /* 新增部门对话框                                                              */
 /* -------------------------------------------------------------------------- */
 
-interface NewOrgDialogProps {
+interface NewDepartmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   parentId: number | null;
-  tree: OrgNode[];
+  tree: DepartmentNode[];
   submitting: boolean;
   setSubmitting: (v: boolean) => void;
-  onCreated: (org: OrgNode) => void;
+  onCreated: (dept: DepartmentNode) => void;
 }
 
-function NewOrgDialog({
+function NewDepartmentDialog({
   open,
   onOpenChange,
   parentId,
@@ -226,7 +226,7 @@ function NewOrgDialog({
   submitting,
   setSubmitting,
   onCreated,
-}: NewOrgDialogProps) {
+}: NewDepartmentDialogProps) {
   const [name, setName] = useState("");
   const [pickedParentId, setPickedParentId] = useState<string>(
     () => (parentId === null ? "" : String(parentId)),
@@ -249,7 +249,7 @@ function NewOrgDialog({
     const sortNum = Number(sort);
     setSubmitting(true);
     try {
-      const res = await fetch("/api/orgs", {
+      const res = await fetch("/api/departments", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -264,7 +264,7 @@ function NewOrgDialog({
         toast.error(err.error ?? `创建失败 (${res.status})`);
         return;
       }
-      const created = (await res.json()) as OrgNode;
+      const created = (await res.json()) as DepartmentNode;
       onCreated(created);
       toast.success(`部门 ${created.name} 已创建`);
       reset();
@@ -277,24 +277,24 @@ function NewOrgDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent data-testid="new-org-dialog">
+      <DialogContent data-testid="new-department-dialog">
         <DialogHeader>
           <DialogTitle>{parentId === null ? "新增根部门" : "新增子部门"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <Field label="名称" required htmlFor="new-org-name">
+          <Field label="名称" required htmlFor="new-department-name">
             <Input
-              id="new-org-name"
-              data-testid="new-org-name"
+              id="new-department-name"
+              data-testid="new-department-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="如 Engineering"
             />
           </Field>
-          <Field label="父部门" htmlFor="new-org-parent" hint="留空=根部门">
+          <Field label="父部门" htmlFor="new-department-parent" hint="留空=根部门">
             <select
-              id="new-org-parent"
-              data-testid="new-org-parent"
+              id="new-department-parent"
+              data-testid="new-department-parent"
               value={pickedParentId}
               onChange={(e) => setPickedParentId(e.target.value)}
               className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
@@ -308,19 +308,19 @@ function NewOrgDialog({
               ))}
             </select>
           </Field>
-          <Field label="排序" htmlFor="new-org-sort">
+          <Field label="排序" htmlFor="new-department-sort">
             <Input
-              id="new-org-sort"
-              data-testid="new-org-sort"
+              id="new-department-sort"
+              data-testid="new-department-sort"
               type="number"
               value={sort}
               onChange={(e) => setSort(e.target.value)}
             />
           </Field>
-          <Field label="启用" htmlFor="new-org-enabled">
+          <Field label="启用" htmlFor="new-department-enabled">
             <input
-              id="new-org-enabled"
-              data-testid="new-org-enabled"
+              id="new-department-enabled"
+              data-testid="new-department-enabled"
               type="checkbox"
               checked={enabled}
               onChange={(e) => setEnabled(e.target.checked)}
@@ -340,7 +340,7 @@ function NewOrgDialog({
             取消
           </Button>
           <Button
-            data-testid="new-org-submit"
+            data-testid="new-department-submit"
             onClick={handleSubmit}
             disabled={submitting}
           >
@@ -356,31 +356,31 @@ function NewOrgDialog({
 /* 编辑部门对话框                                                              */
 /* -------------------------------------------------------------------------- */
 
-interface EditOrgDialogProps {
+interface EditDepartmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  org: OrgNode;
-  tree: OrgNode[];
+  department: DepartmentNode;
+  tree: DepartmentNode[];
   submitting: boolean;
   setSubmitting: (v: boolean) => void;
-  onUpdated: (org: OrgNode) => void;
+  onUpdated: (dept: DepartmentNode) => void;
 }
 
-function EditOrgDialog({
+function EditDepartmentDialog({
   open,
   onOpenChange,
-  org,
+  department,
   tree,
   submitting,
   setSubmitting,
   onUpdated,
-}: EditOrgDialogProps) {
-  const [name, setName] = useState(org.name);
+}: EditDepartmentDialogProps) {
+  const [name, setName] = useState(department.name);
   const [pickedParentId, setPickedParentId] = useState<string>(
-    () => (org.parentId === null ? "" : String(org.parentId)),
+    () => (department.parentId === null ? "" : String(department.parentId)),
   );
-  const [sort, setSort] = useState(String(org.sort));
-  const [enabled, setEnabled] = useState(org.enabled);
+  const [sort, setSort] = useState(String(department.sort));
+  const [enabled, setEnabled] = useState(department.enabled);
 
   async function handleSubmit() {
     if (!name.trim()) {
@@ -390,7 +390,7 @@ function EditOrgDialog({
     const sortNum = Number(sort);
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/orgs/${org.id}`, {
+      const res = await fetch(`/api/departments/${department.id}`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -405,7 +405,7 @@ function EditOrgDialog({
         toast.error(err.error ?? `保存失败 (${res.status})`);
         return;
       }
-      const updated = (await res.json()) as OrgNode;
+      const updated = (await res.json()) as DepartmentNode;
       onUpdated(updated);
       toast.success(`部门 ${updated.name} 已更新`);
     } catch (e) {
@@ -417,30 +417,30 @@ function EditOrgDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent data-testid="edit-org-dialog">
+      <DialogContent data-testid="edit-department-dialog">
         <DialogHeader>
           <DialogTitle>编辑部门</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <Field label="名称" required htmlFor="edit-org-name">
+          <Field label="名称" required htmlFor="edit-department-name">
             <Input
-              id="edit-org-name"
-              data-testid="edit-org-name"
+              id="edit-department-name"
+              data-testid="edit-department-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </Field>
-          <Field label="父部门" htmlFor="edit-org-parent" hint="不能选自己或自己的子孙">
+          <Field label="父部门" htmlFor="edit-department-parent" hint="不能选自己或自己的子孙">
             <select
-              id="edit-org-parent"
-              data-testid="edit-org-parent"
+              id="edit-department-parent"
+              data-testid="edit-department-parent"
               value={pickedParentId}
               onChange={(e) => setPickedParentId(e.target.value)}
               className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
             >
               <option value="">（无 — 根部门）</option>
               {tree
-                .filter((o) => o.id !== org.id)
+                .filter((o) => o.id !== department.id)
                 .map((o) => (
                   <option key={o.id} value={o.id}>
                     {"　".repeat(o.depth ?? 0)}
@@ -449,19 +449,19 @@ function EditOrgDialog({
                 ))}
             </select>
           </Field>
-          <Field label="排序" htmlFor="edit-org-sort">
+          <Field label="排序" htmlFor="edit-department-sort">
             <Input
-              id="edit-org-sort"
-              data-testid="edit-org-sort"
+              id="edit-department-sort"
+              data-testid="edit-department-sort"
               type="number"
               value={sort}
               onChange={(e) => setSort(e.target.value)}
             />
           </Field>
-          <Field label="启用" htmlFor="edit-org-enabled">
+          <Field label="启用" htmlFor="edit-department-enabled">
             <input
-              id="edit-org-enabled"
-              data-testid="edit-org-enabled"
+              id="edit-department-enabled"
+              data-testid="edit-department-enabled"
               type="checkbox"
               checked={enabled}
               onChange={(e) => setEnabled(e.target.checked)}
@@ -478,7 +478,7 @@ function EditOrgDialog({
             取消
           </Button>
           <Button
-            data-testid="edit-org-submit"
+            data-testid="edit-department-submit"
             onClick={handleSubmit}
             disabled={submitting}
           >

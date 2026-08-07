@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
  *   - 客户端不做 fetch、不直连 DB（项目 CLAUDE.md 第二节「禁止 client 组件内联 fetch / 直连数据库」）
  *   - 每张卡都用 <Link href> 包裹，是声明式导航：跳 /tenants /users /orgs
  *   - data-fn="M01.F05.I01" 挂在 Link 元素上（L5 reachability 验证）
+ *
+ * v0.3.0 重命名：原「组织架构 /orgs」已迁到 /departments（与 shared 对齐）。
  */
 
 interface DashboardCounts {
