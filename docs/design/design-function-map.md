@@ -39,6 +39,13 @@
 | M01.F04.I03 | SSO 回调处理页 | 接口 |  |  |
 | M01.F04.I04 | 登录入口页 | 接口 |  |  |
 | M01.F04.I05 | SSO handler + JWT 工具 | 接口 | `sso/{ssoRedirect,SsoCallback}` + MSW `/sso/*` |  |
+| M01.F04.I06 | 授权码端点（/api/sso/authorize） | 接口 | `api/sso/authorize/route.ts:GET → 302 redirect` |  |
+| M01.F04.I07 | 授权码换 token（/api/auth/oauth/callback） | 接口 | `api/auth/oauth/callback/route.ts:POST {code, clientId} → {token, user}` |  |
+| M01.F04.I08 | 权限集端点（/api/auth/permissions） | 接口 | `api/auth/permissions/route.ts:GET Bearer, ?departmentId` |  |
+| M01.F04.I09 | 业务菜单端点（/api/sso/menus） | 接口 | `api/sso/menus/route.ts:GET ?appId=app-lab` |  |
+| M01.F05.I01 | 仪表盘页面 | 页面 | `app/(protected)/page.tsx` |  |
+| M01.F05.I02 | 卡片聚合查询 | 接口 | `lib/dashboard-store.ts:getDashboardCounts()` |  |
+| M01.F05.I03 | 卡片点击跳转 | 按钮 | `data-fn="M01.F05.I03" on 3 Cards (Link)` |  |
 | __M02.F01__ | __M02 模块__部门管理页 类的子项__ | — | — | — |
 | M02.F01.I01 | 部门管理页 | 接口 |  |  |
 | M02.F01.I02 | 查询部门树 | 接口 |  |  |
