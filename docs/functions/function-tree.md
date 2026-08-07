@@ -4,8 +4,7 @@
 >
 > - 真相源：本文件
 > - 3 仓 `docs/functions/function-tree.md` 用 [`scripts/sync_function_tree.mjs`](../../../../../scripts/sync_function_tree.mjs) 同步
-> - nextjs 仓独有 7 个 M01 item 在 nextjs 仓 `docs/functions/extension.md`（OAuth IdP 委托）
-> - React 仓与 Vue 仓不加 extension item
+> - 三仓功能完全一致（同 base）
 >
 > 跨仓完整性由 `python scripts/gate.py --align` 校验（本仓 Phase 6 落地）。
 >
@@ -40,10 +39,10 @@
 |---|---|---|---|
 | M01 | 租户与身份基础 | 多租户切换、租户主题、认证 store、SSO 单点登录 | 已上线 |
 | M02 | 部门与人员 | 部门管理、用户管理、岗位管理 | 已上线 |
-| M03 | 权限模型 | 角色、权限组、用户组（RBAC 三件套） | 已上线 |
-| M04 | 应用与凭据 | 应用管理、API Key 管理 | 已上线 |
+| M03 | 权限模型 | 角色、权限组、用户组、角色菜单权限绑定 | 已上线 |
+| M04 | 应用与凭据 | 应用管理、API Key 管理、菜单模板 | 已上线 |
 | M05 | 审计日志 | 操作日志、登录日志、IP 筛选 | 已上线 |
-| M06 | 平台运营 | 登录策略、密码策略、令牌配置、通知配置、风险控制、开放平台、平台基础配置 | 已上线 |
+| M06 | 平台运营 | 登录策略、密码策略、令牌配置、通知配置、风险控制、开放平台、平台基础配置、OAuth scope、登录方式、SSO 提供商、OAuth2 提供商 | 已上线 |
 
 ## 模块明细
 
@@ -94,6 +93,24 @@
 | M01.F04.I03 | SSO 回调处理页 | 接口 | 已上线 |
 | M01.F04.I04 | 登录入口页 | 接口 | 已上线 |
 | M01.F04.I05 | SSO handler + JWT 工具 | 接口 | 已上线 |
+| M01.F04.I06 | 授权码端点（/sso/authorize） | 接口 | 已上线 |
+| M01.F04.I07 | 授权码换 token（/auth/oauth/callback） | 接口 | 已上线 |
+| M01.F04.I08 | 权限集端点（/auth/permissions） | 接口 | 已上线 |
+| M01.F04.I09 | 业务菜单端点（/sso/menus） | 接口 | 已上线 |
+
+| 功能 ID | 功能名称 | 业务闭环 | 状态 |
+|---|---|---|---|
+| M01.F05 | 仪表盘首页 | tenants/users/todayLogins 三卡聚合 + 跳转 | 已上线 |
+
+| 子项 ID | 名称 | 类型 | 状态 |
+|---|---|---|---|
+| M01.F05.I01 | 仪表盘页面 | 接口 | 已上线 |
+| M01.F05.I02 | 卡片聚合查询 | 接口 | 已上线 |
+| M01.F05.I03 | 卡片点击跳转 | 接口 | 已上线 |
+
+| 功能 ID | 功能名称 | 业务闭环 | 状态 |
+|---|---|---|---|
+| M01.F06 | shared-seed-loader | scripts/seed.ts + src/db/seed.ts 改读 shared 单一入口 | 已上线 |
 
 ### M02 — 部门与人员
 | 功能 ID | 功能名称 | 业务闭环 | 状态 |
@@ -181,6 +198,18 @@
 | M03.F03.I03 | 编辑用户组 | 接口 | 已上线 |
 | M03.F03.I04 | 删除用户组 | 接口 | 已上线 |
 | M03.F03.I05 | 用户组 store 内部接口 | 接口 | 已上线 |
+
+| 功能 ID | 功能名称 | 业务闭环 | 状态 |
+|---|---|---|---|
+| M03.F04 | 角色菜单权限绑定 | Role.menuPermissions[] 落库为 role_menu_permissions 中间表 | 已上线 |
+
+| 子项 ID | 名称 | 类型 | 状态 |
+|---|---|---|---|
+| M03.F04.I01 | 按角色查询菜单权限 | 接口 | 已上线 |
+| M03.F04.I02 | 新增角色菜单权限 | 接口 | 已上线 |
+| M03.F04.I03 | 编辑角色菜单权限 | 接口 | 已上线 |
+| M03.F04.I04 | 删除角色菜单权限 | 接口 | 已上线 |
+| M03.F04.I05 | 角色菜单权限 store 内部接口 | 接口 | 已上线 |
 
 ### M04 — 应用与凭据
 | 功能 ID | 功能名称 | 业务闭环 | 状态 |
@@ -332,39 +361,82 @@
 | 子项 ID | 名称 | 类型 | 状态 |
 |---|---|---|---|
 | M06.F08.I01 | 平台配置页 | 接口 | 已上线 |
-# Function Tree Extension — saas-identity-platform-nextjs
-
-> nextjs 仓独有 7 个 M01 item（OAuth IdP 4 + Dashboard 3）。详见 [ADR 0001](../../../../../saas-identity-platform-shared/docs/adr/0001-shared-submodule-structure.md) §「Function-tree 模型」。
->
-> 与 base 划边：本文件不在 shared 仓 base 内，也不被 React/Vue 仓同步。
->
-> 同步逻辑：nextjs 仓 'docs/functions/function-tree.md' 由 sync 脚本追加本文件内容到末尾，使 L5 扫描能识别本仓独有 ID。'extension.md' 单独保留一份作可读性副本。
-
----
-
-## M01 扩展
-
-### M01.F04 扩展（OAuth 委托登录子项）
-
-M01.F04 在 base 中已定义（SSO 单点登录），下面是 nextjs 额外实现的 4 个 OAuth IdP 子项：
-
-| 子项 ID | 名称 | 类型 | 状态 |
-|---|---|---|---|
-| M01.F04.I06 | 授权码端点（/api/sso/authorize） | 接口 | 已上线 |
-| M01.F04.I07 | 授权码换 token（/api/auth/oauth/callback） | 接口 | 已上线 |
-| M01.F04.I08 | 权限集端点（/api/auth/permissions） | 接口 | 已上线 |
-| M01.F04.I09 | 业务菜单端点（/api/sso/menus） | 接口 | 已上线 |
-
-### M01.F05 — 仪表盘首页 (nextjs 独有)
-
-M01.F05 在 base 中无定义，下表是 nextjs 独有功能 + 子项：
 
 | 功能 ID | 功能名称 | 业务闭环 | 状态 |
 |---|---|---|---|
-| M01.F05 | 仪表盘首页 | tenants/users/todayLogins 3 卡 + 跳转 | 已上线 |
+| M06.F09 | 平台配置 singletons | 6 张单例配置表 CRUD（token/login-security/password/risk/notification/open-platform） | 已上线 |
 
 | 子项 ID | 名称 | 类型 | 状态 |
 |---|---|---|---|
-| M01.F05.I01 | 仪表盘页面 | 页面 | 已上线 |
-| M01.F05.I02 | 卡片聚合查询 | 接口 | 已上线 |
-| M01.F05.I03 | 卡片点击跳转 | 按钮 | 已上线 |
+| M06.F09.I01 | token-config 单例 CRUD | 接口 | 已上线 |
+| M06.F09.I02 | login-security 单例 CRUD | 接口 | 已上线 |
+| M06.F09.I03 | password-policy 单例 CRUD | 接口 | 已上线 |
+| M06.F09.I04 | risk-control 单例 CRUD | 接口 | 已上线 |
+| M06.F09.I05 | notification-config 单例 CRUD | 接口 | 已上线 |
+| M06.F09.I06 | open-platform-config 单例 CRUD | 接口 | 已上线 |
+
+| 功能 ID | 功能名称 | 业务闭环 | 状态 |
+|---|---|---|---|
+| M06.F10 | OAuth scope 注册表 | oauth_scopes 表 CRUD（/auth/permissions 路由强依赖） | 已上线 |
+
+| 子项 ID | 名称 | 类型 | 状态 |
+|---|---|---|---|
+| M06.F10.I01 | OAuth scope 列表 | 接口 | 已上线 |
+| M06.F10.I02 | 按 app 查询 scope | 接口 | 已上线 |
+| M06.F10.I03 | 新增 OAuth scope | 接口 | 已上线 |
+| M06.F10.I04 | 编辑 OAuth scope | 接口 | 已上线 |
+| M06.F10.I05 | 删除 OAuth scope | 接口 | 已上线 |
+
+| 功能 ID | 功能名称 | 业务闭环 | 状态 |
+|---|---|---|---|
+| M06.F11 | 登录方式 | login_methods 表（6 种登录方式开关） | 已上线 |
+
+| 子项 ID | 名称 | 类型 | 状态 |
+|---|---|---|---|
+| M06.F11.I01 | 登录方式列表 | 接口 | 已上线 |
+| M06.F11.I02 | 查询单个登录方式 | 接口 | 已上线 |
+| M06.F11.I03 | 启用/禁用登录方式 | 接口 | 已上线 |
+| M06.F11.I04 | 登录方式 store 内部接口 | 接口 | 已上线 |
+
+| 功能 ID | 功能名称 | 业务闭环 | 状态 |
+|---|---|---|---|
+| M06.F12 | SSO 提供商 | sso_providers 表 CRUD（oidc/saml/cas） | 已上线 |
+
+| 子项 ID | 名称 | 类型 | 状态 |
+|---|---|---|---|
+| M06.F12.I01 | SSO 提供商列表 | 接口 | 已上线 |
+| M06.F12.I02 | 新增 SSO 提供商 | 接口 | 已上线 |
+| M06.F12.I03 | 编辑 SSO 提供商 | 接口 | 已上线 |
+| M06.F12.I04 | 删除 SSO 提供商 | 接口 | 已上线 |
+
+| 功能 ID | 功能名称 | 业务闭环 | 状态 |
+|---|---|---|---|
+| M06.F13 | OAuth2 提供商 | oauth2_providers 表 CRUD | 已上线 |
+
+| 子项 ID | 名称 | 类型 | 状态 |
+|---|---|---|---|
+| M06.F13.I01 | OAuth2 提供商列表 | 接口 | 已上线 |
+| M06.F13.I02 | 新增 OAuth2 提供商 | 接口 | 已上线 |
+| M06.F13.I03 | 编辑 OAuth2 提供商 | 接口 | 已上线 |
+| M06.F13.I04 | 删除 OAuth2 提供商 | 接口 | 已上线 |
+
+| 功能 ID | 功能名称 | 业务闭环 | 状态 |
+|---|---|---|---|
+| M06.F14 | 菜单模板 | menu_templates 表（每 app 单例） | 已上线 |
+
+| 子项 ID | 名称 | 类型 | 状态 |
+|---|---|---|---|
+| M06.F14.I01 | 按 app 查询菜单模板 | 接口 | 已上线 |
+| M06.F14.I02 | upsert 菜单模板 | 接口 | 已上线 |
+
+<!-- nextjs-extension:start -->
+<!--
+本 sentinel 块目前为空。shared v0.3.0 字段合同对齐新增的 38 条 SaaS Identity 平台基础能力
+（M01.F06 / M03.F04 / M06.F09-F14）+ 历史 7 条 nextjs-only 条目（OAuth IdP 4 + Dashboard 3）的
+真实归属是 shared base（OAuth IdP 在 React 仓 msw/handlers.ts 也实现，Dashboard 在 React 仓
+src/pages/Dashboard.tsx + 路由 /dashboard 也实现），正由 saas-identity-platform-shared 仓新一轮
+tree-change 提案迁入 base。迁入完成后由 scripts/sync_function_tree.mjs 同步至 3 仓。
+
+sentinel 块保留是为未来 nextjs 端独有扩展留位置，sync 脚本会保留本块不被覆盖。
+-->
+<!-- nextjs-extension:end -->

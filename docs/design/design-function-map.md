@@ -4,7 +4,7 @@
 >
 > - base = React 仓当前 5 列表（5 列：子项 ID / 名称 / 类型 / 接口·实现 / 权限码）
 > - 3 仓 `docs/design/design-function-map.md` 用 `scripts/sync_function_tree.mjs` 同步（Phase 5 启用 cp）
-> - nextjs 仓独有 7 个 M01 item 的设计映射在 nextjs 仓 `docs/design/design-extension.md`（与 `extension.md` 配套）
+> - 三仓设计映射完全一致（同 base）
 >
 > 详见 [ADR 0001](../adr/0001-shared-submodule-structure.md)。
 
@@ -39,13 +39,16 @@
 | M01.F04.I03 | SSO 回调处理页 | 接口 |  |  |
 | M01.F04.I04 | 登录入口页 | 接口 |  |  |
 | M01.F04.I05 | SSO handler + JWT 工具 | 接口 | `sso/{ssoRedirect,SsoCallback}` + MSW `/sso/*` |  |
-| M01.F04.I06 | 授权码端点（/api/sso/authorize） | 接口 | `api/sso/authorize/route.ts:GET → 302 redirect` |  |
-| M01.F04.I07 | 授权码换 token（/api/auth/oauth/callback） | 接口 | `api/auth/oauth/callback/route.ts:POST {code, clientId} → {token, user}` |  |
-| M01.F04.I08 | 权限集端点（/api/auth/permissions） | 接口 | `api/auth/permissions/route.ts:GET Bearer, ?departmentId` |  |
-| M01.F04.I09 | 业务菜单端点（/api/sso/menus） | 接口 | `api/sso/menus/route.ts:GET ?appId=app-lab` |  |
-| M01.F05.I01 | 仪表盘页面 | 页面 | `app/(protected)/page.tsx` |  |
-| M01.F05.I02 | 卡片聚合查询 | 接口 | `lib/dashboard-store.ts:getDashboardCounts()` |  |
-| M01.F05.I03 | 卡片点击跳转 | 按钮 | `data-fn="M01.F05.I03" on 3 Cards (Link)` |  |
+| M01.F04.I06 | 授权码端点（/sso/authorize） | 接口 | `nextjs/api/sso/authorize` + shared seed labTenant() |  |
+| M01.F04.I07 | 授权码换 token（/auth/oauth/callback） | 接口 | `nextjs/api/auth/oauth/callback` + shared LAB_USERS |  |
+| M01.F04.I08 | 权限集端点（/auth/permissions） | 接口 | `nextjs/api/auth/permissions` + shared LAB_ROLES |  |
+| M01.F04.I09 | 业务菜单端点（/sso/menus） | 接口 | `nextjs/api/sso/menus` + shared labMenus() |  |
+| __M01.F05__ | __M01 模块__仪表盘页面 类的子项__ | — | — | — |
+| M01.F05.I01 | 仪表盘页面 | 页面 | `pages/Dashboard.tsx`（React/Next.js）/ Vue `pages/Dashboard.vue` |  |
+| M01.F05.I02 | 卡片聚合查询 | 接口 | `dashboard/dashboard-store.{getDashboardCounts}` |  |
+| M01.F05.I03 | 卡片点击跳转 | 按钮 | `home-client.tsx` onClick 路由 |  |
+| __M01.F06__ | __M01 模块__shared-seed-loader 类的子项__ | — | — | — |
+| M01.F06 | shared-seed-loader | 接口 | `lib/shared-seed-loader.ts` 跨 schemas/seeds 单一入口 |  |
 | __M02.F01__ | __M02 模块__部门管理页 类的子项__ | — | — | — |
 | M02.F01.I01 | 部门管理页 | 接口 |  |  |
 | M02.F01.I02 | 查询部门树 | 接口 |  |  |
@@ -95,6 +98,12 @@
 | M03.F03.I03 | 编辑用户组 | 接口 |  |  |
 | M03.F03.I04 | 删除用户组 | 接口 |  |  |
 | M03.F03.I05 | 用户组 store 内部接口 | 接口 | `useUserGroupStore.*` |  |
+| __M03.F04__ | __M03 模块__按角色查询菜单权限 类的子项__ | — | — | — |
+| M03.F04.I01 | 按角色查询菜单权限 | 接口 | `role-menu-permissions-store.listByRole` |  |
+| M03.F04.I02 | 新增角色菜单权限 | 接口 | `role-menu-permissions-store.create` |  |
+| M03.F04.I03 | 编辑角色菜单权限 | 接口 | `role-menu-permissions-store.update` |  |
+| M03.F04.I04 | 删除角色菜单权限 | 接口 | `role-menu-permissions-store.delete` |  |
+| M03.F04.I05 | 角色菜单权限 store 内部接口 | 接口 | `role-menu-permissions-store.*` |  |
 | __M04.F01__ | __M04 模块__应用列表页面 类的子项__ | — | — | — |
 | M04.F01.I01 | 应用列表页面 | 接口 |  |  |
 | M04.F01.I02 | 搜索应用 | 接口 |  |  |
@@ -177,3 +186,34 @@
 | M06.F07.I06 | 回调地址白名单 | 接口 |  |  |
 | __M06.F08__ | __M06 模块__平台配置页 类的子项__ | — | — | — |
 | M06.F08.I01 | 平台配置页 | 接口 |  |  |
+| __M06.F09__ | __M06 模块__token-config 单例 CRUD 类的子项__ | — | — | — |
+| M06.F09.I01 | token-config 单例 CRUD | 接口 | `token-config-store.upsert` / MSW `/token-config*` |  |
+| M06.F09.I02 | login-security 单例 CRUD | 接口 | `login-security-store.upsert` / MSW `/login-security*` |  |
+| M06.F09.I03 | password-policy 单例 CRUD | 接口 | `password-policy-store.upsert` / MSW `/password-policy*` |  |
+| M06.F09.I04 | risk-control 单例 CRUD | 接口 | `risk-control-store.upsert` / MSW `/risk-control*` |  |
+| M06.F09.I05 | notification-config 单例 CRUD | 接口 | `notification-config-store.upsert` / MSW `/notification-config*` |  |
+| M06.F09.I06 | open-platform-config 单例 CRUD | 接口 | `open-platform-config-store.upsert` / MSW `/open-platform-config*` |  |
+| __M06.F10__ | __M06 模块__OAuth scope 列表 类的子项__ | — | — | — |
+| M06.F10.I01 | OAuth scope 列表 | 接口 | `oauth-scope-store.list` / MSW `/oauth-scopes*` |  |
+| M06.F10.I02 | 按 app 查询 scope | 接口 | `oauth-scope-store.listByApp` |  |
+| M06.F10.I03 | 新增 OAuth scope | 接口 | `oauth-scope-store.create` |  |
+| M06.F10.I04 | 编辑 OAuth scope | 接口 | `oauth-scope-store.update` |  |
+| M06.F10.I05 | 删除 OAuth scope | 接口 | `oauth-scope-store.delete` |  |
+| __M06.F11__ | __M06 模块__登录方式列表 类的子项__ | — | — | — |
+| M06.F11.I01 | 登录方式列表 | 接口 | `login-method-store.list` / MSW `/login-methods*` |  |
+| M06.F11.I02 | 查询单个登录方式 | 接口 | `login-method-store.get` |  |
+| M06.F11.I03 | 启用/禁用登录方式 | 接口 | `login-method-store.update` toggle |  |
+| M06.F11.I04 | 登录方式 store 内部接口 | 接口 | `login-method-store.*` |  |
+| __M06.F12__ | __M06 模块__SSO 提供商列表 类的子项__ | — | — | — |
+| M06.F12.I01 | SSO 提供商列表 | 接口 | `sso-provider-store.list` / MSW `/sso-providers*` |  |
+| M06.F12.I02 | 新增 SSO 提供商 | 接口 | `sso-provider-store.create` |  |
+| M06.F12.I03 | 编辑 SSO 提供商 | 接口 | `sso-provider-store.update` |  |
+| M06.F12.I04 | 删除 SSO 提供商 | 接口 | `sso-provider-store.delete` |  |
+| __M06.F13__ | __M06 模块__OAuth2 提供商列表 类的子项__ | — | — | — |
+| M06.F13.I01 | OAuth2 提供商列表 | 接口 | `oauth2-provider-store.list` / MSW `/oauth2-providers*` |  |
+| M06.F13.I02 | 新增 OAuth2 提供商 | 接口 | `oauth2-provider-store.create` |  |
+| M06.F13.I03 | 编辑 OAuth2 提供商 | 接口 | `oauth2-provider-store.update` |  |
+| M06.F13.I04 | 删除 OAuth2 提供商 | 接口 | `oauth2-provider-store.delete` |  |
+| __M06.F14__ | __M06 模块__按 app 查询菜单模板 类的子项__ | — | — | — |
+| M06.F14.I01 | 按 app 查询菜单模板 | 接口 | `menu-template-store.getByApp` / MSW `/menu-templates*` |  |
+| M06.F14.I02 | upsert 菜单模板 | 接口 | `menu-template-store.upsert` |  |
