@@ -428,15 +428,3 @@
 |---|---|---|---|
 | M06.F14.I01 | 按 app 查询菜单模板 | 接口 | 已上线 |
 | M06.F14.I02 | upsert 菜单模板 | 接口 | 已上线 |
-
-<!-- nextjs-extension:start -->
-<!--
-本 sentinel 块目前为空。shared v0.3.0 字段合同对齐新增的 38 条 SaaS Identity 平台基础能力
-（M01.F06 / M03.F04 / M06.F09-F14）+ 历史 7 条 nextjs-only 条目（OAuth IdP 4 + Dashboard 3）的
-真实归属是 shared base（OAuth IdP 在 React 仓 msw/handlers.ts 也实现，Dashboard 在 React 仓
-src/pages/Dashboard.tsx + 路由 /dashboard 也实现），正由 saas-identity-platform-shared 仓新一轮
-tree-change 提案迁入 base。迁入完成后由 scripts/sync_function_tree.mjs 同步至 3 仓。
-
-sentinel 块保留是为未来 nextjs 端独有扩展留位置，sync 脚本会保留本块不被覆盖。
--->
-<!-- nextjs-extension:end -->
