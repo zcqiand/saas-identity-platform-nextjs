@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "补 OAuth 2.0 IdP 4 路由（authorize / oauth/callback / permissions / sso/menus）给 lab-nextjs 委托登录用，168 条功能（4 个新 M01.F04.I06-I09），33 软告警（M01.F01-F03 遗留与本轮无关）。L0..L5 全绿、160 tests pass。",
+  "current_task": "M2-B：saas-nextjs schema 切 codegen barrel + 删 menu_templates/tenant_users。shared emit-ts 升 drizzle 0.30 兼容 + camelCase + 数组 .array()。nextjs schema.ts 改 barrel re-export（gitignore generated），drizzle-kit generate 出 27 表 0000_init.sql（无 menu_templates/tenant_users）。permissions-store 删 tenant_users.role 派生。tests/lib/shared-seed-loader + coverage-shared 删 obsolete fnTest。npm run typecheck + eslint + shared codegen:check 全绿；vitest 待 PG 可达后跑。",
   "done": [
     "(2026-08-01) commit 4801603 feat(sso): saas-nextjs 补 OAuth 2.0 IdP 4 路由 + lab 业务数据种子。12 文件 / +823:src/lib/sso-jwt.ts (jose HS256 + SsoClaims) + src/lib/lab-seed.ts (tenant-lab + org-lab-root + LAB_ROLES 2 项 + LAB_MENUS 14 项) + /api/sso/authorize + /api/auth/oauth/callback + /api/auth/permissions + /api/sso/menus 4 路由 + 4 测试 fnTest M01.F04.I06-I09 + function-tree 加 4 个新子项 + design-function-map 同步",
     "(2026-08-01) 端到端:tsc 0 / vitest 22 文件 160 测试 / gate --all 9 项目 exit 0。本仓单项目 saas-identity-platform-nextjs gate exit 0 / 168 功能条目 / 33 软告警（M01.F04.I06-I09 加设计映射后从 41 降到 33；M01.F01-F03 类型遗留与本轮无关）",
@@ -117,28 +117,23 @@
     "(2026-08-07) scripts/seed.ts 重写：完全改读 @saas/identity-platform-shared/seeds，消除本地 TENANT_SEED/USER_SEED/ORG_SEED/ROLE_SEED/... 共 8 套 fixture（200+ 行），改读 shared 22 个常量 + 22 表 wipe→insert。HEALTH_CHECK_SEED 1 行作为 shared 无的派生数据保留。结果：npm run db:seed 灌出来的库与 shared v0.3.0 真正对齐（之前 3 租户/5 用户/4 部门是 v0.2.0 mock 时代数据）。src/db/seed.ts 早于本轮已是 shared 版本，本次保持一致",
     "(2026-08-07) app_menus 插入顺序 bug 修复：shared app-menus.json 父菜单（grp-res/grp-biz/grp-master/grp-insp/grp-stat）sort 值高于子菜单（m-contracts/m-receipts/...），原插入循环按 sort 顺序排导致子菜单 parent FK 失败（src/db/seed.ts:225 FK violation 报 5 个孤儿对）。拆成两轮：先插 parentId=null 根菜单，再插 parentId!=null 子菜单。scripts/seed.ts + src/db/seed.ts 同改。最大嵌套深度=1，二轮足够",
     "(2026-08-07) Q4-Q7 4 个数据空缺全部修：Q4 灌 user_group_members 中间表（5 组 userIds 11 关联）；Q5 灌 platform_settings 表（44 keys 覆盖 M06 7 个 settings/* 页初始值）；Q7 themeString() 保留作 defensive helper（shared seed v0.3.1.1 起已统一字符串，但 schema union 仍兼容对象）；scripts/seed.ts 与 src/db/seed.ts 同步增 PLATFORM_SETTINGS import + user_group_members + platform_settings 3 个新 insert 循环",
-    "(2026-08-07) scripts/seed.ts 不再灌 6 张单例：6 张单例 schema/JSON/shared seed/react+vue 仓都保留（react/vue 仓 6 个 pages + msw handlers + tests 仍依赖），但 nextjs 端本仓 store 无 UI 消费者（登录安全/密码策略/风险/通知/开放平台/Token 6 个 store 文件存在但无 import），所以 scripts/seed.ts + src/db/seed.ts 删 6 张单例 import/wipe/insert。schema.ts 6 张表保留供 future 6 个 store 重启用 + react/vue 仓 shared schema 一致性。tests/coverage-shared.test.ts 同步修 r.menuPermissions 防御 null"
+    "(2026-08-07) scripts/seed.ts 不再灌 6 张单例：6 张单例 schema/JSON/shared seed/react+vue 仓都保留（react/vue 仓 6 个 pages + msw handlers + tests 仍依赖），但 nextjs 端本仓 store 无 UI 消费者（登录安全/密码策略/风险/通知/开放平台/Token 6 个 store 文件存在但无 import），所以 scripts/seed.ts + src/db/seed.ts 删 6 张单例 import/wipe/insert。schema.ts 6 张表保留供 future 6 个 store 重启用 + react/vue 仓 shared schema 一致性。tests/coverage-shared.test.ts 同步修 r.menuPermissions 防御 null",
+    "(2026-08-08) commit 1847e0c refactor(db): switch to shared codegen barrel, drop menu_templates/tenant_users (M2-B)。21 文件 / +1862 / -2844：src/db/schema.ts 381 行手写 → 60 行 barrel re-export + 别名；src/db/seed.ts + scripts/seed.ts 删 menuTemplates/tenantUsers 全栈；permissions-store.ts 删 tenant_users.role SQL；tests/lib/shared-seed-loader + coverage-shared 删 obsolete fnTest；menu-template-store.ts + tests/features/menu-templates.test.tsx + drizzle/0000_soft_inhumans.sql + 0001_loud_forge.sql + 0002_v030_alignment.sql + meta/0001_snapshot.json 删；drizzle/0000_init.sql + meta/0000_snapshot.json + meta/_journal.json 由 drizzle-kit generate 全量重生（27 表无 menu_templates/tenant_users）；drizzle.config.ts schema 字段指向 ./src/db/generated/db.pg.ts；package.json +sync:db-pg；scripts/sync-db-pg.ts 新增；src/db/index.ts 删预存无用 eslint-disable；.gitignore +src/db/generated/",
+    "(2026-08-08) shared commit 7b027e3 feat(codegen): drizzle 0.30 兼容 barrel 输出。emit-ts 升级：camelCase 字段名、列名 text(\"col\") 第二参数、.array() 链式、builder.on() index 链式、单数 PascalCase 类型名 + singularize(ies/ses/s)、self-FK 引用语法。shared 仓 codegen:check 全绿、162 tests pass",
+    "(2026-08-08) 验证：shared npm run codegen:check exit 0；shared npm test exit 0（4 files / 162 tests pass）；nextjs npm run typecheck exit 0；nextjs npx eslint --max-warnings=0 src scripts exit 0"
   ],
   "next": [
-    "(2026-08-01 新) lab-nextjs 端到端验证后决定:(A) saas 仓补 CORS middleware(Access-Control-Allow-Origin: http://localhost:3001)支持 lab 跨源 dev 调 saas;(B) saas 仓改 mock 鉴权为真实 OAuth(加 PKCE + state HMAC 签名)后才上 prod;(C) SSO 用户本地 sync-on-first-login 调 saas /auth/me 拉真实 user 信息",
-    "git commit 当前 fnTest + function-tree + @entry 改动",
-    "考虑抽通用 ResourceDialog 组件（title + children + onSubmit + submitting）以减少 ~60% 重复代码，但 10 模块已经跑顺模式",
-    "saas-identity-platform / saas-identity-platform-vue：这两个项目无 DB 层（用 MSW mock），schema 修复不适用。下一会话可同步 UI 改进",
-    "lab-management-system-nextjs 历史 dirty 清理（独立会话，本仓不碰）"
+    "(2026-08-08) 接 PG 后跑 python scripts/gate.py -p saas-identity-platform-nextjs 验 L0..L5 全绿 + 318+ tests pass（PG 100.79.128.25:5432 网络不可达；本机兜底 127.0.0.1:1 ECONNREFUSED）",
+    "考虑 push origin master（用户未明示要求，留在本地）",
+    "考虑 src/db/generated/ 是否需要在 CI 锁：drizzle-kit generate 每次重出；当前 .gitignore 设计是本地 fresh-run，CI 需在 install 阶段跑 sync:db-pg",
+    "lab-management-system-nextjs / saas-identity-platform / saas-identity-platform-vue 三仓不需要跟 M2-B（react/vue 用 MSW mock，无 DB）",
+    "后续 v0.5.x：permissions-store tenantId 参数重新启用 SQL 查询（per-tenant 角色从新表来）",
+    "M06.F14 菜单模板：manifest v0.4.1 起整条删除；如需恢复走 app_menus 派生"
   ],
   "open_questions": [
-    "_suite 自己 ruff 漂了：python scripts/gate.py --all 时 _suite L1 格式 fail 'ruff format scripts tests'。本次未碰 suite scripts，是预存在状态。是否允许动 suite 还是另开一个会话处理？",
-    "本项目整套改动还没 commit（git status 显示 saas-identity-platform-nextjs/ 全 untracked + package-lock.json dirty）。commit 之前要 review 哪几个改动？",
-    "scripts/seed.ts 与 src/db/seed.ts 重复（4 张表 + 8 张表 seed 数据）。要不要立刻抽到 lib/seed-data.ts 让两边都 import？还是先 commit 当前状态下次再清？",
-    "lab-management-system-nextjs 一堆 dirty 来自历史会话（M04+M05 推完成遗留），git status 里能看到但本会话没碰。要不要本会话顺手清掉？",
-    "saas-identity-platform 也有脏 state，pre-existing，与本次无关",
-    "M01.F05 用 Link 实现 I03 跳转（声明式）。后续如果需要 pre-routing 前做权限/埋点/确认弹窗，可能要改回 useRouter+onClick 以接入。提前知道",
-    "Q4：scripts/seed.ts refactor 后 `user_group_members` 表 wipe 但无 insert 数据 —— shared `user-groups.json` 无 members 字段。本表在 v0.3.0 仍存在（drizzle 0002 CREATE），但 PG 库里此表始终为空。属于抽取期遗留，v0.4.0 评估消化（选项：A 扩 shared seeds 加 members 字段 / B 改 userGroups 1:N 反范化为 JSON / C 保持空表等业务侧首次 insert）",
-    "Q5：scripts/seed.ts refactor 后 `platform_settings` 表 wipe 但无 insert 数据 —— v0.3.0 起概念被拆为 6 张单例（token_config / login_security / password_policy / risk_control / notification_config / open_platform_config），platform_settings 表仍存在但 PG 库始终为空。v0.4.0 评估是否 DROP 该表",
-    "Q6：role_menu_permissions 表第 1-8 条 SaaS 通用角色的 menuPermissions 引用 m-lab-01..m-lab-22 旧菜单 id，与 app-menus.json 现有 m-contracts/m-receipts/... 对不上 —— scripts/seed.ts 用 try/catch + src/db/seed.ts 用 SAVEPOINT 静默吞 FK 异常。shared manifest.json 第 10 条已记，属抽取期遗留 v0.4.0 评估消化",
-    "Q7：TenantSchema.theme shared seed 仍是 {primary, sidebar, logoText} 对象，schema 是单字符串；scripts/seed.ts themeString() helper 强制 \"default\" 兜底（丢失所有主题细节）。shared manifest.json 第 11 条已记。v0.4.0 选项：A schema 改成接受对象 + 字符串 union / B shared seed 全部改字符串",
-    "Q4-Q7 全部已修（v0.3.1.1-1.4 + saas-nextjs scripts/src/db/seed.ts 同步）：Q4 shared UserGroupSchema + userIds + scripts/seed.ts 灌 user_group_members 中间表；Q5 shared 新 platform-settings.json 44 keys + scripts/seed.ts 灌 platform_settings 表；Q6 shared role-permissions 8 SaaS 角色删 menuPermissions；Q7 shared tenants.json theme → 'default' 字符串。本轮 4 Q 全清",
-    "Q8（设计 fork 收尾）：v0.3.1.5 起 scripts/seed.ts + src/db/seed.ts 不再灌 6 张单例（token_config / login_security / password_policy / risk_control / notification_config / open_platform_config）。shared seed 与 schema 保留供 react/vue 仓；nextjs schema.ts 6 张表保留供 future store 启用；本仓 6 个 store 文件（login-security-store.ts 等）目前无人 import，dead 但不删"
+    "saas-identity-platform-shared 仓 package.json#exports 是否补回 ./codegen/db.pg？目前靠 file copy 同步（nextjs npm run sync:db-pg）。若补，需在 shared deps 加 drizzle-orm，与 shared CLAUDE.md 禁止非 zod+dev 依赖冲突",
+    "src/db/generated/ 在 .gitignore。CI 安装阶段是否强制 npm run sync:db-pg？还是允许用 dev DB 的旧 barrel？",
+    "lab-nextjs 端 M2-B 不涉及，但 saas-nextjs 仓 schema 改动可能让 lab 集成测试关注：/api/sso/menus 是否依赖菜单模板？当前测试已绿（commit 4801603），无需改"
   ],
   "dont": [
     "不要改 .harness/stack.json 让门变松",
@@ -163,7 +158,11 @@
     "(2026-08-01 新) saas /api/auth/oauth/callback 当前 clientId 强校 'lab-management' 才签 token,其他 clientId 直接 401;prod 应改成查 saas apps 表验证 clientId 是否注册",
     "(2026-08-01 新) saas /api/auth/permissions 当前只接 org-lab-root(1:1 lab),其他 orgId 一律 403;若要支持 saas 自家其他租户,需在路由加分支(用 saas 内部 perms 库)",
     "(2026-08-01 新) 不要让 saas-react MSW 介入 saas-nextjs IdP:用户拍板 saas-react 与 saas-nextjs 隔离,saas-react 的 msw/handlers.ts 不参与本轮 IdP 契约",
-    "(2026-08-07 新) 本轮 scripts/seed.ts refactor 不解决 Q4-Q7 四个数据空缺（user_group_members / platform_settings / role_menu_permissions m-lab 旧 id / tenant.theme 对象）。这 4 项需改 shared seeds/schemas 跨 3 仓消费方影响，单独立项"
+    "(2026-08-07 新) 本轮 scripts/seed.ts refactor 不解决 Q4-Q7 四个数据空缺（user_group_members / platform_settings / role_menu_permissions m-lab 旧 id / tenant.theme 对象）。这 4 项需改 shared seeds/schemas 跨 3 仓消费方影响，单独立项",
+    "不要手改 src/db/generated/db.pg.ts —— 改 manifest 后跑 npm run sync:db-pg",
+    "不要手改 drizzle/0000_init.sql —— 改 schema 后跑 npm run db:generate",
+    "不要在 shared 仓添加非 zod+dev 依赖（CLAUDE.md 禁止），drizzle-orm 必须由 consumer 仓提供",
+    "不要回滚 schema.ts 到手写 pgTable 形式（commit 1847e0c 是 M2-B 主线）"
   ],
-  "last_gate_passed_at": "2026-08-01 gate.py -p saas-identity-platform-nextjs exit 0（22 files / 160 tests, L0..L5 全绿, 33 软告警 M01.F01-F03 类型遗留）；M01.F04 SSO IdP 4 路由 + lab 业务数据种子 落地后"
+  "last_gate_passed_at": "2026-08-08 pre-commit checks: shared codegen:check ✅ / shared tests 162 ✅ / nextjs typecheck ✅ / nextjs eslint ✅；vitest 待 PG 可达后跑"
 }
