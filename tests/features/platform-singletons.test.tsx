@@ -39,20 +39,29 @@ beforeAll(async () => {
   await seedDatabase();
 });
 
-describe("M06.F09 platform singletons", () => {
+describe("M06.F09 platform singletons", { concurrent: false }, () => {
+  // v0.3.1.5 起 nextjs 端不灌 6 张单例配置（react/vue 仓灌 default 行）；
+  // store 上 upsert 在无 default 行时会自动 insert。test 从 "无 default → upsert → 取出 → 改 → upsert → 取改后"
+  // 模式断言 upsert 幂等，不依赖 seed。
   fnTest(["M06.F09.I01"], "I01 token-config 单例：get + upsert", async () => {
     const before = await getTokenConfig();
-    expect(before).toBeTruthy();
-    const originalAccessTtl = before!.accessTokenTtl;
+    // before 可为 null（nextjs 端不灌 default），upsert 应走 insert 路径
+    const seed = before ?? {
+      accessTokenTtl: 3600,
+      refreshTokenTtl: 604800,
+      refreshTokenEnabled: true,
+      tokenRevocationEnabled: true,
+    };
+    const originalAccessTtl = seed.accessTokenTtl;
 
     const upserted = await upsertTokenConfig({
       accessTokenTtl: originalAccessTtl + 1,
-      refreshTokenTtl: before!.refreshTokenTtl,
-      refreshTokenEnabled: !before!.refreshTokenEnabled,
-      tokenRevocationEnabled: before!.tokenRevocationEnabled,
+      refreshTokenTtl: seed.refreshTokenTtl,
+      refreshTokenEnabled: !seed.refreshTokenEnabled,
+      tokenRevocationEnabled: seed.tokenRevocationEnabled,
     });
     expect(upserted.accessTokenTtl).toBe(originalAccessTtl + 1);
-    expect(upserted.refreshTokenEnabled).toBe(!before!.refreshTokenEnabled);
+    expect(upserted.refreshTokenEnabled).toBe(!seed.refreshTokenEnabled);
 
     // 再查也一致
     const after = await getTokenConfig();
@@ -74,88 +83,143 @@ describe("M06.F09 platform singletons", () => {
 
   fnTest(["M06.F09.I02"], "I02 login-security 单例：get + upsert（改 ipWhitelist）", async () => {
     const before = await getLoginSecurity();
-    expect(before).toBeTruthy();
+    const seed = before ?? {
+      ipWhitelist: [] as string[],
+      ipBlacklist: [] as string[],
+      regionRestrictionEnabled: false,
+      allowedRegions: [] as string[],
+      failedAttemptLockEnabled: true,
+      lockThreshold: 5,
+      lockDuration: 30,
+    };
 
     const newWhitelist = ["192.168.1.0/24", "10.0.0.0/8"];
     const upserted = await upsertLoginSecurity({
       ipWhitelist: newWhitelist,
-      ipBlacklist: before!.ipBlacklist,
-      regionRestrictionEnabled: before!.regionRestrictionEnabled,
-      allowedRegions: before!.allowedRegions,
-      failedAttemptLockEnabled: before!.failedAttemptLockEnabled,
-      lockThreshold: before!.lockThreshold,
-      lockDuration: before!.lockDuration,
+      ipBlacklist: seed.ipBlacklist,
+      regionRestrictionEnabled: seed.regionRestrictionEnabled,
+      allowedRegions: seed.allowedRegions,
+      failedAttemptLockEnabled: seed.failedAttemptLockEnabled,
+      lockThreshold: seed.lockThreshold,
+      lockDuration: seed.lockDuration,
     });
     expect(upserted.ipWhitelist).toEqual(newWhitelist);
   });
 
   fnTest(["M06.F09.I03"], "I03 password-policy 单例：get + upsert（改 minLength）", async () => {
     const before = await getPasswordPolicy();
-    expect(before).toBeTruthy();
-    const oldMin = before!.minLength;
+    const seed = before ?? {
+      minLength: 8,
+      requireUppercase: true,
+      requireLowercase: true,
+      requireDigit: true,
+      requireSpecial: false,
+      expireDays: 90,
+      historyCount: 5,
+      enabled: true,
+    };
+    const oldMin = seed.minLength;
 
     const upserted = await upsertPasswordPolicy({
       minLength: oldMin + 4,
-      requireUppercase: before!.requireUppercase,
-      requireLowercase: before!.requireLowercase,
-      requireDigit: before!.requireDigit,
-      requireSpecial: before!.requireSpecial,
-      expireDays: before!.expireDays,
-      historyCount: before!.historyCount,
-      enabled: before!.enabled,
+      requireUppercase: seed.requireUppercase,
+      requireLowercase: seed.requireLowercase,
+      requireDigit: seed.requireDigit,
+      requireSpecial: seed.requireSpecial,
+      expireDays: seed.expireDays,
+      historyCount: seed.historyCount,
+      enabled: seed.enabled,
     });
     expect(upserted.minLength).toBe(oldMin + 4);
   });
 
   fnTest(["M06.F09.I04"], "I04 risk-control 单例：get + upsert（改 riskScoreThreshold）", async () => {
     const before = await getRiskControl();
-    expect(before).toBeTruthy();
+    const seed = before ?? {
+      anomalyDetectionEnabled: true,
+      crossRegionAlertEnabled: true,
+      deviceFingerprintEnabled: true,
+      riskScoreThreshold: 70,
+    };
 
     const upserted = await upsertRiskControl({
-      anomalyDetectionEnabled: before!.anomalyDetectionEnabled,
-      crossRegionAlertEnabled: before!.crossRegionAlertEnabled,
-      deviceFingerprintEnabled: !before!.deviceFingerprintEnabled,
-      riskScoreThreshold: before!.riskScoreThreshold + 5,
+      anomalyDetectionEnabled: seed.anomalyDetectionEnabled,
+      crossRegionAlertEnabled: seed.crossRegionAlertEnabled,
+      deviceFingerprintEnabled: !seed.deviceFingerprintEnabled,
+      riskScoreThreshold: seed.riskScoreThreshold + 5,
     });
-    expect(upserted.deviceFingerprintEnabled).toBe(!before!.deviceFingerprintEnabled);
-    expect(upserted.riskScoreThreshold).toBe(before!.riskScoreThreshold + 5);
+    expect(upserted.deviceFingerprintEnabled).toBe(!seed.deviceFingerprintEnabled);
+    expect(upserted.riskScoreThreshold).toBe(seed.riskScoreThreshold + 5);
   });
 
   fnTest(["M06.F09.I05"], "I05 notification-config 单例：get + upsert（关 sms）", async () => {
     const before = await getNotificationConfig();
-    expect(before).toBeTruthy();
+    const seed = before ?? {
+      emailEnabled: true,
+      smsEnabled: false,
+      inAppEnabled: true,
+      notifyOn: ["login", "password_change"] as string[],
+    };
 
     const upserted = await upsertNotificationConfig({
-      emailEnabled: before!.emailEnabled,
-      smsEnabled: !before!.smsEnabled,
-      inAppEnabled: before!.inAppEnabled,
-      notifyOn: before!.notifyOn,
+      emailEnabled: seed.emailEnabled,
+      smsEnabled: !seed.smsEnabled,
+      inAppEnabled: seed.inAppEnabled,
+      notifyOn: seed.notifyOn,
     });
-    expect(upserted.smsEnabled).toBe(!before!.smsEnabled);
+    expect(upserted.smsEnabled).toBe(!seed.smsEnabled);
   });
 
   fnTest(["M06.F09.I06"], "I06 open-platform-config 单例：get + upsert（关 api）", async () => {
     const before = await getOpenPlatformConfig();
-    expect(before).toBeTruthy();
+    const seed = before ?? {
+      apiEnabled: true,
+      webhookEnabled: true,
+      sdkEnabled: true,
+      openScopes: ["user:read", "role:read"] as string[],
+      callbackWhitelist: [] as string[],
+    };
 
     const upserted = await upsertOpenPlatformConfig({
-      apiEnabled: !before!.apiEnabled,
-      webhookEnabled: before!.webhookEnabled,
-      sdkEnabled: before!.sdkEnabled,
-      openScopes: before!.openScopes,
-      callbackWhitelist: before!.callbackWhitelist,
+      apiEnabled: !seed.apiEnabled,
+      webhookEnabled: seed.webhookEnabled,
+      sdkEnabled: seed.sdkEnabled,
+      openScopes: seed.openScopes,
+      callbackWhitelist: seed.callbackWhitelist,
     });
-    expect(upserted.apiEnabled).toBe(!before!.apiEnabled);
+    expect(upserted.apiEnabled).toBe(!seed.apiEnabled);
   });
 
-  fnTest(["M06.F09.I01", "M06.F09.I02", "M06.F09.I03", "M06.F09.I04", "M06.F09.I05", "M06.F09.I06"], "所有 6 张单例表都能取到（seed 已灌入 default 行）", async () => {
-    expect(await getTokenConfig()).toBeTruthy();
-    expect(await getLoginSecurity()).toBeTruthy();
-    expect(await getPasswordPolicy()).toBeTruthy();
-    expect(await getRiskControl()).toBeTruthy();
-    expect(await getNotificationConfig()).toBeTruthy();
-    expect(await getOpenPlatformConfig()).toBeTruthy();
-  });
+  // v0.4.x 单表粒度测试（避免 1 个 fnTest 触发 6 个 upsert → 5s timeout）
+fnTest(["M06.F09.I01"], "I01 token-config schema 可访问 + upsert 取得到", async () => {
+  await upsertTokenConfig({ accessTokenTtl: 3600, refreshTokenTtl: 604800, refreshTokenEnabled: true, tokenRevocationEnabled: true });
+  expect(await getTokenConfig()).toBeTruthy();
+});
+
+fnTest(["M06.F09.I02"], "I02 login-security schema 可访问 + upsert 取得到", async () => {
+  await upsertLoginSecurity({ ipWhitelist: [], ipBlacklist: [], regionRestrictionEnabled: false, allowedRegions: [], failedAttemptLockEnabled: true, lockThreshold: 5, lockDuration: 30 });
+  expect(await getLoginSecurity()).toBeTruthy();
+});
+
+fnTest(["M06.F09.I03"], "I03 password-policy schema 可访问 + upsert 取得到", async () => {
+  await upsertPasswordPolicy({ minLength: 8, requireUppercase: true, requireLowercase: true, requireDigit: true, requireSpecial: false, expireDays: 90, historyCount: 5, enabled: true });
+  expect(await getPasswordPolicy()).toBeTruthy();
+});
+
+fnTest(["M06.F09.I04"], "I04 risk-control schema 可访问 + upsert 取得到", async () => {
+  await upsertRiskControl({ anomalyDetectionEnabled: true, crossRegionAlertEnabled: true, deviceFingerprintEnabled: true, riskScoreThreshold: 70 });
+  expect(await getRiskControl()).toBeTruthy();
+});
+
+fnTest(["M06.F09.I05"], "I05 notification-config schema 可访问 + upsert 取得到", async () => {
+  await upsertNotificationConfig({ emailEnabled: true, smsEnabled: false, inAppEnabled: true, notifyOn: ["login"] });
+  expect(await getNotificationConfig()).toBeTruthy();
+});
+
+fnTest(["M06.F09.I06"], "I06 open-platform-config schema 可访问 + upsert 取得到", async () => {
+  await upsertOpenPlatformConfig({ apiEnabled: true, webhookEnabled: true, sdkEnabled: true, openScopes: ["user:read"], callbackWhitelist: [] });
+  expect(await getOpenPlatformConfig()).toBeTruthy();
+});
 
   it("M06.F09 token-config：连续 upsert 两次只产生 1 行（id=default 约束）", async () => {
     await upsertTokenConfig({

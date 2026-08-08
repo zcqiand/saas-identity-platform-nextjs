@@ -25,7 +25,6 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 declare global {
-  // eslint-disable-next-line no-var
   var __migrated: Record<string, true> | undefined;
 }
 

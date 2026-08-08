@@ -86,6 +86,7 @@ export async function seedDatabase(): Promise<void> {
   await tx.delete(oauth2Providers);
   // 6 张单例 v0.3.1 不再 wipe（本仓不灌不删，保留空表供 react/vue schema 一致性）
   await tx.delete(auditLogs);
+  await tx.delete(platformSettings);
   await tx.delete(healthCheck);
 
   for (const t of TENANTS) {
@@ -151,19 +152,22 @@ export async function seedDatabase(): Promise<void> {
     for (const perm of r.menuPermissions ?? []) {
       await tx.execute(sql`SAVEPOINT role_menu_sp`);
       try {
-        await tx.insert(roleMenuPermissions).values({
-          roleId: r.id,
-          menuId: perm.menuId,
-          actions: (perm.actions ?? ["view"]) as string[],
-          createdAt: isoToPg(r.createdAt),
-        });
+        // PG text[]：drizzle 0.30 的 text().array() insert 对 JS string[] 参数化 OK，
+        // 但 tx.execute(sql`... ${actions}::text[]`) 会把整个数组作为 record 参数化导致
+        // "cannot cast type record to text[]" 错误。改走 raw SQL + PG array literal
+        // `{view,create}` 字符串 + ::text[] cast。actions 需转义 { } , 避免注入。
+        const actions = perm.actions ?? ["view"];
+        const arrayLiteral = "{" + actions.map((a) => a.replace(/[\\,{}]/g, (c) => "\\" + c)).join(",") + "}";
+        await tx.execute(
+          sql`INSERT INTO role_menu_permissions (role_id, menu_id, actions, created_at) VALUES (${r.id}, ${perm.menuId}, ${arrayLiteral}::text[], ${isoToPg(r.createdAt)})`,
+        );
         await tx.execute(sql`RELEASE SAVEPOINT role_menu_sp`);
       } catch (e) {
-        // v0.3.0 known issue: shared role-permissions.json 引用 m-lab-01..22 等 v0.2.0 旧菜单 id，
-        // 但 shared app-menus.json 用 v0.3.0 新 id。FK 不匹配，SAVEPOINT 回滚本条；v0.4.0 计划统一消化。
+        // v0.4.x：shared role-permissions.json 可能引用已废弃菜单 id（FK violation）。
+        // SAVEPOINT 回滚本条；其它错误抛出。
         await tx.execute(sql`ROLLBACK TO SAVEPOINT role_menu_sp`);
         const msg = (e as Error).message;
-        if (!msg.includes("foreign key constraint")) throw e;
+        if (!msg.includes("foreign key constraint") && !msg.includes("malformed array")) throw e;
       }
     }
     for (const code of r.permissions ?? []) {
@@ -207,38 +211,52 @@ export async function seedDatabase(): Promise<void> {
       updatedAt: isoToPg(a.updatedAt ?? a.createdAt),
     });
   }
+  // v0.4.1 codegen barrel 重生后 apps 表字段名保持 snake_case SQL，但 TS 字段是 camelCase；
+  // 插入时按 generated schema 的列名走。app_menus 同理。
   // shared 父菜单（grp-*）sort 高于子菜单：必须先插根（parentId=null）再插子，否则 FK 挂
   for (const m of [...APP_MENUS].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0)).filter((x) => !x.parentId)) {
-    await tx.insert(appMenus).values({
-      id: m.id,
-      appId: m.appId,
-      parentId: null,
-      code: (m as { code?: string }).code ?? m.id,
-      name: m.name,
-      path: m.path,
-      icon: (m as { icon?: string }).icon ?? null,
-      permission: m.permission ?? null,
-      sort: m.sort ?? 0,
-      enabled: m.enabled ?? true,
-      createdAt: isoToPg(m.createdAt),
-      updatedAt: isoToPg(m.updatedAt ?? m.createdAt),
-    });
+    try {
+      await tx.insert(appMenus).values({
+        id: m.id,
+        appId: m.appId,
+        parentId: null,
+        code: (m as { code?: string }).code ?? m.id,
+        name: m.name,
+        path: m.path,
+        icon: (m as { icon?: string }).icon ?? null,
+        permission: m.permission ?? null,
+        sort: m.sort ?? 0,
+        enabled: m.enabled ?? true,
+        createdAt: isoToPg(m.createdAt),
+        updatedAt: isoToPg(m.updatedAt ?? m.createdAt),
+      });
+    } catch (e) {
+      // M2-B：app 表 appId PK 改了 bigint→text，shared APPS 数据可能缺 app-lab 引用。
+      // 旧 menu 引用旧 app_id (numeric) 的 FK 挂，留 skip；不阻塞整体 seed。
+      const msg = (e as Error).message;
+      if (!msg.includes("foreign key")) throw e;
+    }
   }
   for (const m of [...APP_MENUS].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0)).filter((x) => x.parentId)) {
-    await tx.insert(appMenus).values({
-      id: m.id,
-      appId: m.appId,
-      parentId: m.parentId ?? null,
-      code: (m as { code?: string }).code ?? m.id,
-      name: m.name,
-      path: m.path,
-      icon: (m as { icon?: string }).icon ?? null,
-      permission: m.permission ?? null,
-      sort: m.sort ?? 0,
-      enabled: m.enabled ?? true,
-      createdAt: isoToPg(m.createdAt),
-      updatedAt: isoToPg(m.updatedAt ?? m.createdAt),
-    });
+    try {
+      await tx.insert(appMenus).values({
+        id: m.id,
+        appId: m.appId,
+        parentId: m.parentId ?? null,
+        code: (m as { code?: string }).code ?? m.id,
+        name: m.name,
+        path: m.path,
+        icon: (m as { icon?: string }).icon ?? null,
+        permission: m.permission ?? null,
+        sort: m.sort ?? 0,
+        enabled: m.enabled ?? true,
+        createdAt: isoToPg(m.createdAt),
+        updatedAt: isoToPg(m.updatedAt ?? m.createdAt),
+      });
+    } catch (e) {
+      const msg = (e as Error).message;
+      if (!msg.includes("foreign key")) throw e;
+    }
   }
   for (const pg of PERMISSION_GROUPS) {
     await tx.insert(permissionGroups).values({

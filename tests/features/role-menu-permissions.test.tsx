@@ -25,11 +25,20 @@ afterAll(async () => {
 });
 
 describe("M03.F04 role menu permissions store", () => {
-  fnTest(["M03.F04.I01"], "I01 按角色查询（role-admin 来自 shared seed）", async () => {
-    const rows = await listRoleMenuPermissionsByRole("role-admin");
-    expect(rows.length).toBeGreaterThan(0);
+  // v0.3.1.3：8 条 SaaS 角色 menuPermissions 已删（m-lab-01..22 FK 失败），
+  // 仅 lab 角色（role-lab-admin / role-lab-editor 等）保留 menuPermissions。
+  // role-admin / role-editor 当前 shared seed 中 menuPermissions=[]，属 by-design。
+  fnTest(["M03.F04.I01"], "I01 按角色查询（role-helpdesk 通过 store 设置菜单权限）", async () => {
+    // v0.4.1 codegen barrel：seed 不再灌 SaaS 角色 menuPermissions；
+    // 用 store 自填 + 验证 listRoleMenuPermissionsByRole 路径。
+    await setRoleMenuPermissions("role-helpdesk", [
+      { menuId: "m-lab-dash", actions: ["view"] },
+      { menuId: "grp-res", actions: ["view", "create"] },
+    ]);
+    const rows = await listRoleMenuPermissionsByRole("role-helpdesk");
+    expect(rows.length).toBe(2);
     for (const row of rows) {
-      expect(row.roleId).toBe("role-admin");
+      expect(row.roleId).toBe("role-helpdesk");
       expect(Array.isArray(row.actions)).toBe(true);
     }
   });
@@ -40,64 +49,72 @@ describe("M03.F04 role menu permissions store", () => {
   });
 
   fnTest(["M03.F04.I02", "M03.F04.I05"], "I02+I05 新增角色菜单权限（setRoleMenuPermissions 整批）", async () => {
-    // role-editor 来自 shared seed，先确认无菜单权限
-    const before = await listRoleMenuPermissionsByRole("role-editor");
-    expect(before.length).toBe(0);
-
-    await setRoleMenuPermissions("role-editor", [
-      { menuId: "m-lab-01", actions: ["view", "create"] },
-      { menuId: "m-lab-02", actions: ["view"] },
+    await setRoleMenuPermissions("role-auditor", [
+      { menuId: "m-lab-dash", actions: ["view", "create"] },
+      { menuId: "grp-res", actions: ["view"] },
     ]);
 
-    const after = await listRoleMenuPermissionsByRole("role-editor");
+    const after = await listRoleMenuPermissionsByRole("role-auditor");
     expect(after.length).toBe(2);
-    const lab01 = after.find((r) => r.menuId === "m-lab-01")!;
-    expect(lab01.actions).toEqual(["view", "create"]);
+    const dash = after.find((r) => r.menuId === "m-lab-dash")!;
+    expect(dash.actions).toEqual(["view", "create"]);
   });
 
   fnTest(["M03.F04.I03", "M03.F04.I05"], "I03+I05 编辑：setRoleMenuPermissions 是「先清后插」（差量替换）", async () => {
-    // 上一步已给 role-editor 两条；现在替换成完全不同的菜单
-    await setRoleMenuPermissions("role-editor", [
-      { menuId: "m-lab-05", actions: ["view", "update", "delete"] },
+    // 上一步已给 role-auditor 两条；现在替换成完全不同的菜单
+    await setRoleMenuPermissions("role-auditor", [
+      { menuId: "m-receipts", actions: ["view", "update", "delete"] },
     ]);
 
-    const rows = await listRoleMenuPermissionsByRole("role-editor");
+    const rows = await listRoleMenuPermissionsByRole("role-auditor");
     expect(rows.length).toBe(1);
-    expect(rows[0]!.menuId).toBe("m-lab-05");
+    expect(rows[0]!.menuId).toBe("m-receipts");
     expect(rows[0]!.actions).toEqual(["view", "update", "delete"]);
 
     // 老的两条被清掉了
-    const lab01 = rows.find((r) => r.menuId === "m-lab-01");
-    expect(lab01).toBeUndefined();
+    const dash = rows.find((r) => r.menuId === "m-lab-dash");
+    expect(dash).toBeUndefined();
   });
 
   fnTest(["M03.F04.I04", "M03.F04.I05"], "I04+I05 删除：传空数组 = 清空", async () => {
-    await setRoleMenuPermissions("role-editor", []);
-    const rows = await listRoleMenuPermissionsByRole("role-editor");
+    await setRoleMenuPermissions("role-helpdesk", []);
+    const rows = await listRoleMenuPermissionsByRole("role-helpdesk");
     expect(rows).toEqual([]);
   });
 
-  fnTest(["M03.F04.I05"], "I05 内部接口：shared role-admin 在中间表里 actions 含 view/create/update/delete", async () => {
-    const rows = await listRoleMenuPermissionsByRole("role-admin");
-    // shared seed role-admin 第一个菜单 actions 数组就是 view/create/update/delete
-    expect(rows.length).toBeGreaterThan(0);
-    const first = rows[0]!;
-    expect(first.actions).toContain("view");
-    expect(first.actions).toContain("create");
+  // v0.3.1.3 起 8 SaaS 角色 menuPermissions 已删（m-lab-01..22 FK 失败）；仅 lab 角色保留。
+  // 改用 setRoleMenuPermissions 直接灌入测试数据，验证 actions 数组透传。
+  fnTest(["M03.F04.I05"], "I05 内部接口：role-helpdesk 通过 store 设置的 actions 数组含 view/create", async () => {
+    await setRoleMenuPermissions("role-helpdesk", [
+      { menuId: "m-lab-dash", actions: ["view", "create"] },
+      { menuId: "grp-res", actions: ["view"] },
+    ]);
+    const rows = await listRoleMenuPermissionsByRole("role-helpdesk");
+    expect(rows.length).toBe(2);
+    const dash = rows.find((r) => r.menuId === "m-lab-dash")!;
+    expect(dash.actions).toContain("view");
+    expect(dash.actions).toContain("create");
   });
 
-  fnTest(["M03.F04.I05"], "I05 直接查中间表：role-lab-admin 至少有 m-lab-dash", async () => {
+  fnTest(["M03.F04.I05"], "I05 直接查中间表：role-helpdesk 至少有 m-lab-dash", async () => {
+    // m-lab-dash 是 v0.4.x 唯一全角色可见的菜单（5 个 grp-* + 27 个 lab 角色含）
+    await setRoleMenuPermissions("role-helpdesk", [
+      { menuId: "m-lab-dash", actions: ["view"] },
+    ]);
     const rows = await db
       .select()
       .from(roleMenuPermissions)
-      .where(eq(roleMenuPermissions.roleId, "role-lab-admin"));
+      .where(eq(roleMenuPermissions.roleId, "role-helpdesk"));
     expect(rows.length).toBeGreaterThan(0);
     const dash = rows.find((r) => r.menuId === "m-lab-dash");
     expect(dash).toBeTruthy();
   });
 
-  it("role-admin 的 actions 数组长度大于 1（覆盖共享 seed 的「多操作」语义）", async () => {
-    const rows = await listRoleMenuPermissionsByRole("role-admin");
+  it("role-helpdesk 的 actions 数组长度大于 1（覆盖 store 的「多操作」语义）", async () => {
+    await setRoleMenuPermissions("role-helpdesk", [
+      { menuId: "m-lab-dash", actions: ["view", "create", "update", "delete"] },
+    ]);
+    const rows = await listRoleMenuPermissionsByRole("role-helpdesk");
     const withMultipleActions = rows.filter((r) => r.actions.length > 1);
     expect(withMultipleActions.length).toBeGreaterThan(0);
   });
@@ -108,8 +125,9 @@ describe("M03.F04 role menu permissions store", () => {
     expect(m!.appId).toBe("app-lab");
   });
 
-  it("roles 表里 role-admin / role-editor / role-lab-admin 都真实存在（来源 truth）", async () => {
-    const ids = ["role-admin", "role-editor", "role-lab-admin"];
+  it("roles 表里 role-admin / role-helpdesk / role-lab-admin 都真实存在（来源 truth）", async () => {
+    // v0.3.1.3 SaaS 角色 menuPermissions 已删，但 roles 行还在；FK 验真性需 role 自身可查
+  const ids = ["role-admin", "role-helpdesk", "role-lab-admin"];
     for (const id of ids) {
       const [row] = await db.select().from(roles).where(eq(roles.id, id));
       expect(row).toBeTruthy();
