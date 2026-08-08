@@ -70,6 +70,7 @@ export async function seedDatabase(): Promise<void> {
   return db.transaction(async (tx) => {
   await tx.delete(roleMenuPermissions);
   await tx.delete(rolePermissions);
+  await tx.delete(userGroupMembers);
   await tx.delete(userGroups);
   await tx.delete(permissionGroups);
   await tx.delete(appMenus);
@@ -89,6 +90,14 @@ export async function seedDatabase(): Promise<void> {
   await tx.delete(platformSettings);
   await tx.delete(healthCheck);
 
+  // 插入顺序：FK 依赖（parents 先，children 后）：
+  //   tenants → departments/positions/users（依赖 tenants）
+  //   → roles（依赖 tenants）
+  //   → apps（无依赖）→ app_menus（依赖 apps，自引用先父后子）
+  //   → user_groups（依赖 tenants）→ user_group_members（依赖 user_groups）
+  //   → permission_groups（依赖 apps）
+  //   → role_menu_permissions（依赖 roles + app_menus）
+  //   → api_keys/oauth_scopes/...（依赖 apps）
   for (const t of TENANTS) {
     await tx.insert(tenants).values({
       id: t.id,
@@ -110,6 +119,19 @@ export async function seedDatabase(): Promise<void> {
       updatedAt: isoToPg(d.updatedAt ?? d.createdAt),
     });
   }
+  for (const p of POSITIONS) {
+    await tx.insert(positions).values({
+      id: p.id,
+      tenantId: p.tenantId,
+      code: p.code,
+      name: p.name,
+      description: p.description ?? null,
+      sort: p.sort ?? 0,
+      enabled: p.enabled ?? true,
+      createdAt: isoToPg(p.createdAt),
+      updatedAt: isoToPg(p.updatedAt ?? p.createdAt),
+    });
+  }
   for (const u of USERS) {
     await tx.insert(users).values({
       id: u.id,
@@ -124,60 +146,21 @@ export async function seedDatabase(): Promise<void> {
       updatedAt: isoToPg(u.updatedAt ?? u.createdAt),
     });
   }
-  for (const p of POSITIONS) {
-    await tx.insert(positions).values({
-      id: p.id,
-      tenantId: p.tenantId,
-      code: p.code,
-      name: p.name,
-      description: p.description ?? null,
-      sort: p.sort ?? 0,
-      enabled: p.enabled ?? true,
-      createdAt: isoToPg(p.createdAt),
-      updatedAt: isoToPg(p.updatedAt ?? p.createdAt),
+  for (const a of APPS) {
+    await tx.insert(apps).values({
+      id: a.id,
+      code: a.code,
+      name: a.name,
+      type: (a as { type?: string }).type ?? "web",
+      description: a.description ?? null,
+      theme: a.theme ?? null,
+      sort: a.sort ?? 0,
+      enabled: a.enabled ?? true,
+      createdAt: isoToPg(a.createdAt),
+      updatedAt: isoToPg(a.updatedAt ?? a.createdAt),
     });
   }
-  for (const r of ROLE_PERMISSIONS) {
-    await tx.insert(roles).values({
-      id: r.id,
-      tenantId: r.tenantId,
-      code: r.code,
-      name: r.name,
-      description: r.description ?? null,
-      sort: r.sort ?? 0,
-      enabled: r.enabled ?? true,
-      createdAt: isoToPg(r.createdAt),
-      updatedAt: isoToPg(r.updatedAt ?? r.createdAt),
-    });
-    for (const perm of r.menuPermissions ?? []) {
-      await tx.execute(sql`SAVEPOINT role_menu_sp`);
-      try {
-        // PG text[]：drizzle 0.30 的 text().array() insert 对 JS string[] 参数化 OK，
-        // 但 tx.execute(sql`... ${actions}::text[]`) 会把整个数组作为 record 参数化导致
-        // "cannot cast type record to text[]" 错误。改走 raw SQL + PG array literal
-        // `{view,create}` 字符串 + ::text[] cast。actions 需转义 { } , 避免注入。
-        const actions = perm.actions ?? ["view"];
-        const arrayLiteral = "{" + actions.map((a) => a.replace(/[\\,{}]/g, (c) => "\\" + c)).join(",") + "}";
-        await tx.execute(
-          sql`INSERT INTO role_menu_permissions (role_id, menu_id, actions, created_at) VALUES (${r.id}, ${perm.menuId}, ${arrayLiteral}::text[], ${isoToPg(r.createdAt)})`,
-        );
-        await tx.execute(sql`RELEASE SAVEPOINT role_menu_sp`);
-      } catch (e) {
-        // v0.4.x：shared role-permissions.json 可能引用已废弃菜单 id（FK violation）。
-        // SAVEPOINT 回滚本条；其它错误抛出。
-        await tx.execute(sql`ROLLBACK TO SAVEPOINT role_menu_sp`);
-        const msg = (e as Error).message;
-        if (!msg.includes("foreign key constraint") && !msg.includes("malformed array")) throw e;
-      }
-    }
-    for (const code of r.permissions ?? []) {
-      await tx.insert(rolePermissions).values({
-        roleId: r.id,
-        permissionCode: code,
-        createdAt: isoToPg(r.createdAt),
-      });
-    }
-  }
+  // app_menus 必须先 apps，且父菜单（parentId=null）先于子菜单（v0.3.1 起已有 sort 保证）
   for (const g of USER_GROUPS) {
     await tx.insert(userGroups).values({
       id: g.id,
@@ -197,22 +180,44 @@ export async function seedDatabase(): Promise<void> {
       });
     }
   }
-  for (const a of APPS) {
-    await tx.insert(apps).values({
-      id: a.id,
-      code: a.code,
-      name: a.name,
-      type: (a as { type?: string }).type ?? "web",
-      description: a.description ?? null,
-      theme: a.theme ?? null,
-      sort: a.sort ?? 0,
-      enabled: a.enabled ?? true,
-      createdAt: isoToPg(a.createdAt),
-      updatedAt: isoToPg(a.updatedAt ?? a.createdAt),
+  for (const r of ROLE_PERMISSIONS) {
+    await tx.insert(roles).values({
+      id: r.id,
+      tenantId: r.tenantId,
+      code: r.code,
+      name: r.name,
+      description: r.description ?? null,
+      sort: r.sort ?? 0,
+      enabled: r.enabled ?? true,
+      createdAt: isoToPg(r.createdAt),
+      updatedAt: isoToPg(r.updatedAt ?? r.createdAt),
     });
   }
-  // v0.4.1 codegen barrel 重生后 apps 表字段名保持 snake_case SQL，但 TS 字段是 camelCase；
-  // 插入时按 generated schema 的列名走。app_menus 同理。
+  // role_menu_permissions 中间表插在 roles + app_menus 后
+  for (const r of ROLE_PERMISSIONS) {
+    for (const perm of r.menuPermissions ?? []) {
+      await tx.execute(sql`SAVEPOINT role_menu_sp`);
+      try {
+        const actions = perm.actions ?? ["view"];
+        const arrayLiteral = "{" + actions.map((a) => a.replace(/[\\,{}]/g, (c) => "\\" + c)).join(",") + "}";
+        await tx.execute(
+          sql`INSERT INTO role_menu_permissions (role_id, menu_id, actions, created_at) VALUES (${r.id}, ${perm.menuId}, ${arrayLiteral}::text[], ${isoToPg(r.createdAt)})`,
+        );
+        await tx.execute(sql`RELEASE SAVEPOINT role_menu_sp`);
+      } catch (e) {
+        await tx.execute(sql`ROLLBACK TO SAVEPOINT role_menu_sp`);
+        const msg = (e as Error).message;
+        if (!msg.includes("foreign key constraint") && !msg.includes("malformed array")) throw e;
+      }
+    }
+    for (const code of r.permissions ?? []) {
+      await tx.insert(rolePermissions).values({
+        roleId: r.id,
+        permissionCode: code,
+        createdAt: isoToPg(r.createdAt),
+      });
+    }
+  }
   // shared 父菜单（grp-*）sort 高于子菜单：必须先插根（parentId=null）再插子，否则 FK 挂
   for (const m of [...APP_MENUS].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0)).filter((x) => !x.parentId)) {
     try {
