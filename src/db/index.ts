@@ -6,7 +6,6 @@ import * as schema from "./schema";
 export type Db = NodePgDatabase<typeof schema>;
 
 declare global {
-  // eslint-disable-next-line no-var
   var __drizzle: Db | undefined;
 }
 

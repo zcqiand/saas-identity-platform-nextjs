@@ -16,7 +16,6 @@ import {
   appMenus,
   apiKeys,
   oauthScopes,
-  menuTemplates,
   platformSettings,
   loginMethods,
   ssoProviders,
@@ -24,7 +23,6 @@ import {
   // 6 张单例 schema 仍定义（react/vue 仓 shared schema 一致性），但本仓不读不写
   auditLogs,
   healthCheck,
-  tenantUsers,
 } from "./schema";
 import {
   TENANTS,
@@ -37,7 +35,6 @@ import {
   APPS,
   APP_MENUS,
   API_KEYS,
-  MENU_TEMPLATES,
   LOGIN_METHODS,
   SSO_PROVIDERS,
   OAUTH2_PROVIDERS,
@@ -77,9 +74,7 @@ export async function seedDatabase(): Promise<void> {
   await tx.delete(permissionGroups);
   await tx.delete(appMenus);
   await tx.delete(apiKeys);
-  await tx.delete(menuTemplates);
   await tx.delete(oauthScopes);
-  await tx.delete(tenantUsers);
   await tx.delete(roles);
   await tx.delete(positions);
   await tx.delete(users);
@@ -126,14 +121,6 @@ export async function seedDatabase(): Promise<void> {
       status: u.status,
       createdAt: isoToPg(u.createdAt),
       updatedAt: isoToPg(u.updatedAt ?? u.createdAt),
-    });
-  }
-  for (const u of USERS) {
-    await tx.insert(tenantUsers).values({
-      tenantId: u.tenantId,
-      userId: u.id,
-      role: (u.roles[0] ?? "member") as string,
-      joinedAt: isoToPg(u.createdAt),
     });
   }
   for (const p of POSITIONS) {
@@ -279,13 +266,6 @@ export async function seedDatabase(): Promise<void> {
       enabled: k.enabled ?? true,
       expiresAt: (k as { expiresAt?: string }).expiresAt ?? "never",
       createdAt: isoToPg(k.createdAt),
-    });
-  }
-  for (const mt of MENU_TEMPLATES) {
-    await tx.insert(menuTemplates).values({
-      appId: (mt as unknown as { "app-id": string })["app-id"] ?? (mt as unknown as { appId: string }).appId,
-      menus: JSON.stringify(mt.menus ?? []),
-      updatedAt: isoToPg(undefined),
     });
   }
   for (const s of OAUTH_SCOPES) {

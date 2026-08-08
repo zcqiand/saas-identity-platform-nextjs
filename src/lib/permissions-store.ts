@@ -3,8 +3,8 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 
 // @entry M03.F01.I10 — 当前用户权限拉取与查询 (permissionStore)
-//                      getCurrentUserPermissions(userId, tenantId): 派生 user global roles +
-//                      tenant_users.role，去重返回 permission code 列表
+//                      getCurrentUserPermissions(userId, tenantId): 派生 user global roles，
+//                      去重返回 permission code 列表
 // @entry M03.F01.I09 — 权限守卫 PermissionGuard（permissionStore + middleware 协同，
 //                      返回 boolean 决定是否允许访问）
 
@@ -16,10 +16,11 @@ import { db } from "@/db";
  * 拿 PG 结果行（结果类型用 as 断言，因为 db.execute 的泛型约束 Record<string, unknown>
  * 与具名 interface 不兼容）。
  *
- * 派生策略（D14 决策）：
+ * 派生策略（D14 决策，M2-B 起）：
  *   1. user global roles (users.roles PG text[] 数组) → role 表查 code → permissions
- *   2. tenant_users.role（per-tenant role code）→ role 表查 code → permissions
- *   3. user_group 继承推到 M05
+ *   2. user_group 继承推到 M05
+ *   3. ~~tenant_users.role（per-tenant role code）~~：v0.4.1 起 manifest 删除
+ *      tenant_users 表，per-tenant 角色信息走 users.roles + app_menus 派生
  *
  * 返回去重后的 permission code 列表。
  *
@@ -35,7 +36,11 @@ interface PermissionRow {
   code: string;
 }
 
-export async function getCurrentUserPermissions(userId: string, tenantId: string): Promise<string[]> {
+// v0.4.1 起 tenant_users 表已删；保留 tenantId 参数以兼容既有调用面（middleware
+// 仍透传），但当前派生只走 users.roles。等 per-tenant role 信息再次来源（v0.5.x）
+// 后，tenantId 会重新参与 SQL 查询。
+export async function getCurrentUserPermissions(userId: string, _tenantId: string): Promise<string[]> {
+  void _tenantId;
   const collected = new Set<string>();
 
   // 1. user global roles —— v0.3.0：roles 为 PG text[]，node-pg 已解析为 string[]
@@ -59,21 +64,7 @@ export async function getCurrentUserPermissions(userId: string, tenantId: string
     }
   }
 
-  // 2. tenant role
-  const tuResult = await db.execute(
-    sql`SELECT role FROM tenant_users WHERE user_id = ${userId} AND tenant_id = ${tenantId}`,
-  );
-  const tu = tuResult.rows[0] as { role: string } | undefined;
-  if (tu) {
-    const roleResult = await db.execute(sql`SELECT id, code FROM roles WHERE code = ${tu.role}`);
-    const role = roleResult.rows[0] as RoleRow | undefined;
-    if (role) {
-      const permsResult = await db.execute(
-        sql`SELECT permission_code AS code FROM role_permissions WHERE role_id = ${role.id}`,
-      );
-      for (const p of permsResult.rows as unknown as PermissionRow[]) collected.add(p.code);
-    }
-  }
+  // 2. tenant role —— v0.4.1 起 tenant_users 表已删；per-tenant 权限通过 users.roles 派生
 
   return [...collected].sort();
 }

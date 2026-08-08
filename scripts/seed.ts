@@ -21,7 +21,6 @@ import {
   APPS,
   APP_MENUS,
   API_KEYS,
-  MENU_TEMPLATES,
   LOGIN_METHODS,
   SSO_PROVIDERS,
   OAUTH2_PROVIDERS,
@@ -79,9 +78,7 @@ async function seed(): Promise<void> {
   await db.delete(schema.userGroups);
   await db.delete(schema.appMenus);
   await db.delete(schema.apiKeys);
-  await db.delete(schema.menuTemplates);
   await db.delete(schema.oauthScopes);
-  await db.delete(schema.tenantUsers);
   await db.delete(schema.positions);
   await db.delete(schema.users);
   await db.delete(schema.departments);
@@ -132,15 +129,6 @@ async function seed(): Promise<void> {
       status: u.status,
       createdAt: isoToPg(u.createdAt),
       updatedAt: isoToPg(u.updatedAt ?? u.createdAt),
-    });
-  }
-
-  for (const u of USERS) {
-    await db.insert(schema.tenantUsers).values({
-      tenantId: u.tenantId,
-      userId: u.id,
-      role: (u.roles[0] ?? "member") as string,
-      joinedAt: isoToPg(u.createdAt),
     });
   }
 
@@ -295,15 +283,6 @@ async function seed(): Promise<void> {
     });
   }
 
-  // shared MENU_TEMPLATES 用 `app-id`（非 appId），无 updatedAt/createdAt
-  for (const mt of MENU_TEMPLATES) {
-    await db.insert(schema.menuTemplates).values({
-      appId: (mt as unknown as { "app-id": string })["app-id"] ?? (mt as unknown as { appId: string }).appId,
-      menus: JSON.stringify(mt.menus ?? []),
-      updatedAt: isoToPg(undefined),
-    });
-  }
-
   for (const s of OAUTH_SCOPES) {
     await db.insert(schema.oauthScopes).values({
       id: s.id,
@@ -383,7 +362,6 @@ async function seed(): Promise<void> {
     tenants: (await db.select().from(schema.tenants)).length,
     departments: (await db.select().from(schema.departments)).length,
     users: (await db.select().from(schema.users)).length,
-    tenant_users: (await db.select().from(schema.tenantUsers)).length,
     positions: (await db.select().from(schema.positions)).length,
     roles: (await db.select().from(schema.roles)).length,
     role_permissions: (await db.select().from(schema.rolePermissions)).length,
@@ -395,7 +373,6 @@ async function seed(): Promise<void> {
     app_menus: (await db.select().from(schema.appMenus)).length,
     api_keys: (await db.select().from(schema.apiKeys)).length,
     oauth_scopes: (await db.select().from(schema.oauthScopes)).length,
-    menu_templates: (await db.select().from(schema.menuTemplates)).length,
     login_methods: (await db.select().from(schema.loginMethods)).length,
     sso_providers: (await db.select().from(schema.ssoProviders)).length,
     oauth2_providers: (await db.select().from(schema.oauth2Providers)).length,

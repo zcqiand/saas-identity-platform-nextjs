@@ -19,7 +19,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx scripts/seed.ts",
     "db:bootstrap": "node -e \"require('fs').mkdirSync('data',{recursive:true})\" && npm run db:migrate && npm run db:seed",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "sync:db-pg": "tsx scripts/sync-db-pg.ts"
   },
   "dependencies": {
     "@saas/identity-platform-shared": "file:../saas-identity-platform-shared",

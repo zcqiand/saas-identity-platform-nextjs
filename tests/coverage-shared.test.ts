@@ -16,7 +16,6 @@ import { fnTest } from "./fn";
 import {
   LoginMethodEntrySchema,
   LoginSecuritySchema,
-  MenuTemplateSchema,
   NotificationConfigSchema,
   OAuth2ProviderSchema,
   OAuthScopeSchema,
@@ -34,7 +33,6 @@ import {
 import {
   LOGIN_METHODS,
   LOGIN_SECURITY,
-  MENU_TEMPLATES,
   NOTIFICATION_CONFIG,
   OAUTH_SCOPES,
   OAUTH2_PROVIDERS,
@@ -177,18 +175,8 @@ fnTest(
   },
 );
 
-// ─── M06.F14 菜单模板 ──────────────────────────────────────────────────────
-
-fnTest(
-  ["M06.F14.I01", "M06.F14.I02"],
-  "M06.F14 菜单模板（getByApp/upsert — 每 app 单例）",
-  () => {
-    expect(MENU_TEMPLATES.length).toBeGreaterThan(0);
-    MENU_TEMPLATES.forEach((t) =>
-      expect(MenuTemplateSchema.safeParse(t).success, t["app-id"]).toBe(true),
-    );
-  },
-);
+// M06.F14 菜单模板 — v0.4.1 起 menu_templates 表废弃（M2-B）。后续如需菜单模板
+// 可在 app_menus + role_menu_permissions 上派生，本测试随 schema/seed 同步删除。
 
 // ─── invariants（不是 fnTest，不挂业务 ID）──────────────────────────────────
 

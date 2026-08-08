@@ -22,7 +22,6 @@ import {
   appMenus,
   apiKeys,
   oauthScopes,
-  menuTemplates,
   loginMethods,
   ssoProviders,
   oauth2Providers,
@@ -33,7 +32,6 @@ import {
   notificationConfig,
   openPlatformConfig,
   auditLogs,
-  tenantUsers,
 } from "@/db/schema";
 import { seedDatabase } from "@/db/seed";
 import { fnTest } from "../fn";
@@ -75,14 +73,6 @@ describe("M01.F06 shared-seed-loader", () => {
     expect(row).toBeTruthy();
     expect(row!.tenantId).toBe("acme");
     expect(row!.roles).toEqual(["admin"]);
-  });
-
-  fnTest(["M01.F06"], "tenant_users 中间表同步灌入（per-tenant role）", async () => {
-    const rows = await db.select().from(tenantUsers);
-    // shared USERS 共 13 行（11 acme + 2 lab）→ tenant_users 应有 13 行
-    expect(rows.length).toBeGreaterThanOrEqual(10);
-    const acmeUsers = rows.filter((r) => r.tenantId === "acme");
-    expect(acmeUsers.length).toBeGreaterThan(0);
   });
 
   fnTest(["M01.F06"], "departments 表灌入 org-acme + org-lab-root", async () => {
@@ -144,11 +134,9 @@ describe("M01.F06 shared-seed-loader", () => {
     expect(Array.isArray(ak001!.scopes)).toBe(true);
   });
 
-  fnTest(["M01.F06"], "oauth_scopes + menu_templates 至少 1 行", async () => {
+  fnTest(["M01.F06"], "oauth_scopes 至少 1 行", async () => {
     const scopes = await db.select().from(oauthScopes);
     expect(scopes.length).toBeGreaterThan(0);
-    const templates = await db.select().from(menuTemplates);
-    expect(templates.length).toBeGreaterThan(0);
   });
 
   fnTest(["M01.F06"], "6 张单例表各至少 1 行（default 行）", async () => {
