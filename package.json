@@ -18,7 +18,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx scripts/seed.ts",
-    "db:bootstrap": "node -e \"require('fs').mkdirSync('data',{recursive:true})\" && npm run db:migrate && npm run db:seed",
+    "db:reset": "tsx scripts/db-reset.ts",
+    "db:bootstrap": "tsx scripts/db-reset.ts --confirm && npm run db:migrate && npm run db:seed",
     "db:studio": "drizzle-kit studio",
     "sync:db-pg": "tsx scripts/sync-db-pg.ts"
   },
