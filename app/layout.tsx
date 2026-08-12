@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { TenantProvider } from "../src/state/tenant-context";
+import { Providers } from "../src/components/providers";
 
 export const metadata: Metadata = {
   title: "SaaS Identity Platform",
@@ -10,7 +10,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body style={{ margin: 0, fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
-        <TenantProvider>{children}</TenantProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

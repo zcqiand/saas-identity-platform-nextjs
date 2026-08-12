@@ -1,7 +1,7 @@
 {
   "name": "saas-identity-platform-nextjs",
-  "version": "0.1.0",
-  "description": "SaaS Identity Platform — Next.js 15 + App Router. Consumes @saas/identity-platform-shared TypeSpec codegen.",
+  "version": "0.2.0",
+  "description": "SaaS Identity Platform — Next.js 15 + App Router + TS. v0.2.0: 自己 orval 读 shared/openapi.yaml，不再 file: 依赖 shared 仓。",
   "scripts": {
     "gen:shared": "tsx scripts/gen-shared.ts",
     "prebuild": "npm run gen:shared",
@@ -13,8 +13,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@saas/identity-platform-shared": "file:../saas-identity-platform-shared",
     "@tanstack/react-query": "^5.62.0",
+    "axios": "^1.7.7",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -30,10 +30,12 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",
+    "ajv": "^8.17.1",
     "eslint": "^9.16.0",
     "eslint-config-next": "^15.1.0",
     "globals": "^15.13.0",
     "jsdom": "^25.0.0",
+    "orval": "^7.5.0",
     "prettier": "^3.4.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",

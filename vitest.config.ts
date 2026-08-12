@@ -1,13 +1,12 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
-import { resolve } from "node:path";
 import FnReporter from "./tests/fnReporter";
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@saas/shared": resolve(__dirname, "../saas-identity-platform-shared/generated/ts"),
+      "@": new URL("./src/", import.meta.url).pathname,
     },
   },
   test: {
