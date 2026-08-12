@@ -20,5 +20,10 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "scripts/**/*.ts"],
-  "exclude": ["node_modules", "../saas-identity-platform-shared/generated"]
+  "exclude": [
+    "node_modules",
+    "../saas-identity-platform-shared",
+    "../saas-identity-platform-shared/generated",
+    "../saas-identity-platform-msw"
+  ]
 }
