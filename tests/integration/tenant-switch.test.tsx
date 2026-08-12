@@ -1,0 +1,19 @@
+import { describe, it, expect } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import { TenantProvider } from "../state-helpers";
+import { TenantSwitcher } from "../../src/components/tenant-switcher";
+
+describe("M00.F02.I03 当前用户跨租户切换", () => {
+  it("渲染 TenantSwitcher，下拉框挂 data-fn=M00.F02.I03", async () => {
+    render(
+      <TenantProvider>
+        <TenantSwitcher />
+      </TenantProvider>,
+    );
+    await waitFor(() => {
+      const select = screen.getByTestId("tenant-switcher").querySelector("select");
+      expect(select).toBeTruthy();
+      expect(select?.getAttribute("data-fn")).toBe("M00.F02.I03");
+    });
+  });
+});

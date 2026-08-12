@@ -1,0 +1,42 @@
+{
+  "name": "saas-identity-platform-nextjs",
+  "version": "0.1.0",
+  "description": "SaaS Identity Platform — Next.js 15 + App Router. Consumes @saas/identity-platform-shared TypeSpec codegen.",
+  "scripts": {
+    "gen:shared": "tsx scripts/gen-shared.ts",
+    "prebuild": "npm run gen:shared",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@saas/identity-platform-shared": "file:../saas-identity-platform-shared",
+    "@tanstack/react-query": "^5.62.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.16.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "eslint": "^9.16.0",
+    "eslint-config-next": "^15.1.0",
+    "globals": "^15.13.0",
+    "jsdom": "^25.0.0",
+    "prettier": "^3.4.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.18.0",
+    "vitest": "^2.1.0"
+  }
+}
