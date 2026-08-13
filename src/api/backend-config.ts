@@ -2,12 +2,15 @@
 // 同步进来，setBackend/setBaseUrl 写回这里 + localStorage。这样非 React 模块
 //（如 http-client / MSW 启动脚本）也能拿到当前模式，不依赖 hook。
 
-export type BackendMode = "msw" | "aspnetcore" | "springboot";
+export type BackendMode = "msw" | "aspnetcore" | "springboot" | "nextjs-self";
 
 const DEFAULT_BASE_URLS: Readonly<Record<BackendMode, string>> = {
   msw: "", // 同源，service worker 拦截
   aspnetcore: "http://localhost:5000",
   springboot: "http://localhost:8080",
+  // v0.4.0 (ADR-0008)：同源；调 app/api/v1/... Route Handler
+  // 留空让 orval 客户端走相对路径；http-client 需要特判空字符串
+  "nextjs-self": "",
 };
 
 let currentBackend: BackendMode = "msw";

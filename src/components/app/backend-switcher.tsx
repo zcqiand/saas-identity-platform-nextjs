@@ -1,12 +1,19 @@
-"use client";
-
 // 运行时后端切换器：msw / aspnetcore / springboot
 // 放在 sidebar 底部，紧贴版本号，低视觉权重（dev/admin 关注，普通用户不打扰）。
 // 直接 dropdown 选；选 aspnetcore / springboot 时可改 baseUrl。
-//
-// v0.2.0 nextjs 仓：plain CSS 实现（未引入 shadcn/ui；其他 React 仓可用 shadcn DropdownMenu）。
 
 import { useState } from "react";
+import { Server } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useBackend } from "@/state/backend-context";
 import type { BackendMode } from "@/api/backend-config";
 
@@ -14,19 +21,20 @@ const LABELS: Record<BackendMode, string> = {
   msw: "MSW（浏览器内 Mock）",
   aspnetcore: "ASP.NET Core",
   springboot: "Spring Boot",
+  "nextjs-self": "Next.js（自身 Route Handler，v0.4.0）",
 };
 
 const SHORT: Record<BackendMode, string> = {
   msw: "MSW Mock",
   aspnetcore: "ASP.NET Core",
   springboot: "Spring Boot",
+  "nextjs-self": "Next.js Self",
 };
 
 export function BackendSwitcher() {
   const { backend, baseUrls, setBackend, setBaseUrl, resetBaseUrls } = useBackend();
   const [editing, setEditing] = useState<BackendMode | null>(null);
   const [draft, setDraft] = useState("");
-  const [open, setOpen] = useState(false);
 
   function startEdit(mode: BackendMode) {
     setEditing(mode);
@@ -42,82 +50,53 @@ export function BackendSwitcher() {
   }
 
   return (
-    <div
-      data-testid="backend-switcher"
-      style={{
-        padding: "8px 12px",
-        borderTop: "1px solid #eee",
-        fontSize: 12,
-        color: "#555",
-        position: "relative",
-      }}
-    >
-      <button
-        data-testid="backend-switcher-trigger"
-        data-fn="M03.F01.I01"
-        onClick={() => setOpen((o) => !o)}
-        style={{
-          width: "100%",
-          padding: "4px 8px",
-          border: "1px solid #ccc",
-          borderRadius: 4,
-          background: "#fff",
-          cursor: "pointer",
-          textAlign: "left",
-        }}
-        title={`当前后端：${LABELS[backend]}`}
-      >
-        ⚙ {SHORT[backend]}
-      </button>
-      {open && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: "calc(100% + 4px)",
-            left: 12,
-            right: 12,
-            background: "#fff",
-            border: "1px solid #ccc",
-            borderRadius: 4,
-            padding: 8,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-            zIndex: 100,
-          }}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          data-testid="backend-switcher-trigger"
+          data-fn="M03.F01.I01"
+          className="w-full justify-start gap-2 text-white/70 hover:text-white hover:bg-white/10 text-xs h-7 px-2"
+          title={`当前后端：${LABELS[backend]}`}
         >
-          <div style={{ fontWeight: 600, marginBottom: 6 }}>后端模式（运行时切换）</div>
-          {(Object.keys(LABELS) as BackendMode[]).map((mode) => {
-            const active = mode === backend;
-            return (
-              <button
-                key={mode}
-                data-testid={`backend-option-${mode}`}
-                data-fn="M03.F01.I01"
-                onClick={() => setBackend(mode)}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  padding: "4px 6px",
-                  border: 0,
-                  borderRadius: 4,
-                  background: active ? "#1f2937" : "transparent",
-                  color: active ? "#fff" : "#333",
-                  cursor: "pointer",
-                  textAlign: "left",
-                }}
-              >
-                <div style={{ fontWeight: 500, fontSize: 13 }}>{LABELS[mode]}</div>
-                <div style={{ fontFamily: "monospace", fontSize: 11, color: active ? "#cbd5e1" : "#888" }}>
+          <Server className="h-3.5 w-3.5" />
+          {SHORT[backend]}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80">
+        <DropdownMenuLabel>后端模式（运行时切换）</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {(Object.keys(LABELS) as BackendMode[]).map((mode) => {
+          const active = mode === backend;
+          return (
+            <DropdownMenuItem
+              key={mode}
+              onSelect={(e) => {
+                e.preventDefault();
+                setBackend(mode);
+              }}
+              data-testid={`backend-option-${mode}`}
+              className={active ? "bg-accent" : ""}
+            >
+              <div className="flex-1">
+                <div className="font-medium text-sm">{LABELS[mode]}</div>
+                <div className="font-mono text-xs text-muted-foreground truncate">
                   {baseUrls[mode] || "(同源 / worker 拦截)"}
                 </div>
-              </button>
-            );
-          })}
-          <hr style={{ margin: "8px 0", border: 0, borderTop: "1px solid #eee" }} />
-          <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>自定义 baseUrl</div>
+              </div>
+            </DropdownMenuItem>
+          );
+        })}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+          自定义 baseUrl
+        </DropdownMenuLabel>
+        <div className="px-2 pb-2 space-y-2">
           {editing ? (
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 500 }}>{LABELS[editing]}</div>
-              <input
+            <div className="space-y-2">
+              <div className="text-xs font-medium">{LABELS[editing]}</div>
+              <Input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 placeholder="http://localhost:5000"
@@ -126,61 +105,40 @@ export function BackendSwitcher() {
                   if (e.key === "Enter") commitEdit();
                   if (e.key === "Escape") setEditing(null);
                 }}
-                style={{ width: "100%", padding: "2px 6px", border: "1px solid #ccc", borderRadius: 4 }}
               />
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 4, marginTop: 4 }}>
-                <button onClick={() => setEditing(null)} style={{ padding: "2px 8px" }}>
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
                   取消
-                </button>
-                <button onClick={commitEdit} style={{ padding: "2px 8px" }}>
+                </Button>
+                <Button size="sm" onClick={commitEdit}>
                   保存
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
-            <div>
+            <div className="space-y-1">
               {(Object.keys(LABELS) as BackendMode[]).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => startEdit(mode)}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    padding: "2px 4px",
-                    border: 0,
-                    borderRadius: 4,
-                    background: "transparent",
-                    textAlign: "left",
-                    fontSize: 11,
-                    cursor: "pointer",
-                  }}
+                  className="w-full text-left text-xs px-2 py-1 rounded hover:bg-accent"
                 >
-                  <span style={{ fontWeight: 500 }}>{LABELS[mode]}</span>
-                  <span style={{ marginLeft: 6, fontFamily: "monospace", color: "#888" }}>
+                  <span className="font-medium">{LABELS[mode]}</span>
+                  <span className="ml-2 font-mono text-muted-foreground">
                     {baseUrls[mode] || "(空)"}
                   </span>
                 </button>
               ))}
               <button
                 onClick={() => resetBaseUrls()}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  padding: "2px 4px",
-                  border: 0,
-                  background: "transparent",
-                  textAlign: "left",
-                  fontSize: 11,
-                  color: "#888",
-                  cursor: "pointer",
-                }}
+                className="w-full text-left text-xs px-2 py-1 rounded hover:bg-accent text-muted-foreground"
               >
                 恢复默认 baseUrl
               </button>
             </div>
           )}
         </div>
-      )}
-    </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
