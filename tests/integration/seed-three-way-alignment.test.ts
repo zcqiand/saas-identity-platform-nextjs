@@ -8,8 +8,8 @@
 // 频率:L4 门禁自动包含(每次 sync-db + seed-db 后回归)。
 
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { readFileSync, readdirSync } from "node:fs";
+import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -57,14 +57,12 @@ describe("shared SQL 9 enum 全部注册(V001-V008)", () => {
 
   for (const { enum: enumName, file } of expected) {
     it(`${enumName} 在 ${file}.sql 里 CREATE TYPE`, () => {
-      const path = require("node:path") as typeof import("node:path");
-      const fs = require("node:fs") as typeof import("node:fs");
-      const files = fs.readdirSync(SHARED_SQL).filter((f) =>
+      const files = readdirSync(SHARED_SQL).filter((f) =>
         f.startsWith(file),
       );
       expect(files.length, `${file} 至少 1 个 SQL 文件`).toBeGreaterThanOrEqual(1);
       const sqlAll = files
-        .map((f) => fs.readFileSync(path.join(SHARED_SQL, f), "utf-8"))
+        .map((f) => readFileSync(join(SHARED_SQL, f), "utf-8"))
         .join("\n");
       expect(sqlAll).toContain(`CREATE TYPE ${enumName}`);
     });
@@ -81,18 +79,14 @@ describe("users.role_ids 三方一致", () => {
   });
 
   it("shared SQL V008 加 ADD COLUMN role_ids", () => {
-    const fs = require("node:fs") as typeof import("node:fs");
-    const v008 = fs
-      .readdirSync(SHARED_SQL)
-      .find((f) => f.startsWith("V008"));
+    const v008 = readdirSync(SHARED_SQL).find((f) => f.startsWith("V008"));
     expect(v008, "V008 SQL 文件必须存在").toBeDefined();
-    const sql = fs.readFileSync(resolve(SHARED_SQL, v008!), "utf-8");
+    const sql = readFileSync(resolve(SHARED_SQL, v008!), "utf-8");
     expect(sql).toMatch(/ADD COLUMN.*role_ids/);
   });
 
   it("nextjs Drizzle schema.ts:128 有 roleIds 字段", () => {
-    const fs = require("node:fs") as typeof import("node:fs");
-    const schema = fs.readFileSync(
+    const schema = readFileSync(
       resolve(ROOT, "saas-identity-platform-nextjs/src/db/schema.ts"),
       "utf-8",
     );
@@ -112,8 +106,7 @@ describe("role_menu_grants.tenantId 三方一致", () => {
   });
 
   it("shared TypeSpec role-menu-grant.tsp 有 tenantId", () => {
-    const fs = require("node:fs") as typeof import("node:fs");
-    const tsp = fs.readFileSync(
+    const tsp = readFileSync(
       resolve(
         ROOT,
         "saas-identity-platform-shared/tsp/models/role-menu-grant.tsp",
