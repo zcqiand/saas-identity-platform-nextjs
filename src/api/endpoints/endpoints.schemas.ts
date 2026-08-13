@@ -28,7 +28,6 @@ export interface ApiKey {
 export type ApiKeyStatus = typeof ApiKeyStatus[keyof typeof ApiKeyStatus];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ApiKeyStatus = {
   active: 'active',
   revoked: 'revoked',
@@ -68,7 +67,6 @@ export interface App {
 export type AppStatus = typeof AppStatus[keyof typeof AppStatus];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const AppStatus = {
   active: 'active',
   disabled: 'disabled',
@@ -77,7 +75,6 @@ export const AppStatus = {
 export type AuditAction = typeof AuditAction[keyof typeof AuditAction];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const AuditAction = {
   user_created: 'user_created',
   user_updated: 'user_updated',
@@ -106,7 +103,6 @@ export interface AuditEvent {
 export type AuthorizeCodeRequestResponseType = typeof AuthorizeCodeRequestResponseType[keyof typeof AuthorizeCodeRequestResponseType];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const AuthorizeCodeRequestResponseType = {
   code: 'code',
 } as const;
@@ -285,7 +281,6 @@ export interface LoginResponse {
 export type MembershipStatus = typeof MembershipStatus[keyof typeof MembershipStatus];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const MembershipStatus = {
   active: 'active',
   invited: 'invited',
@@ -318,7 +313,6 @@ export interface Menu {
 export type MenuStatus = typeof MenuStatus[keyof typeof MenuStatus];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const MenuStatus = {
   active: 'active',
   disabled: 'disabled',
@@ -327,7 +321,6 @@ export const MenuStatus = {
 export type MenuType = typeof MenuType[keyof typeof MenuType];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const MenuType = {
   group: 'group',
   page: 'page',
@@ -337,7 +330,6 @@ export const MenuType = {
 export type OAuthGrantType = typeof OAuthGrantType[keyof typeof OAuthGrantType];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const OAuthGrantType = {
   authorization_code: 'authorization_code',
   refresh_token: 'refresh_token',
@@ -428,7 +420,6 @@ export interface TenantSettings {
 export type TenantStatus = typeof TenantStatus[keyof typeof TenantStatus];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const TenantStatus = {
   active: 'active',
   suspended: 'suspended',
@@ -438,7 +429,6 @@ export const TenantStatus = {
 export type TokenRequestGrantType = typeof TokenRequestGrantType[keyof typeof TokenRequestGrantType];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const TokenRequestGrantType = {
   authorization_code: 'authorization_code',
   refresh_token: 'refresh_token',
@@ -527,7 +517,6 @@ export interface User {
 export type UserStatus = typeof UserStatus[keyof typeof UserStatus];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const UserStatus = {
   active: 'active',
   invited: 'invited',
@@ -617,7 +606,6 @@ export type TenantAuditListAuditEventsByUser200 = {
 export type TenantAuditExportAuditEventsBodyFormat = typeof TenantAuditExportAuditEventsBodyFormat[keyof typeof TenantAuditExportAuditEventsBodyFormat];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const TenantAuditExportAuditEventsBodyFormat = {
   csv: 'csv',
   json: 'json',
