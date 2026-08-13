@@ -124,6 +124,8 @@ export const users = pgTable(
     displayName: varchar("display_name", { length: 255 }),
     status: userStatusEnum("status").notNull().default("invited"),
     passwordHash: varchar("password_hash", { length: 255 }),
+    // role_ids 镜像 shared SQL V002（authoritative 在 tenant_memberships.role_ids；本列冗余留作 Phase 5 简化）
+    roleIds: uuid("role_ids").array().notNull().default(sql`ARRAY[]::UUID[]`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

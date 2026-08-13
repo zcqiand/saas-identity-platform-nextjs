@@ -8,6 +8,8 @@
 import "server-only";
 import { claimsFromAuthHeader, JwtClaims } from "./jwt";
 
+export { claimsFromAuthHeader, JwtParseError } from "./jwt";
+
 export class TenantGuardError extends Error {
   readonly status = 401;
   constructor(message: string) {
