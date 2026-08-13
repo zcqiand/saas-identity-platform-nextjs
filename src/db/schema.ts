@@ -22,6 +22,7 @@ import {
   index,
   primaryKey,
   check,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -108,7 +109,7 @@ export const tenants = pgTable(
   },
   (t) => [
     uniqueIndex("tenants_code_unique").on(t.code),
-    uniqueIndex("idx_tenants_code").on(t.code),
+    // V008 删了 V001 line 50 的 idx_tenants_code 冗余 unique index（保留 unique constraint 即可）
     check("tenants_settings_is_object", sql`settings IS NOT NULL AND jsonb_typeof(settings) = 'object'`),
   ],
 );
@@ -124,7 +125,9 @@ export const users = pgTable(
     displayName: varchar("display_name", { length: 255 }),
     status: userStatusEnum("status").notNull().default("invited"),
     passwordHash: varchar("password_hash", { length: 255 }),
-    // role_ids 镜像 shared SQL V002（authoritative 在 tenant_memberships.role_ids；本列冗余留作 Phase 5 简化）
+    // role_ids: OpenAPI TypeSpec User.roleIds + msw fixture 必填字段。SQL 物理列在 V008 才落地
+    // （V002 早于 TypeSpec/drizzle 加此字段时漏列；V008 补齐）。
+    // authoritative 仍在 tenant_memberships.role_ids；本列冗余便于按 tenantId 直查角色列表。
     roleIds: uuid("role_ids").array().notNull().default(sql`ARRAY[]::UUID[]`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -263,7 +266,7 @@ export const menus = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     appId: uuid("app_id").notNull().references(() => apps.id, { onDelete: "cascade" }),
-    parentId: uuid("parent_id"),  // 自引用；FK 在 SQL 由 CHECK + 触发器维护，Drizzle 这里只声明 notNull
+    parentId: uuid("parent_id").references((): AnyPgColumn => menus.id, { onDelete: "cascade" }),  // 自引用 FK，镜像 V005 menus_parent_fk
     code: varchar("code", { length: 64 }).notNull(),
     name: varchar("name", { length: 255 }).notNull(),
     path: varchar("path", { length: 512 }),
