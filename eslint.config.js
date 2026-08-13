@@ -9,6 +9,11 @@ export default tseslint.config(
       ".next/**",
       "out/**",
       "../saas-identity-platform-shared/generated/**",
+      // Node CLI scripts(.mjs)— ESLint flat config files-glob only matches
+      // .ts/.tsx; .mjs files fall through to default rules which assume
+      // browser globals. Node scripts use process/console which need
+      // node globals; skip them from frontend lint scope.
+      "scripts/**/*.mjs",
     ],
   },
   js.configs.recommended,
