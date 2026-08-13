@@ -5,7 +5,7 @@
 import { use, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-  useAdminAppMenusListMenus,
+  adminAppMenusListMenus,
   useAdminAppsListApps,
   useTenantRoleMenusListRoleMenus,
   useTenantRoleMenusSetRoleMenus,
@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/app/page-header";
 import { toApiError } from "@/api/http-client";
 import { toast } from "sonner";
-import { getTenant, listApps } from "@saas/identity-platform-msw/fixtures";
+import { getTenant } from "@saas/identity-platform-msw/fixtures";
 
 export default function RoleMenuGrantPage({
   params,
@@ -24,10 +24,24 @@ export default function RoleMenuGrantPage({
   params: Promise<{ tenantId: string; roleId: string }>;
 }) {
   const { tenantId, roleId } = use(params);
-  const apps = useMemo(() => listApps(), []);
+  const appsQ = useAdminAppsListApps();
+  const apps = appsQ.data?.data?.items ?? [];
   const tenant = tenantId ? getTenant(tenantId) ?? null : null;
   const tenantLabel = tenant ? `${tenant.name}（${tenant.code}）` : "未知租户";
-  const groupsQ = useAdminAppMenusListMenus(apps[0]?.id ?? "");
+  // 一次性拉所有 app 的 menus（修 apps[0] bug：之前每张 Card 共享同一份 menus）
+  const groupsQ = useQuery({
+    queryKey: ["roleMenuGrantAllGroups", tenantId, roleId],
+    queryFn: async () => {
+      return Promise.all(
+        apps.map(async (a) => ({
+          appCode: a.code,
+          appName: a.name,
+          menus: (await adminAppMenusListMenus(a.id)).data,
+        })),
+      );
+    },
+    enabled: !!tenantId && !!roleId && apps.length > 0,
+  });
   const grantQ = useTenantRoleMenusListRoleMenus(tenantId, roleId);
   const saveMut = useTenantRoleMenusSetRoleMenus();
 
@@ -92,19 +106,19 @@ export default function RoleMenuGrantPage({
         }
       />
 
-      {apps.map((app) => (
-        <Card key={app.id}>
+      {(groupsQ.data ?? []).map((g) => (
+        <Card key={g.appCode}>
           <CardHeader>
             <CardTitle>
-              {app.name}
-              <span className="ml-2 text-xs font-mono text-slate-500">({app.code})</span>
+              {g.appName}
+              <span className="ml-2 text-xs font-mono text-slate-500">({g.appCode})</span>
               <span className="ml-2 text-xs font-mono text-slate-500">
-                {(groupsQ.data?.data ?? []).length} 项
+                {g.menus.length} 项
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {(groupsQ.data?.data ?? []).map((m) => {
+            {g.menus.map((m) => {
               const checked = granted.has(m.id);
               return (
                 <label
