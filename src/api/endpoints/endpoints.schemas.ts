@@ -376,6 +376,7 @@ export interface Role {
 
 export interface RoleMenuGrant {
   roleId: string;
+  tenantId: string;
   menuIds: string[];
   updatedAt: string;
 }
