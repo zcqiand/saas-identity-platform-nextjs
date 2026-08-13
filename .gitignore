@@ -1,7 +1,15 @@
 node_modules/
 dist/
 build/
+.next/
 .vite/
 coverage/
 .state/trace.json
 .state/gate.json
+
+# TypeScript incremental build cache（按机器生成；本机 dev 时偶尔需要 rm）
+tsconfig.tsbuildinfo
+
+# 本地环境变量（含凭据，不进 git）
+.env*
+!.env.example

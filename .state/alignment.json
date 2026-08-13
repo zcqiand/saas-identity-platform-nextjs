@@ -96,7 +96,7 @@
       "flows": [],
       "designs": [],
       "tests": [
-        "渲染 TenantSwitcher，下拉框挂 data-fn=M00.F02.I03"
+        "渲染 TenantSwitcher 触发按钮挂 data-fn=M00.F02.I03"
       ],
       "entry": [
         "src\\components\\tenant-switcher.tsx"
@@ -123,7 +123,7 @@
         "渲染用户列表，邀请按钮挂 data-fn=M01.F01.I02"
       ],
       "entry": [
-        "app\\t\\[tenantId]\\users\\page.tsx"
+        "app\\tenants\\[tenantId]\\users\\page.tsx"
       ]
     },
     "M01.F01.I03": {
@@ -145,7 +145,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "app\\t\\[tenantId]\\users\\page.tsx"
+        "app\\tenants\\[tenantId]\\users\\page.tsx"
       ]
     },
     "M01.F01.I05": {
@@ -157,7 +157,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "app\\t\\[tenantId]\\users\\page.tsx"
+        "app\\tenants\\[tenantId]\\users\\page.tsx"
       ]
     },
     "M01.F01.I06": {
@@ -178,7 +178,9 @@
       "flows": [],
       "designs": [],
       "tests": [],
-      "entry": []
+      "entry": [
+        "app\\tenants\\[tenantId]\\users\\page.tsx"
+      ]
     },
     "M01.F02.I02": {
       "name": "邀请用户",
@@ -221,7 +223,7 @@
         "渲染角色列表，新建角色按钮挂 data-fn=M02.F01.I02"
       ],
       "entry": [
-        "app\\t\\[tenantId]\\roles\\page.tsx"
+        "app\\tenants\\[tenantId]\\roles\\page.tsx"
       ]
     },
     "M02.F01.I03": {
@@ -243,7 +245,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "app\\t\\[tenantId]\\roles\\page.tsx"
+        "app\\tenants\\[tenantId]\\roles\\page.tsx"
       ]
     },
     "M02.F01.I05": {
@@ -255,7 +257,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "app\\t\\[tenantId]\\roles\\page.tsx"
+        "app\\tenants\\[tenantId]\\roles\\page.tsx"
       ]
     },
     "M02.F02.I01": {
@@ -266,7 +268,9 @@
       "flows": [],
       "designs": [],
       "tests": [],
-      "entry": []
+      "entry": [
+        "app\\tenants\\[tenantId]\\roles\\page.tsx"
+      ]
     },
     "M03.F01.I01": {
       "name": "账号密码登录",
@@ -321,7 +325,9 @@
       "flows": [],
       "designs": [],
       "tests": [],
-      "entry": []
+      "entry": [
+        "src\\components\\app\\app-shell.tsx"
+      ]
     },
     "M03.F03.I06": {
       "name": "登出（全局 SSO）",
@@ -391,7 +397,9 @@
       "flows": [],
       "designs": [],
       "tests": [],
-      "entry": []
+      "entry": [
+        "app\\admin\\apps\\page.tsx"
+      ]
     },
     "M04.F03.I07": {
       "name": "授权码签发",
@@ -442,7 +450,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "app\\t\\[tenantId]\\api-keys\\page.tsx"
+        "app\\tenants\\[tenantId]\\api-keys\\page.tsx"
       ]
     },
     "M05.F01.I03": {
@@ -454,7 +462,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "app\\t\\[tenantId]\\api-keys\\page.tsx"
+        "app\\tenants\\[tenantId]\\api-keys\\page.tsx"
       ]
     },
     "M05.F01.I04": {
@@ -466,7 +474,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "app\\t\\[tenantId]\\api-keys\\page.tsx"
+        "app\\tenants\\[tenantId]\\api-keys\\page.tsx"
       ]
     },
     "M06.F01.I01": {
@@ -500,7 +508,7 @@
         "渲染审计列表，导出按钮挂 data-fn=M06.F01.I03"
       ],
       "entry": [
-        "app\\t\\[tenantId]\\audit\\page.tsx"
+        "app\\tenants\\[tenantId]\\audit\\page.tsx"
       ]
     },
     "M06.F02.I04": {
@@ -521,10 +529,7 @@
       "flows": [],
       "designs": [],
       "tests": [],
-      "entry": [
-        "app\\admin\\apps\\[appId]\\menus\\page.tsx",
-        "app\\admin\\apps\\page.tsx"
-      ]
+      "entry": []
     },
     "M08.F01.I02": {
       "name": "创建菜单",
@@ -593,7 +598,9 @@
       "flows": [],
       "designs": [],
       "tests": [],
-      "entry": []
+      "entry": [
+        "app\\admin\\apps\\[appId]\\menus\\page.tsx"
+      ]
     },
     "M09.F01.I01": {
       "name": "角色已授权菜单",
@@ -603,7 +610,9 @@
       "flows": [],
       "designs": [],
       "tests": [],
-      "entry": []
+      "entry": [
+        "app\\tenants\\[tenantId]\\roles\\page.tsx"
+      ]
     },
     "M09.F02.I02": {
       "name": "设置角色菜单",
@@ -614,7 +623,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "app\\t\\[tenantId]\\roles\\[roleId]\\menus\\page.tsx"
+        "app\\tenants\\[tenantId]\\roles\\[roleId]\\menus\\page.tsx"
       ]
     },
     "M09.F02.I03": {
@@ -626,8 +635,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "app\\t\\[tenantId]\\roles\\[roleId]\\menus\\page.tsx",
-        "app\\t\\[tenantId]\\roles\\page.tsx"
+        "app\\tenants\\[tenantId]\\roles\\[roleId]\\menus\\page.tsx"
       ]
     },
     "M09.F03.I04": {

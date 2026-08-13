@@ -135,6 +135,7 @@ vi.mock("@/api/endpoints/endpoints", () => ({
   useTenantUsersGetUser: () => queryStub(users[0]),
   useTenantUsersUpdateUser: () => mutationStub(),
   useTenantUsersDeleteUser: () => mutationStub(),
+  useTenantUsersAssignRoles: () => mutationStub(),
 
   useTenantRolesListRoles: () => queryStub({ data: page(roles) }),
   useTenantRolesCreateRole: () => mutationStub(),

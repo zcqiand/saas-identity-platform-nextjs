@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Providers } from "../src/components/providers";
+import { RequireAuth } from "../src/components/require-auth";
+import "../src/app/globals.css";
 
 export const metadata: Metadata = {
   title: "SaaS Identity Platform",
@@ -9,8 +11,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
-        <Providers>{children}</Providers>
+      <body className="antialiased">
+        <Providers>
+          <RequireAuth>{children}</RequireAuth>
+        </Providers>
       </body>
     </html>
   );
