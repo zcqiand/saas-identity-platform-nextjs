@@ -13,12 +13,14 @@
 // 默认值（首次访问、未持久化场景）：
 //   - 租户 = msw 仓 TENANT_IDS.acme / 名称 "ACME Corp"
 //   - 应用 = app-lab / 名称 "建筑工程实验室管理系统"
+//
+// CLAUDE.md §2 硬规则：必须 lazy initializer 同步 hydrate，禁止 useState(default) + useEffect(load)
+// 反模式（会在首次挂载闪 default 再切到 localStorage 值）。
 
 import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -46,11 +48,12 @@ export interface SelectionContextValue {
 
 const SelectionContext = createContext<SelectionContextValue | null>(null);
 
-function loadJSON<T>(raw: string | null, fallback: T): T {
-  if (raw === null) return fallback;
+// 同步读 localStorage；SSR 时无 window 走 default
+function readSelection(key: string, fallback: Selection): Selection {
   if (typeof window === "undefined") return fallback;
   try {
-    return JSON.parse(raw) as T;
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as Selection) : fallback;
   } catch {
     return fallback;
   }
@@ -58,34 +61,17 @@ function loadJSON<T>(raw: string | null, fallback: T): T {
 
 export function SelectionProvider({ children }: { children: ReactNode }) {
   const [selectedTenant, setSelectedTenantState] = useState<Selection>(() =>
-    loadJSON<Selection>(null, {
+    readSelection(TENANT_STORAGE_KEY, {
       id: DEFAULT_TENANT_ID,
       name: DEFAULT_TENANT_NAME,
     }),
   );
   const [selectedApp, setSelectedAppState] = useState<Selection>(() =>
-    loadJSON<Selection>(null, {
+    readSelection(APP_STORAGE_KEY, {
       id: DEFAULT_APP_ID,
       name: DEFAULT_APP_NAME,
     }),
   );
-
-  // 客户端 hydrate 后从 localStorage 恢复
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const t = localStorage.getItem(TENANT_STORAGE_KEY);
-      if (t) setSelectedTenantState(JSON.parse(t));
-    } catch {
-      // ignore
-    }
-    try {
-      const a = localStorage.getItem(APP_STORAGE_KEY);
-      if (a) setSelectedAppState(JSON.parse(a));
-    } catch {
-      // ignore
-    }
-  }, []);
 
   const setSelectedTenant = useCallback((s: Selection) => {
     setSelectedTenantState(s);

@@ -3,6 +3,7 @@
 // M08 — 应用下树形菜单 CRUD
 
 import { use, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronRight, FolderTree } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -96,11 +97,15 @@ export default function MenuTreePage({ params }: { params: Promise<{ appId: stri
   const { appId: initialAppId } = use(params);
   const { selectedApp, setSelectedApp } = useSelection();
   const qc = useQueryClient();
+  const router = useRouter();
 
   const allAppsQ = useAdminAppsListApps();
   const allApps = allAppsQ.data?.data?.items ?? [];
-  const selectedAppId = initialAppId || selectedApp.id || allApps[0]?.id || "";
-  const currentApp = allApps.find((a) => a.id === selectedAppId) ?? allApps[0];
+  // URL 路径用 App.Code（slug 如 "lab-management"）；下拉 value 必须跟 URL 一致，
+  // 否则 Select 显示 placeholder 且 onChange 找不到项。fallback 也走 code。
+  const selectedAppCode = initialAppId || selectedApp.id || allApps[0]?.code || "";
+  const currentApp = allApps.find((a) => a.code === selectedAppCode) ?? allApps[0];
+  const selectedAppId = selectedAppCode;  // 后续 menusQ/mutation 统一用 slug（后端已兼容 Guid↔code）
 
   const menusQ = useAdminAppMenusListMenus(selectedAppId);
   const createMut = useAdminAppMenusCreateMenu();
@@ -202,10 +207,13 @@ export default function MenuTreePage({ params }: { params: Promise<{ appId: stri
         actions={
           <div className="flex gap-2">
             <Select
-              value={selectedAppId}
-              onValueChange={(id) => {
-                const a = allApps.find((x) => x.id === id);
-                if (a) setSelectedApp({ id: a.id, name: a.name });
+              value={selectedAppCode}
+              onValueChange={(code) => {
+                const a = allApps.find((x) => x.code === code);
+                if (a) {
+                  setSelectedApp({ id: a.id, name: a.name });
+                  router.push(`/admin/apps/${a.code}/menus`);
+                }
               }}
             >
               <SelectTrigger className="w-64" data-testid="app-selector-trigger">
@@ -213,7 +221,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ appId: stri
               </SelectTrigger>
               <SelectContent>
                 {allApps.map((a) => (
-                  <SelectItem key={a.id} value={a.id} data-testid={`app-option-${a.id}`}>
+                  <SelectItem key={a.id} value={a.code} data-testid={`app-option-${a.id}`}>
                     {a.name}
                   </SelectItem>
                 ))}
