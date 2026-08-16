@@ -39,6 +39,7 @@ import type {
   AdminTenantsListTenantsParams,
   ApiKey,
   App,
+  AppPublicInfo,
   AuthorizeCodeRequest,
   CreateApiKeyRequest,
   CreateApiKeyResponse,
@@ -1296,6 +1297,91 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
       return useMutation(mutationOptions, queryClient);
     }
     
+export const appsGetApp = (
+    code: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<AppPublicInfo>> => {
+    
+    
+    return axios.get(
+      `/api/v1/apps/${code}`,options
+    );
+  }
+
+
+
+
+export const getAppsGetAppQueryKey = (code?: string,) => {
+    return [
+    `/api/v1/apps/${code}`
+    ] as const;
+    }
+
+    
+export const getAppsGetAppQueryOptions = <TData = Awaited<ReturnType<typeof appsGetApp>>, TError = AxiosError<ErrorResponse>>(code: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof appsGetApp>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAppsGetAppQueryKey(code);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof appsGetApp>>> = ({ signal }) => appsGetApp(code, { signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(code), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof appsGetApp>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AppsGetAppQueryResult = NonNullable<Awaited<ReturnType<typeof appsGetApp>>>
+export type AppsGetAppQueryError = AxiosError<ErrorResponse>
+
+
+export function useAppsGetApp<TData = Awaited<ReturnType<typeof appsGetApp>>, TError = AxiosError<ErrorResponse>>(
+ code: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof appsGetApp>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof appsGetApp>>,
+          TError,
+          Awaited<ReturnType<typeof appsGetApp>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAppsGetApp<TData = Awaited<ReturnType<typeof appsGetApp>>, TError = AxiosError<ErrorResponse>>(
+ code: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof appsGetApp>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof appsGetApp>>,
+          TError,
+          Awaited<ReturnType<typeof appsGetApp>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAppsGetApp<TData = Awaited<ReturnType<typeof appsGetApp>>, TError = AxiosError<ErrorResponse>>(
+ code: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof appsGetApp>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useAppsGetApp<TData = Awaited<ReturnType<typeof appsGetApp>>, TError = AxiosError<ErrorResponse>>(
+ code: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof appsGetApp>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAppsGetAppQueryOptions(code,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
 export const authLogin = (
     loginRequest: LoginRequest, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<LoginResponse>> => {
