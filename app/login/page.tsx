@@ -4,8 +4,11 @@
 //
 // 提交：调 authLogin（orval 1:1 端点函数）；成功后写 tenant-context session；
 // 失败：toast.error（sonner）。
+//
+// SSO 返回：URL 带 ?redirect=<lab-callback> 时，登录成功后跳回那里（带 token+state）。
+//          没有 ?redirect= 时落回 /tenants 默认路径。
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +34,25 @@ export default function LoginPage() {
   const { login } = useTenant();
   const { backend } = useBackend();
   const [submitting, setSubmitting] = useState(false);
+  const [ssoReturn, setSsoReturn] = useState<{ redirect: string; state: string } | null>(null);
+
+  // 解析 SSO ?redirect=&state=（lab RP 跳来时带）
+  // 用 window.location.search 直接读，不依赖 useSearchParams 的 Suspense 时序。
+  // URLSearchParams.get 在某些浏览器/Next.js 版本下对 redirect 这种
+  // 「已被 URLSearchParams.set 编码过」的值不再二次解码，统一 decodeURIComponent 兜底。
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    const raw = sp.get("redirect");
+    if (!raw) return;
+    let redirect = raw;
+    try {
+      redirect = decodeURIComponent(raw);
+    } catch {
+      // 已是 decoded 形式；保留原值
+    }
+    setSsoReturn({ redirect, state: sp.get("state") ?? "" });
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,6 +60,7 @@ export default function LoginPage() {
     try {
       const res = await authLogin({ username, password });
       const data = res.data;
+      console.log("[SSO/login] authLogin OK, ssoReturn=", ssoReturn);
       login({
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
@@ -47,7 +70,31 @@ export default function LoginPage() {
         currentTenantId: data.currentTenantId,
         tenantCode: null,
       });
-      router.push("/tenants");
+      // SSO 回跳：把 token + state 拼到 redirect URL，让 RP 拿
+      // 用 setTimeout(0) 让 React 先把 setSession 的 re-render 跑完、RequireAuth
+      // 的 useEffect 决定「不抢着跳 /tenants」之后，再做导航，避免 race。
+      setTimeout(() => {
+        if (ssoReturn) {
+          try {
+            // lab msw 发的 redirect 通常是 path（"/" 或 "/select-tenant" 等）。
+            // new URL(path) 需要 base —— 没有就抛 "Invalid URL"。
+            // 同时支持全 URL 形式（lab 给绝对地址 / saas 间调）。
+            const LAB_BASE = process.env.NEXT_PUBLIC_LAB_BASE_URL ?? "http://localhost:5173";
+            const target = new URL(ssoReturn.redirect, LAB_BASE);
+            target.searchParams.set("token", data.accessToken);
+            if (ssoReturn.state) target.searchParams.set("state", ssoReturn.state);
+            const url = target.toString();
+            console.log("[SSO/login] window.location ->", url);
+            window.location.href = url;
+          } catch (err) {
+            console.error("[SSO/login] SSO redirect build failed:", err);
+            toast.error("SSO 回跳 URL 构造失败");
+          }
+          return;
+        }
+        console.log("[SSO/login] no ssoReturn, router.push /tenants");
+        router.push("/tenants");
+      }, 0);
     } catch (err) {
       const apiErr = toApiError(err);
       const msg =
@@ -67,7 +114,11 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-2">
           <CardTitle className="text-lg">SaaS 多租户身份平台</CardTitle>
-          <CardDescription>使用账号密码登录管理控制台</CardDescription>
+          <CardDescription>
+            {ssoReturn
+              ? "有外部应用通过 SSO 请求登录，登录后将自动返回"
+              : "使用账号密码登录管理控制台"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
@@ -94,12 +145,7 @@ export default function LoginPage() {
                 autoComplete="current-password"
               />
             </div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={submitting}
-              data-fn="M03.F01.I01"
-            >
+            <Button type="submit" className="w-full" disabled={submitting} data-fn="M03.F01.I01">
               {submitting ? "登录中…" : "登录"}
             </Button>
           </form>
@@ -152,6 +198,12 @@ export default function LoginPage() {
             <p className="text-xs text-slate-400">
               当前后端模式：<span className="font-medium text-slate-700">{backend}</span>
             </p>
+
+            {ssoReturn && (
+              <p className="text-xs text-blue-600 break-all">
+                SSO 登录后返回：{ssoReturn.redirect}
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
