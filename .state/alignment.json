@@ -6,8 +6,33 @@
     "features": 20,
     "items": 57
   },
-  "warnings_total": 0,
-  "warnings": {},
+  "warnings_total": 16,
+  "warnings": {
+    "已上线但无设计映射": [
+      "M03.F01.I01",
+      "M03.F01.I02",
+      "M03.F02.I04",
+      "M03.F03.I05",
+      "M04.F03.I07",
+      "M04.F03.I08",
+      "M04.F03.I09"
+    ],
+    "已上线但无测试引用": [
+      "M03.F03.I05"
+    ],
+    "已上线但不在任何流程且非孤儿白名单": [
+      "M03.F01.I01",
+      "M03.F01.I02",
+      "M03.F02.I04",
+      "M03.F03.I05",
+      "M04.F03.I07",
+      "M04.F03.I08",
+      "M04.F03.I09"
+    ],
+    "开发中但无需求文档引用": [
+      "M03.F02.I03"
+    ]
+  },
   "unreachable_shipped": [],
   "function_map": {
     "M00.F01.I01": {
@@ -274,12 +299,15 @@
     },
     "M03.F01.I01": {
       "name": "账号密码登录",
-      "status": "规划",
+      "status": "已上线",
       "type": "页面",
       "requirements": [],
       "flows": [],
       "designs": [],
       "tests": [
+        "M03.F01.I01 returns 200 LoginResponse for valid credentials",
+        "M03.F01.I01 returns 400 BAD_REQUEST for invalid body",
+        "M03.F01.I01 returns 401 UNAUTHORIZED for wrong password",
         "渲染登录表单，挂 data-fn=M03.F01.I01 的提交按钮"
       ],
       "entry": [
@@ -289,37 +317,49 @@
     },
     "M03.F01.I02": {
       "name": "登录失败锁定",
-      "status": "规划",
+      "status": "已上线",
       "type": "接口",
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "M03.F01.I02 returns 429 ACCOUNT_LOCKED after 5 consecutive failures"
+      ],
       "entry": []
     },
     "M03.F02.I03": {
       "name": "OIDC Code 换取",
-      "status": "规划",
+      "status": "开发中",
       "type": "接口",
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "M03.F02.I03 returns 200 TokenResponse for valid OIDC callback",
+        "M03.F02.I03 returns 400 INVALID_CLIENT when clientId unknown",
+        "M03.F02.I03 returns 400 INVALID_REQUEST when fields missing",
+        "M03.F02.I03 returns 400 NO_USER when no active user"
+      ],
       "entry": []
     },
     "M03.F02.I04": {
       "name": "refresh token",
-      "status": "规划",
+      "status": "已上线",
       "type": "接口",
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "M03.F02.I04 returns 200 rotated TokenResponse for valid refresh_token",
+        "M03.F02.I04 returns 400 INVALID_GRANT when refreshToken unknown",
+        "M03.F02.I04 returns 400 when grantType not refresh_token",
+        "M03.F02.I04 returns 400 when tenantId mismatches"
+      ],
       "entry": []
     },
     "M03.F03.I05": {
       "name": "登出（本地清理）",
-      "status": "规划",
+      "status": "已上线",
       "type": "接口",
       "requirements": [],
       "flows": [],
@@ -403,32 +443,47 @@
     },
     "M04.F03.I07": {
       "name": "授权码签发",
-      "status": "规划",
+      "status": "已上线",
       "type": "接口",
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "M04.F03.I07 returns 200 { code, state } for valid request",
+        "M04.F03.I07 returns 400 INVALID_CLIENT when clientId unknown",
+        "M04.F03.I07 returns 400 INVALID_REDIRECT_URI when redirectUri not in whitelist",
+        "M04.F03.I07 returns 400 INVALID_REQUEST when fields missing",
+        "M04.F03.I07 returns 400 NO_USER when tenant has no user",
+        "M04.F03.I07 returns 400 UNSUPPORTED_RESPONSE_TYPE when not 'code'"
+      ],
       "entry": []
     },
     "M04.F03.I08": {
       "name": "令牌交换",
-      "status": "规划",
+      "status": "已上线",
       "type": "接口",
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "M04.F03.I08 returns 200 TokenResponse for valid authorization_code",
+        "M04.F03.I08 returns 400 INVALID_CLIENT when clientId unknown",
+        "M04.F03.I08 returns 400 INVALID_GRANT when code unknown",
+        "M04.F03.I08 returns 400 UNSUPPORTED_GRANT_TYPE for unknown grant"
+      ],
       "entry": []
     },
     "M04.F03.I09": {
       "name": "令牌刷新",
-      "status": "规划",
+      "status": "已上线",
       "type": "接口",
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "M04.F03.I09 returns 200 rotated TokenResponse for valid refresh_token",
+        "M04.F03.I09 returns 400 INVALID_GRANT when refreshToken unknown"
+      ],
       "entry": []
     },
     "M05.F01.I01": {
