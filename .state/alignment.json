@@ -6,30 +6,8 @@
     "features": 20,
     "items": 57
   },
-  "warnings_total": 15,
-  "warnings": {
-    "已上线但无设计映射": [
-      "M03.F01.I01",
-      "M03.F01.I02",
-      "M03.F02.I04",
-      "M03.F03.I05",
-      "M04.F03.I07",
-      "M04.F03.I08",
-      "M04.F03.I09"
-    ],
-    "已上线但不在任何流程且非孤儿白名单": [
-      "M03.F01.I01",
-      "M03.F01.I02",
-      "M03.F02.I04",
-      "M03.F03.I05",
-      "M04.F03.I07",
-      "M04.F03.I08",
-      "M04.F03.I09"
-    ],
-    "开发中但无需求文档引用": [
-      "M03.F02.I03"
-    ]
-  },
+  "warnings_total": 0,
+  "warnings": {},
   "unreachable_shipped": [],
   "function_map": {
     "M00.F01.I01": {
@@ -299,8 +277,12 @@
       "status": "已上线",
       "type": "页面",
       "requirements": [],
-      "flows": [],
-      "designs": [],
+      "flows": [
+        "docs\\design\\flow-function-map.md"
+      ],
+      "designs": [
+        "docs\\design\\design-function-map.md"
+      ],
       "tests": [
         "M03.F01.I01 returns 200 LoginResponse for valid credentials",
         "M03.F01.I01 returns 400 BAD_REQUEST for invalid body",
@@ -316,9 +298,15 @@
       "name": "登录失败锁定",
       "status": "已上线",
       "type": "接口",
-      "requirements": [],
-      "flows": [],
-      "designs": [],
+      "requirements": [
+        "docs\\requirements\\M03-F02-I03-oidc-callback.md"
+      ],
+      "flows": [
+        "docs\\design\\flow-function-map.md"
+      ],
+      "designs": [
+        "docs\\design\\design-function-map.md"
+      ],
       "tests": [
         "M03.F01.I02 returns 429 ACCOUNT_LOCKED after 5 consecutive failures"
       ],
@@ -328,9 +316,15 @@
       "name": "OIDC Code 换取",
       "status": "开发中",
       "type": "接口",
-      "requirements": [],
-      "flows": [],
-      "designs": [],
+      "requirements": [
+        "docs\\requirements\\M03-F02-I03-oidc-callback.md"
+      ],
+      "flows": [
+        "docs\\design\\flow-function-map.md"
+      ],
+      "designs": [
+        "docs\\design\\design-function-map.md"
+      ],
       "tests": [
         "M03.F02.I03 returns 200 TokenResponse for valid OIDC callback",
         "M03.F02.I03 returns 400 INVALID_CLIENT when clientId unknown",
@@ -343,9 +337,15 @@
       "name": "refresh token",
       "status": "已上线",
       "type": "接口",
-      "requirements": [],
-      "flows": [],
-      "designs": [],
+      "requirements": [
+        "docs\\requirements\\M03-F02-I03-oidc-callback.md"
+      ],
+      "flows": [
+        "docs\\design\\flow-function-map.md"
+      ],
+      "designs": [
+        "docs\\design\\design-function-map.md"
+      ],
       "tests": [
         "M03.F02.I04 returns 200 rotated TokenResponse for valid refresh_token",
         "M03.F02.I04 returns 400 INVALID_GRANT when refreshToken unknown",
@@ -359,8 +359,12 @@
       "status": "已上线",
       "type": "接口",
       "requirements": [],
-      "flows": [],
-      "designs": [],
+      "flows": [
+        "docs\\design\\flow-function-map.md"
+      ],
+      "designs": [
+        "docs\\design\\design-function-map.md"
+      ],
       "tests": [
         "M03.F03.I05 returns 204 even with invalid Authorization header",
         "M03.F03.I05 returns 204 with no Authorization header",
@@ -376,7 +380,9 @@
       "type": "接口",
       "requirements": [],
       "flows": [],
-      "designs": [],
+      "designs": [
+        "docs\\design\\design-function-map.md"
+      ],
       "tests": [],
       "entry": []
     },
@@ -447,8 +453,12 @@
       "status": "已上线",
       "type": "接口",
       "requirements": [],
-      "flows": [],
-      "designs": [],
+      "flows": [
+        "docs\\design\\flow-function-map.md"
+      ],
+      "designs": [
+        "docs\\design\\design-function-map.md"
+      ],
       "tests": [
         "M04.F03.I07 returns 200 { code, state } for valid request",
         "M04.F03.I07 returns 400 INVALID_CLIENT when clientId unknown",
@@ -464,8 +474,12 @@
       "status": "已上线",
       "type": "接口",
       "requirements": [],
-      "flows": [],
-      "designs": [],
+      "flows": [
+        "docs\\design\\flow-function-map.md"
+      ],
+      "designs": [
+        "docs\\design\\design-function-map.md"
+      ],
       "tests": [
         "M04.F03.I08 returns 200 TokenResponse for valid authorization_code",
         "M04.F03.I08 returns 400 INVALID_CLIENT when clientId unknown",
@@ -479,8 +493,12 @@
       "status": "已上线",
       "type": "接口",
       "requirements": [],
-      "flows": [],
-      "designs": [],
+      "flows": [
+        "docs\\design\\flow-function-map.md"
+      ],
+      "designs": [
+        "docs\\design\\design-function-map.md"
+      ],
       "tests": [
         "M04.F03.I09 returns 200 rotated TokenResponse for valid refresh_token",
         "M04.F03.I09 returns 400 INVALID_GRANT when refreshToken unknown"
