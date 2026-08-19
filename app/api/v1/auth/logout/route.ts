@@ -5,10 +5,14 @@
 // Phase 5：仅返回 204，不维护 server-side session store（无状态 JWT）。
 
 import { NextRequest, NextResponse } from "next/server";
-import { claimsFromAuthHeader } from "@/lib/jwt";
+import { claimsFromAuthHeader, JwtParseError } from "@/lib/jwt";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  // 即便 token 无效也返回 204（防止泄露 token 状态信息）
-  claimsFromAuthHeader(req.headers.get("authorization"));
+  // 即便 token 无效（null / 缺 / 解析失败）也返回 204（防止泄露 token 状态信息）
+  try {
+    claimsFromAuthHeader(req.headers.get("authorization"));
+  } catch (e) {
+    if (!(e instanceof JwtParseError)) throw e;
+  }
   return new NextResponse(null, { status: 204 });
 }

@@ -6,7 +6,7 @@
     "features": 20,
     "items": 57
   },
-  "warnings_total": 16,
+  "warnings_total": 15,
   "warnings": {
     "已上线但无设计映射": [
       "M03.F01.I01",
@@ -16,9 +16,6 @@
       "M04.F03.I07",
       "M04.F03.I08",
       "M04.F03.I09"
-    ],
-    "已上线但无测试引用": [
-      "M03.F03.I05"
     ],
     "已上线但不在任何流程且非孤儿白名单": [
       "M03.F01.I01",
@@ -364,7 +361,11 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "M03.F03.I05 returns 204 even with invalid Authorization header",
+        "M03.F03.I05 returns 204 with no Authorization header",
+        "M03.F03.I05 returns 204 with valid Authorization header"
+      ],
       "entry": [
         "src\\components\\app\\app-shell.tsx"
       ]
