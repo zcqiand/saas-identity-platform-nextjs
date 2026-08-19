@@ -13,7 +13,8 @@ import { z } from "zod";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
 import { apps, users } from "@/db/schema";
-import { oauthStore, generateAccessToken, generateRefreshToken } from "@/lib/oauth-store";
+import { oauthStore, generateRefreshToken } from "@/lib/oauth-store";
+import { signToken } from "@/lib/jwt";
 
 const OidcCallbackRequest = z.object({
   code: z.string().min(1).max(512),
@@ -67,8 +68,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // 3) 把 OIDC callback 视为一次性 code exchange — 把外部 code 写进 oauth-store 当成「authorize 阶段的 code」，
   //    内部立刻 consumeCode 拿到 entry 再签 saas-jwt / saas-rt
-  // 简化路径：直接签 token（不再二次 code exchange，避免与 /oauth/token 双语义重叠）
-  const accessToken = generateAccessToken(devUser.id);
+  // 简化路径：直接签 HS256 JWT（不再二次 code exchange，避免与 /oauth/token 双语义重叠）
+  const accessToken = await signToken({
+    sub: devUser.id,
+    tenant_id: devUser.tenantId,
+    scope: "openid",
+  });
   const refreshToken = generateRefreshToken(devUser.id);
   oauthStore.putRefresh(refreshToken, {
     appId: app.id,

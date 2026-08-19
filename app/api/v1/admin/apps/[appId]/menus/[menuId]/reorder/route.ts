@@ -37,7 +37,7 @@ export async function PUT(
   { params }: { params: Promise<{ appId: string; menuId: string }> },
 ): Promise<NextResponse> {
   try {
-    verifyPathTenant(null, req.headers.get("authorization"));
+    await verifyPathTenant(null, req.headers.get("authorization"));
     const { appId: appIdParam } = await params;
     const appId = await resolveAppId(appIdParam);
     if (!appId) {

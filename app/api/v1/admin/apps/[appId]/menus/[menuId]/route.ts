@@ -48,7 +48,7 @@ export async function GET(
   { params }: { params: Promise<{ appId: string; menuId: string }> },
 ): Promise<NextResponse> {
   try {
-    verifyPathTenant(null, req.headers.get("authorization"));
+    await verifyPathTenant(null, req.headers.get("authorization"));
     const { menuId } = await params;
     const menu = await getMenuById(menuId);
     if (!menu) {
@@ -70,7 +70,7 @@ export async function PATCH(
   { params }: { params: Promise<{ appId: string; menuId: string }> },
 ): Promise<NextResponse> {
   try {
-    verifyPathTenant(null, req.headers.get("authorization"));
+    await verifyPathTenant(null, req.headers.get("authorization"));
     const { menuId } = await params;
     const parsed = UpdateMenuBody.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
@@ -116,7 +116,7 @@ export async function DELETE(
   { params }: { params: Promise<{ appId: string; menuId: string }> },
 ): Promise<NextResponse> {
   try {
-    verifyPathTenant(null, req.headers.get("authorization"));
+    await verifyPathTenant(null, req.headers.get("authorization"));
     const { menuId } = await params;
     const existing = await getMenuById(menuId);
     if (!existing) {

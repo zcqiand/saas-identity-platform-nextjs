@@ -40,7 +40,7 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { tenantId, roleId } = await params;
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const r = await ensureRole(tenantId, roleId);
     if (!r) {
       return NextResponse.json({ code: "NOT_FOUND", message: "Role not found" }, { status: 404 });
@@ -72,7 +72,7 @@ export async function PUT(
 ): Promise<NextResponse> {
   try {
     const { tenantId, roleId } = await params;
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const r = await ensureRole(tenantId, roleId);
     if (!r) {
       return NextResponse.json({ code: "NOT_FOUND", message: "Role not found" }, { status: 404 });
@@ -111,7 +111,7 @@ export async function DELETE(
 ): Promise<NextResponse> {
   try {
     const { tenantId, roleId } = await params;
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
     await db
       .delete(roleMenuGrants)
       .where(eq(roleMenuGrants.roleId, roleId));

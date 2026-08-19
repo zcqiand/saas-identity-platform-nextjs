@@ -15,7 +15,7 @@ import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-g
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     // pathTenantId=null：因为 /me 不在 tenant-scoped 路径下
-    const claims = verifyPathTenant(null, req.headers.get("authorization"));
+    const claims = await verifyPathTenant(null, req.headers.get("authorization"));
     if (!claims.sub) {
       return NextResponse.json(
         { code: "UNAUTHORIZED", message: "JWT missing sub claim" },

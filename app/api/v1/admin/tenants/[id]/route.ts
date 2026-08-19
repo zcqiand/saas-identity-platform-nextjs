@@ -5,7 +5,7 @@
 //   updateTenant(@path id, @body UpdateTenantRequest): Tenant
 //   deleteTenant(@path id): void (204)
 // 语义：
-//   - 平台级（不 tenant-scoped）：verifyPathTenant(null) 只要 JWT
+//   - 平台级（不 tenant-scoped）：await verifyPathTenant(null) 只要 JWT
 //   - DELETE 级联清 users / memberships / roles 等（FK ON DELETE CASCADE）
 
 import { NextRequest, NextResponse } from "next/server";
@@ -46,7 +46,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    verifyPathTenant(null, req.headers.get("authorization"));
+    await verifyPathTenant(null, req.headers.get("authorization"));
     const { id } = await params;
     const tenant = await getTenantById(id);
     if (!tenant) {
@@ -68,7 +68,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    verifyPathTenant(null, req.headers.get("authorization"));
+    await verifyPathTenant(null, req.headers.get("authorization"));
     const { id } = await params;
     const parsed = UpdateTenantBody.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
@@ -121,7 +121,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    verifyPathTenant(null, req.headers.get("authorization"));
+    await verifyPathTenant(null, req.headers.get("authorization"));
     const { id } = await params;
     const existing = await getTenantById(id);
     if (!existing) {

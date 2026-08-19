@@ -5,7 +5,7 @@
 //   updateApp(@path appId, @body UpdateAppRequest): App
 //   deleteApp(@path appId): void (204)
 // 语义：
-//   - 平台级：verifyPathTenant(null) 只要 JWT
+//   - 平台级：await verifyPathTenant(null) 只要 JWT
 //   - DELETE 级联清 menus（FK ON DELETE CASCADE）
 //   - UpdateAppRequest 不含 code/clientId（不可改）
 
@@ -66,7 +66,7 @@ export async function GET(
   { params }: { params: Promise<{ appId: string }> },
 ): Promise<NextResponse> {
   try {
-    verifyPathTenant(null, req.headers.get("authorization"));
+    await verifyPathTenant(null, req.headers.get("authorization"));
     const { appId } = await params;
     const app = await getAppById(appId);
     if (!app) {
@@ -88,7 +88,7 @@ export async function PATCH(
   { params }: { params: Promise<{ appId: string }> },
 ): Promise<NextResponse> {
   try {
-    verifyPathTenant(null, req.headers.get("authorization"));
+    await verifyPathTenant(null, req.headers.get("authorization"));
     const { appId } = await params;
     const parsed = UpdateAppBody.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
@@ -139,7 +139,7 @@ export async function DELETE(
   { params }: { params: Promise<{ appId: string }> },
 ): Promise<NextResponse> {
   try {
-    verifyPathTenant(null, req.headers.get("authorization"));
+    await verifyPathTenant(null, req.headers.get("authorization"));
     const { appId } = await params;
     const existing = await getAppById(appId);
     if (!existing) {

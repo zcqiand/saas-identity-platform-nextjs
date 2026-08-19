@@ -10,7 +10,7 @@ import { tenantMemberships } from "@/db/schema";
 import { claimsFromAuthHeader } from "@/lib/jwt";
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  const claims = claimsFromAuthHeader(req.headers.get("authorization"));
+  const claims = await claimsFromAuthHeader(req.headers.get("authorization"));
   if (!claims?.sub) {
     return NextResponse.json({ code: "UNAUTHORIZED", message: "Missing JWT sub" }, { status: 401 });
   }

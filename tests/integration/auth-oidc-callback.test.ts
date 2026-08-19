@@ -1,3 +1,4 @@
+// @vitest-environment node
 // M03.F02.I03 — /api/v1/auth/oidc/callback
 //
 // 直接调 Route Handler；mock @/db 避免真 Postgres；fnId 写进 test name。
@@ -53,7 +54,7 @@ describe("M03.F02.I03 /api/v1/auth/oidc/callback", () => {
     const res = await POST(makeReq(validBody) as never);
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.accessToken).toMatch(/^saas-jwt-/);
+    expect(json.accessToken).toMatch(/^[\w-]+\.[\w-]+\.[\w-]+$/); // HS256 3 segments
     expect(json.refreshToken).toMatch(/^saas-rt-/);
     expect(json.tokenType).toBe("Bearer");
     expect(json.expiresIn).toBe(3600);

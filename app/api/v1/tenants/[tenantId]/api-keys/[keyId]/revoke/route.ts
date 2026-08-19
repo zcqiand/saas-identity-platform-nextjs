@@ -12,7 +12,7 @@ export async function POST(
 ): Promise<NextResponse> {
   try {
     const { tenantId, keyId } = await params;
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const updated = await db
       .update(apiKeys)
       .set({ status: "revoked", revokedAt: new Date() })

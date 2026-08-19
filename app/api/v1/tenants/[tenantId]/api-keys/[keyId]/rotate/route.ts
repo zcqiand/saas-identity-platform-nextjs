@@ -16,7 +16,7 @@ export async function POST(
 ): Promise<NextResponse> {
   try {
     const { tenantId, keyId } = await params;
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
     // 找旧 key
     const oldRows = await db
       .select()

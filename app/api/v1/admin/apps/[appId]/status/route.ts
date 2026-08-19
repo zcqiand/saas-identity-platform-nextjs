@@ -36,7 +36,7 @@ export async function PATCH(
   { params }: { params: Promise<{ appId: string }> },
 ): Promise<NextResponse> {
   try {
-    verifyPathTenant(null, req.headers.get("authorization"));
+    await verifyPathTenant(null, req.headers.get("authorization"));
     const { appId } = await params;
     const parsed = StatusBody.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {

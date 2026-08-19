@@ -1,3 +1,4 @@
+// @vitest-environment node
 // M04.F03.I07 — /api/v1/oauth/authorize
 //
 // 直接调 Route Handler 函数；mock @/db 避免真 Postgres；fnId 写进 test name

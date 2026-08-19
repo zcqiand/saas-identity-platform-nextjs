@@ -21,7 +21,7 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { tenantId, roleId } = await params;
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const rows = await db
       .select()
       .from(roles)
@@ -53,7 +53,7 @@ export async function PATCH(
 ): Promise<NextResponse> {
   try {
     const { tenantId, roleId } = await params;
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const parsed = PatchRoleBody.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json(
@@ -95,7 +95,7 @@ export async function DELETE(
 ): Promise<NextResponse> {
   try {
     const { tenantId, roleId } = await params;
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
     await db.delete(roles).where(and(eq(roles.tenantId, tenantId), eq(roles.id, roleId)));
     return new NextResponse(null, { status: 204 });
   } catch (e) {

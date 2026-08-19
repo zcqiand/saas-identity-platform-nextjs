@@ -27,12 +27,20 @@ export class TenantGuardError extends Error {
  * @throws TenantGuardError 当：
  *   - pathTenantId 给出但 JWT 无 tenant_id claim
  *   - JWT tenant_id 与 pathTenantId 不一致
+ *   - JWT 缺失 / 解析失败 / 验签失败
  */
-export function verifyPathTenant(
+export async function verifyPathTenant(
   pathTenantId: string | null,
   authHeader: string | null | undefined,
-): JwtClaims {
-  const claims = claimsFromAuthHeader(authHeader);
+): Promise<JwtClaims> {
+  let claims: JwtClaims | null;
+  try {
+    claims = await claimsFromAuthHeader(authHeader);
+  } catch (e) {
+    // 验签失败（jose 抛 JwtParseError）→ 统一转为 TenantGuardError 401
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new TenantGuardError(`Invalid Bearer token: ${msg}`);
+  }
   if (!claims) {
     throw new TenantGuardError("Missing or invalid Bearer token");
   }

@@ -1,3 +1,4 @@
+// @vitest-environment node
 // M04.F03.I08 + M04.F03.I09 — /api/v1/oauth/token
 //
 // 覆盖：authorization_code / refresh_token 两条 grantType 路径 + 各种 400 错误码。
@@ -65,7 +66,7 @@ describe("M04.F03.I08 /api/v1/oauth/token (authorization_code + refresh_token)",
     );
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.accessToken).toMatch(/^saas-jwt-/);
+    expect(json.accessToken).toMatch(/^[\w-]+\.[\w-]+\.[\w-]+$/); // HS256 3 segments
     expect(json.refreshToken).toMatch(/^saas-rt-/);
     expect(json.tokenType).toBe("Bearer");
     expect(json.expiresIn).toBe(3600);
@@ -118,7 +119,7 @@ describe("M04.F03.I08 /api/v1/oauth/token (authorization_code + refresh_token)",
     );
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.accessToken).toMatch(/^saas-jwt-/);
+    expect(json.accessToken).toMatch(/^[\w-]+\.[\w-]+\.[\w-]+$/); // HS256 3 segments
     expect(json.refreshToken).not.toBe(oldRefresh); // rotated
   });
 

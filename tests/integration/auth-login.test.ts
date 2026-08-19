@@ -1,3 +1,4 @@
+// @vitest-environment node
 // M03.F01.I01 + M03.F01.I02 — /api/v1/auth/login
 //
 // v0.5.0 增加 lockout (loginLockout) + audit_events INSERT。
@@ -52,7 +53,7 @@ describe("M03.F01.I01 + M03.F01.I02 /api/v1/auth/login", () => {
     );
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.accessToken).toMatch(/^[\w-]+\.[\w-]+\.dev-placeholder$/);
+    expect(json.accessToken).toMatch(/^[\w-]+\.[\w-]+\.[\w-]+$/); // HS256 3 base64url segments
     expect(json.refreshToken).toBe("mock-refresh-user-id-1");
     expect(json.tokenType).toBe("Bearer");
     expect(json.expiresIn).toBe(3600);

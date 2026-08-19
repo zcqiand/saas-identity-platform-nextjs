@@ -7,8 +7,8 @@
 // - M03.F01.I01：账号密码登录。bcrypt 比较（手写 PBKDF2 占位；Phase 5 接 argon2）
 // - M03.F01.I02：登录失败锁定。LOCKOUT_MAX_FAILS 阈值 + LOCKOUT_WINDOW_MIN 窗口 + LOCKOUT_COOLDOWN_MIN 冷却
 // - audit_events 写 login_success / login_failed
-// - token 前缀 mock-jwt-${userId} / mock-refresh-${userId}（对齐 msw handlers-extra.ts:282-283）
-// - JWT_SIGNING_KEY 从 env 读，未设置打 console.warn（dev 占位 alg:none）
+// - accessToken 走 HS256 + jose 真签发（Phase 5）；refreshToken 沿用 mock-refresh-${userId} 前缀对齐 msw
+// - JWT_SIGNING_KEY 从 env 读，必须 ≥32 bytes
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -16,40 +16,13 @@ import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
 import { tenants, users, auditEvents } from "@/db/schema";
 import { loginLockout } from "@/lib/login-lockout";
+import { signToken } from "@/lib/jwt";
 
 const LoginBody = z.object({
   username: z.string().min(1).max(64),
   password: z.string().min(1).max(128),
   tenantCode: z.string().uuid().optional(),
 });
-
-function b64url(input: Buffer | string): string {
-  return Buffer.from(input)
-    .toString("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
-}
-
-function issueAccessToken(userId: string, tenantId: string): string {
-  // 读 JWT_SIGNING_KEY（env 镜像 springboot/aspnetcore）；未设置打 warn
-  if (!process.env.JWT_SIGNING_KEY) {
-    console.warn(
-      "[auth/login] JWT_SIGNING_KEY 未设置；当前 dev 占位 alg:none base64url，生产前必须设。",
-    );
-  }
-  // Phase 5 替换为 jose HS256 签发；当前 dev 用 base64url 占位
-  const header = b64url(JSON.stringify({ alg: "none", typ: "JWT" }));
-  const payload = b64url(
-    JSON.stringify({
-      sub: userId,
-      tenant_id: tenantId,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 3600,
-    }),
-  );
-  return `${header}.${payload}.dev-placeholder`;
-}
 
 async function writeAudit(
   tenantId: string,
@@ -153,11 +126,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // 成功：清零失败计数 + 写 audit + 签 token（token 前缀对齐 msw handler-extra.ts:282-283）
+  // 成功：清零失败计数 + 写 audit + 签 token（accessToken HS256 真签发；refreshToken 沿用 msw 前缀 mock-refresh-）
   loginLockout.clearFailures(username);
   await writeAudit(user.tenantId, user.id, "login_success", { username });
 
-  const accessToken = issueAccessToken(user.id, user.tenantId);
+  const accessToken = await signToken({ sub: user.id, tenant_id: user.tenantId });
   return NextResponse.json({
     accessToken,
     refreshToken: `mock-refresh-${user.id}`,

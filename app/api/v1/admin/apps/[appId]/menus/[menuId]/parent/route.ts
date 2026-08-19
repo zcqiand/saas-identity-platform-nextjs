@@ -40,7 +40,7 @@ export async function PATCH(
   { params }: { params: Promise<{ appId: string; menuId: string }> },
 ): Promise<NextResponse> {
   try {
-    verifyPathTenant(null, req.headers.get("authorization"));
+    await verifyPathTenant(null, req.headers.get("authorization"));
     const { menuId } = await params;
     const parsed = MoveBody.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {

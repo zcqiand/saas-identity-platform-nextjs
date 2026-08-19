@@ -51,6 +51,12 @@ function mutationStub() {
   };
 }
 
+// === JWT signing key for tests（Phase 5 HS256 + jose 要求 ≥32 bytes）===
+process.env.JWT_SIGNING_KEY ??= "dev-key-32-bytes-minimum-length!";
+process.env.JWT_ISSUER ??= "saas-identity-platform";
+process.env.JWT_AUDIENCE ??= "saas-identity-platform-clients";
+process.env.JWT_TTL_SECONDS ??= "3600";
+
 // === Mock local orval api-client (@/api/endpoints/endpoints) ===
 // orval 生成的 endpoints.ts 模块同时含裸函数 + useXxx hooks。tests 需要 hooks 形态桩。
 vi.mock("@/api/endpoints/endpoints", () => ({
@@ -185,5 +191,8 @@ vi.mock("next/navigation", () => ({
 
 afterEach(() => {
   cleanup();
-  localStorage.clear();
+  // localStorage 仅在 jsdom 环境存在（auth fnTests 用 // @vitest-environment node）
+  if (typeof globalThis.localStorage !== "undefined") {
+    globalThis.localStorage.clear();
+  }
 });

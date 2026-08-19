@@ -4,7 +4,7 @@
 //   listApps(@query page?, @query pageSize?): Page<App>
 //   createApp(@body CreateAppRequest): App
 // 语义：
-//   - 平台级（不 tenant-scoped）：verifyPathTenant(null) 只要 JWT
+//   - 平台级（不 tenant-scoped）：await verifyPathTenant(null) 只要 JWT
 //   - GET -> Page<App>（sort_order ASC, created_at DESC）
 //   - POST -> App；code / clientId 平台唯一，冲突 409
 //   - clientSecret 入库为 client_secret_hash（dev 占位）；响应不返回明文
@@ -60,7 +60,7 @@ const appFields = {
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
-    verifyPathTenant(null, req.headers.get("authorization"));
+    await verifyPathTenant(null, req.headers.get("authorization"));
     const url = new URL(req.url);
     const page = Math.max(0, Number(url.searchParams.get("page") ?? 0));
     const pageSize = Math.min(
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
-    verifyPathTenant(null, req.headers.get("authorization"));
+    await verifyPathTenant(null, req.headers.get("authorization"));
     const parsed = CreateAppBody.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json(

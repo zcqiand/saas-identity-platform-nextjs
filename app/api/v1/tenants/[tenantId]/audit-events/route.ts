@@ -25,7 +25,7 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { tenantId } = await params;
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const url = new URL(req.url);
     const page = Math.max(0, Number(url.searchParams.get("page") ?? 0));
     const pageSize = Math.min(100, Math.max(1, Number(url.searchParams.get("pageSize") ?? 20)));

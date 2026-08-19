@@ -26,7 +26,7 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { tenantId, userId } = await params;
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const rows = await db
       .select()
       .from(users)
@@ -60,7 +60,7 @@ export async function PATCH(
 ): Promise<NextResponse> {
   try {
     const { tenantId, userId } = await params;
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const parsed = UpdateUserBody.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json(
@@ -106,7 +106,7 @@ export async function DELETE(
 ): Promise<NextResponse> {
   try {
     const { tenantId, userId } = await params;
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
     await db
       .delete(users)
       .where(and(eq(users.tenantId, tenantId), eq(users.id, userId)));

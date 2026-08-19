@@ -20,7 +20,7 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { tenantId } = await params;
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const rows = await db
       .select()
       .from(auditRetentionPolicies)
@@ -43,7 +43,7 @@ export async function PUT(
 ): Promise<NextResponse> {
   try {
     const { tenantId } = await params;
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const parsed = PutBody.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json(

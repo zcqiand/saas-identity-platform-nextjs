@@ -8,7 +8,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { oauthStore, generateAccessToken, generateRefreshToken } from "@/lib/oauth-store";
+import { oauthStore, generateRefreshToken } from "@/lib/oauth-store";
+import { signToken } from "@/lib/jwt";
 
 const RefreshRequest = z.object({
   grantType: z.literal("refresh_token"),
@@ -44,7 +45,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const accessToken = generateAccessToken(entry.userId);
+  const accessToken = await signToken({
+    sub: entry.userId,
+    tenant_id: entry.tenantId,
+    scope: entry.scope,
+  });
   const newRefresh = generateRefreshToken(entry.userId);
   oauthStore.putRefresh(newRefresh, entry);
 

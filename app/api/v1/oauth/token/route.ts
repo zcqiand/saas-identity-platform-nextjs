@@ -24,7 +24,8 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { apps, auditEvents } from "@/db/schema";
-import { oauthStore, generateAccessToken, generateRefreshToken } from "@/lib/oauth-store";
+import { oauthStore, generateRefreshToken } from "@/lib/oauth-store";
+import { signToken } from "@/lib/jwt";
 
 const TokenRequest = z.object({
   grantType: z.enum(["authorization_code", "refresh_token"]),
@@ -89,7 +90,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         { status: 400 },
       );
     }
-    const accessToken = generateAccessToken(entry.userId);
+    const accessToken = await signToken({
+      sub: entry.userId,
+      tenant_id: entry.tenantId,
+      scope: entry.scope,
+    });
     const refreshToken = generateRefreshToken(entry.userId);
     oauthStore.putRefresh(refreshToken, {
       appId: entry.appId,
@@ -133,7 +138,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 400 },
     );
   }
-  const accessToken = generateAccessToken(entry.userId);
+  const accessToken = await signToken({
+    sub: entry.userId,
+    tenant_id: entry.tenantId,
+    scope: entry.scope,
+  });
   const newRefresh = generateRefreshToken(entry.userId);
   oauthStore.putRefresh(newRefresh, entry);
 

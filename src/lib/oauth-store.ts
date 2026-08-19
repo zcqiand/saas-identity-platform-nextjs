@@ -90,12 +90,10 @@ export function generateAuthCode(): string {
   return `saas-code-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-/** 生成 OAuth access token（saas-jwt-${userId}-${nonce}，与 msw handler-extra.ts:439 对齐） */
-export function generateAccessToken(userId: string): string {
-  return `saas-jwt-${userId}-${Math.random().toString(36).slice(2)}`;
-}
-
-/** 生成 OAuth refresh token（saas-rt-${userId}-${nonce}-${rand}，与 msw handler-extra.ts:440 对齐） */
+/**
+ * 生成 OAuth refresh token（saas-rt-${userId}-${nonce}-${rand}，与 msw handler-extra.ts:440 对齐）。
+ * 注意：accessToken 不在此生成 —— Phase 5 走 src/lib/jwt.ts 的 HS256 真签发（signToken）。
+ */
 export function generateRefreshToken(userId: string): string {
   return `saas-rt-${userId}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
 }

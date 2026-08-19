@@ -21,7 +21,7 @@ export async function POST(
 ): Promise<NextResponse> {
   try {
     const { tenantId } = await params;
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const parsed = Body.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json(

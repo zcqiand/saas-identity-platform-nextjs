@@ -1,3 +1,4 @@
+// @vitest-environment node
 // M03.F03.I05 — /api/v1/auth/logout
 //
 // 最佳努力 204：即便 Authorization header 无效 / 缺失也返回 204（防泄露 token 状态）。

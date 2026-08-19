@@ -1,11 +1,11 @@
 {
   "schema": 1,
   "last_session_at": "2026-08-19",
-  "last_session_summary": "M03/M04 auth 批次：5 路由新增 + 2 增强 + oauth-store in-memory + login-lockout + 11 env vars + function-tree 部分翻 已上线 + ADR-0008 §6 实施日志",
+  "last_session_summary": "Phase 5: HS256 + jose 真签发/验签收口。src/lib/jwt.ts 加 signToken + verifyToken；5 个 Route Handler (login/refresh/oidc-callback/oauth-token 双 grantType/switch-tenant) 切真签发；verifyPathTenant async + JwtParseError 转 TenantGuardError；所有 23 个 admin/tenants/me 路由调用 await 化；6 个测试文件加 // @vitest-environment node (jsdom TextEncoder Uint8Array 与 Node 不同类)；L0-L5 全绿 / 软告警 0 条",
   "open_items": [
     "M03.F03.I06 全局 SSO logout 无 OpenAPI 端点；保留规划",
-    "HS256 真签发 + jose 验签 延后 Phase 5（当前 dev 占位 alg:none）",
     "oauth-store 进程内 Map 无 TTL 后台清理；当前仅按需 evict，Phase 6 切 Redis",
-    "M03.F02.I03 OIDC dev echo 与真 IdP 集成留远期"
+    "M03.F02.I03 OIDC dev echo 与真 IdP 集成留远期",
+    "Phase 5 后 nextjs 已不再依赖 alg:none dev 占位；遗留 debugJwtPayload 不验签 helper 仅单元测试使用"
   ]
 }

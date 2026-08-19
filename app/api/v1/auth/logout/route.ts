@@ -8,9 +8,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { claimsFromAuthHeader, JwtParseError } from "@/lib/jwt";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  // 即便 token 无效（null / 缺 / 解析失败）也返回 204（防止泄露 token 状态信息）
+  // 即便 token 无效（null / 缺 / 解析失败 / 验签失败）也返回 204（防止泄露 token 状态信息）
   try {
-    claimsFromAuthHeader(req.headers.get("authorization"));
+    await claimsFromAuthHeader(req.headers.get("authorization"));
   } catch (e) {
     if (!(e instanceof JwtParseError)) throw e;
   }

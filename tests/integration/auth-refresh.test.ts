@@ -1,3 +1,4 @@
+// @vitest-environment node
 // M03.F02.I04 — /api/v1/auth/refresh
 //
 // v0.5.0 切到 oauth-store.rotateRefresh；与 /oauth/token grantType=refresh_token 同款语义。
@@ -38,7 +39,7 @@ describe("M03.F02.I04 /api/v1/auth/refresh", () => {
     const res = await POST(makeReq({ ...baseBody, refreshToken: oldRefresh }) as never);
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.accessToken).toMatch(/^saas-jwt-/);
+    expect(json.accessToken).toMatch(/^[\w-]+\.[\w-]+\.[\w-]+$/); // HS256 3 segments
     expect(json.refreshToken).not.toBe(oldRefresh);
     expect(json.refreshToken).toMatch(/^saas-rt-/);
   });

@@ -81,3 +81,31 @@ HS256 真签发延后到 Phase 5；当前 dev 占位 `alg:none` base64url，但 
 fnTest 覆盖：`tests/integration/{oauth-authorize,oauth-token,auth-oidc-callback,auth-refresh,auth-login}.test.ts` 共 5 个文件 ~25 条 `it()`；test 名称内嵌 `M\d{2}\.F\d{2}\.I\d{2}`，由 `tests/fnReporter.ts` 正则提取写入 `.state/trace.json`。
 
 后续 session：Phase 5 jose HS256 真签发 + verify；Phase 6 oauth-store → Redis（TTL 后台清理 + 多进程共享）；远期真 OIDC 替换 dev echo。
+
+### 2026-08-19 — Phase 5：HS256 + jose 真签发 / 验签
+
+替换 dev 占位 `alg:none` base64url 为 `jose@5.10.0` HS256 真签发 + 验签。
+
+`src/lib/jwt.ts` 改造：
+- 新增 `signToken({ sub, tenant_id, scope?, email?, ttlSeconds? })` → jose `SignJWT`，HS256 header + iss + aud + sub + iat + exp。
+- 新增 `verifyToken(token)` → jose `jwtVerify`，issuer/audience 一并校验；任何验签失败（含 jose 对 `alg:none` 抛的 TypeError）一律包装为 `JwtParseError`。
+- `claimsFromAuthHeader` 现在 async（底层 `verifyToken` async）；3 个调用点已同步改造：`/auth/logout`、`/me/tenants`、`/me/tenants/[id]/switch`、`/me`。
+- `src/lib/tenant-guard.ts` 的 `verifyPathTenant` 现在 async，且把 `JwtParseError` 转为 `TenantGuardError`（401）；所有 23 个 admin/tenants/me 路由调用点已 `await` 化。
+- 保留 `decodeJwtPayload` 作为 legacy 不验签 helper（仅 debug / 单元测试用），新增 `signTestToken` helper（HS256 真签发但 tenant_id 可省略，便于「缺少 tenant_id」错误测试）。
+
+`src/lib/oauth-store.ts` 删 `generateAccessToken`（accessToken 走 jose HS256 真签发），`generateRefreshToken` 保留为不透明字符串。
+
+5 个 Route Handler 切到 `signToken`：
+- `/api/v1/auth/login` —— 移除本地 b64url 占位 + `JWT_SIGNING_KEY` 缺失告警（signToken 内部已 throw）
+- `/api/v1/auth/refresh` —— 复用 `signToken`
+- `/api/v1/auth/oidc/callback` —— 复用 `signToken`
+- `/api/v1/oauth/token` grantType=authorization_code + refresh_token —— 复用 `signToken`
+- `/api/v1/me/tenants/[id]/switch` —— 复用 `signToken`
+
+测试调整：
+- `tests/setup.ts`：注入 `JWT_SIGNING_KEY` / `JWT_ISSUER` / `JWT_AUDIENCE` / `JWT_TTL_SECONDS` 默认值；`afterEach` 加 `localStorage` 守卫（auth fnTests 走 `// @vitest-environment node`）。
+- 6 个 auth/tenant 测试文件首行加 `// @vitest-environment node`（jsdom 环境 polyfill 的 TextEncoder 返回的 Uint8Array 与 Node 原生 Uint8Array 不是同一类，jose v5 的 `payload instanceof Uint8Array` 校验失败）。
+- `tests/tenant-guard.test.ts`：所有 `verifyPathTenant` 测试改 async + 用 `signTestToken` 签 HS256 token；新增「alg:none token 抛 TenantGuardError」用例；`decodeJwtPayload` legacy 测试保留。
+- 4 个 auth fnTest 文件的 accessToken 断言从 `^[\w-]+\.[\w-]+\.dev-placeholder$` / `^saas-jwt-` 改为 `^[\w-]+\.[\w-]+\.[\w-]+$`（HS256 3 base64url 段）。
+
+后续 Phase 6：oauth-store → Redis（TTL 后台清理 + 多进程共享 + 重启恢复）。

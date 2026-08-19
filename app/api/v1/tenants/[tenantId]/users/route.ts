@@ -24,7 +24,7 @@ export async function GET(
     const { tenantId } = await params;
 
     // tenant guard 第一行
-    verifyPathTenant(tenantId, req.headers.get("authorization"));
+    await verifyPathTenant(tenantId, req.headers.get("authorization"));
 
     // query params
     const url = new URL(req.url);
