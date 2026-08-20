@@ -13,7 +13,7 @@ saas-identity-platform 的 Next.js **全栈**应用（已落地 v0.2.0 迁移 + 
 
 - ❌ 禁止从 `@saas/identity-platform-shared` import TS 客户端
 - ❌ 禁止给 next.config.js 加 webpack alias `@saas/shared` / tsconfig paths `@saas/*`
-- ❌ 禁止把后端模式写到 `.env` / `.env.example` / `next.config.js` proxy
+- ❌ **禁止**把后端模式写到 `.env` / `.env.example` / `next.config.js` proxy（**v0.4.0 已反转**：必须把 `NEXT_PUBLIC_API_BASE_URL` / `NEXT_PUBLIC_ENABLE_MSW` 写到 `.env.example`，运行时不切 — ADR-0014）
 - ❌ 禁止给按钮加图标（`Plus` / `Trash2` / `Power` / `ShieldCheck` / `Save` / `X` / `LogIn` / `Download`）
 - ❌ 禁止用 `useState(emptySession) + useEffect(loadSession)` —— tenant / selection / backend 三个 Provider 必须 lazy initializer 同步 hydrate
 - ❌ 禁止手写 fetch + 字符串 URL
@@ -31,15 +31,17 @@ saas-identity-platform 的 Next.js **全栈**应用（已落地 v0.2.0 迁移 + 
 - ❌ 禁止自定义 `<select>` 风格的下拉
 - ❌ 禁止未在 function-tree 登记的 fnId 挂在 `data-fn` 上
 
-## 3. 7 个核心基建文件
+## 3. 7 个核心基建文件（v0.4.0 — ADR-0014）
 
 | 文件 | 职责 |
 | --- | --- |
 | `src/components/app/app-shell.tsx` | 顶栏 + 左侧 sidebar + 内容（App Router 版用 `children` prop） |
-| `src/components/app/sidebar-nav.tsx` | 分组菜单 + 登出按钮 + BackendSwitcher footer |
-| `src/api/backend-config.ts` | 模块级单例；7 个 getter/setter；hydrate/snapshot 双向桥 |
-| `src/state/backend-context.tsx` | React Context；同步 hydrate 单例；useBackend() hook |
-| `src/components/app/backend-switcher.tsx` | sidebar 底部 DropdownMenu + 自定义 baseUrl 编辑 |
+| `src/components/app/sidebar-nav.tsx` | 分组菜单 + 登出按钮 + BackendBadge footer（v0.4.0 改） |
+| `src/api/backend-config.ts` | env 适配：`getApiBaseUrl` / `getApiMode` / `isMswEnabled`（v0.4.0 塌缩到 3 个函数） |
+| `src/api/env.ts` | 唯一 `process.env.NEXT_PUBLIC_*` 适配点（v0.4.0 新增） |
+| ~~`src/state/backend-context.tsx`~~ | ~~React Context；同步 hydrate 单例；useBackend() hook~~（v0.4.0 删除 — ADR-0014） |
+| ~~`src/components/app/backend-switcher.tsx`~~ | ~~sidebar 底部 DropdownMenu + 自定义 baseUrl 编辑~~（v0.4.0 删除 — ADR-0014） |
+| `src/components/app/backend-badge.tsx` | 无交互 backend 标签（v0.4.0 替代 BackendSwitcher — ADR-0014） |
 | `src/components/app/crud-dialog.tsx` | 通用 CRUD Dialog；fields: FieldDef[] 驱动 |
 | `src/state/selection-context.tsx` | 多租户/多应用「焦点选中」状态 |
 

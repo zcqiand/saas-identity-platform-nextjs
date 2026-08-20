@@ -290,8 +290,7 @@
         "渲染登录表单，挂 data-fn=M03.F01.I01 的提交按钮"
       ],
       "entry": [
-        "app\\login\\page.tsx",
-        "src\\components\\app\\backend-switcher.tsx"
+        "app\\login\\page.tsx"
       ]
     },
     "M03.F01.I02": {

@@ -13,11 +13,7 @@ import {
   useTenantUsersListUsers,
   useTenantUsersUpdateUser,
 } from "@/api/endpoints/endpoints";
-import type {
-  CreateUserRequest,
-  UpdateUserRequest,
-  User,
-} from "@/api/endpoints/endpoints.schemas";
+import type { CreateUserRequest, UpdateUserRequest, User } from "@/api/endpoints/endpoints.schemas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -61,7 +57,7 @@ const EDIT_FIELDS = FIELDS.filter((f) => f.name !== "username");
 export default function UserListPage({ params }: { params: Promise<{ tenantId: string }> }) {
   const { tenantId } = use(params);
   const qc = useQueryClient();
-  const tenant = tenantId ? getTenant(tenantId) ?? null : null;
+  const tenant = tenantId ? (getTenant(tenantId) ?? null) : null;
   const tenantLabel = tenant ? `租户 ${tenant.name}（${tenant.code}）` : "租户未知";
 
   const usersQ = useTenantUsersListUsers(tenantId);
@@ -162,60 +158,58 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
           ) : users.length === 0 ? (
             <EmptyState title="还没有用户" description="邀请第一个用户加入租户" />
           ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>用户名</TableHead>
-                <TableHead>邮箱</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>角色</TableHead>
-                <TableHead className="text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((u) => (
-                <TableRow key={u.id} data-testid="user-row">
-                  <TableCell className="font-medium">{u.username}</TableCell>
-                  <TableCell className="text-slate-500">{u.email}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={u.status} />
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-xs text-slate-500">
-                      {(u.roleIds ?? []).length} 项
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      data-fn="M01.F02.I01"
-                      onClick={() => setRoleTarget(u)}
-                    >
-                      分配角色
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      data-fn="M01.F01.I04"
-                      onClick={() => setEditTarget(u)}
-                    >
-                      编辑
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      data-fn="M01.F01.I05"
-                      className="text-red-600 hover:text-red-700"
-                      onClick={() => setDeleteTarget(u)}
-                    >
-                      删除
-                    </Button>
-                  </TableCell>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>用户名</TableHead>
+                  <TableHead>邮箱</TableHead>
+                  <TableHead>状态</TableHead>
+                  <TableHead>角色</TableHead>
+                  <TableHead className="text-right">操作</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {users.map((u) => (
+                  <TableRow key={u.id} data-testid="user-row">
+                    <TableCell className="font-medium">{u.username}</TableCell>
+                    <TableCell className="text-slate-500">{u.email}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={u.status} />
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs text-slate-500">{(u.roleIds ?? []).length} 项</span>
+                    </TableCell>
+                    <TableCell className="text-right space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        data-fn="M01.F02.I01"
+                        onClick={() => setRoleTarget(u)}
+                      >
+                        分配角色
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        data-fn="M01.F01.I04"
+                        onClick={() => setEditTarget(u)}
+                      >
+                        编辑
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        data-fn="M01.F01.I05"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => setDeleteTarget(u)}
+                      >
+                        删除
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
@@ -257,9 +251,7 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
         ]}
         submitText="保存角色"
         loading={roleAssignMut.isPending}
-        initialValues={
-          roleTarget ? { roleIds: roleTarget.roleIds ?? [] } : undefined
-        }
+        initialValues={roleTarget ? { roleIds: roleTarget.roleIds ?? [] } : undefined}
         renderField={(_field, value, onChange) => (
           <div className="space-y-1 max-h-48 overflow-y-auto border rounded p-2">
             {roles.map((r) => {
@@ -296,12 +288,6 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
         loading={deleteMut.isPending}
         onConfirm={confirmDelete}
       />
-
-      <p className="text-xs text-slate-400">
-        <Link href="../roles" className="underline">
-          角色权限 →
-        </Link>
-      </p>
     </div>
   );
 }

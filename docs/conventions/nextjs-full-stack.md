@@ -24,11 +24,13 @@
 - `.env`（gitignore）：实际凭据；`DATABASE_URL=postgresql://postgres:...@host:5432/saas_dev`
 - 远期切 secret manager 时改 `scripts/lib/db-env.sh` 一处即可
 
-## runtime backend switcher 增项
+## runtime backend switcher 增项（**已废弃 — v0.4.0 / ADR-0014**）
 
-- 旧 3 项：`msw` / `aspnetcore` / `springboot`
-- 新增第 4 项 `nextjs-self`：调本仓 `app/api/v1/` Route Handler，便于「前端 + 自己后端」端到端调试
-- `src/api/backend-config.ts` 的 `Backend` union 加 `nextjs-self`；`src/components/app/backend-switcher.tsx` UI 加一项
+- 旧 4 项：`msw` / `aspnetcore` / `springboot` / `nextjs-self`
+- 整块 runtime 切换基础设施（BackendConfig 单例 / BackendProvider / BackendSwitcher UI / localStorage 持久化）已删除
+- 后端 URL 改走 `NEXT_PUBLIC_API_BASE_URL`（部署期单 URL 配置，默认 `""` 同源调本仓 Route Handler 即原 `nextjs-self` 行为）
+- MSW 启动门控改走 `NEXT_PUBLIC_ENABLE_MSW`（dev 默认 true，prod 默认 false）
+- 详见 [../../../../docs/adr/0014-runtime-backend-switcher-removed.md](../../../../docs/adr/0014-runtime-backend-switcher-removed.md)
 
 ## 后续 phase 增量
 

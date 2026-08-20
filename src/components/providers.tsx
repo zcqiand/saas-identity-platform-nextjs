@@ -1,24 +1,17 @@
 "use client";
 
-// Providers 容器：QueryClient + BackendProvider + TenantProvider + SelectionProvider
+// Providers 容器：QueryClient + TenantProvider + SelectionProvider
 // 在 layout.tsx 用 <Providers> 包裹 children（layout.tsx 本身是 server component）
 //
-// v0.3.0 装配顺序：
-//   MSW worker 启动（dev + backend == "msw"，拦截 /api/v1/* 走浏览器内 mock）
-//   → axios 拦截器装（baseURL / Bearer token）
-//   → QueryClient（react-query）
-//   → BackendProvider（lazy hydrate 模块单例）
-//   → TenantProvider（lazy hydrate session）
-//   → SelectionProvider（lazy hydrate localStorage）
+// v0.4.0（ADR-0014）：删 BackendProvider；MSW 启动门控由 getBackend() 改为 isMswEnabled()。
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
-import { BackendProvider } from "@/state/backend-context";
 import { TenantProvider } from "@/state/tenant-context";
 import { SelectionProvider } from "@/state/selection-context";
 import { installHttpClient } from "@/api/http-client";
 import { useTenant } from "@/state/tenant-context";
-import { getBackend } from "@/api/backend-config";
+import { isMswEnabled } from "@/api/backend-config";
 
 function HttpClientInstaller({ children }: { children: ReactNode }) {
   const tenant = useTenant();
@@ -37,10 +30,10 @@ export function Providers({ children }: { children: ReactNode }) {
       }),
   );
 
-  // dev 模式 + backend == "msw" → 启动 service worker 拦截
+  // dev 模式 + NEXT_PUBLIC_ENABLE_MSW=true → 启动 service worker 拦截
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
-    if (getBackend() !== "msw") return;
+    if (!isMswEnabled()) return;
     // dynamic import：msw + browser entry 仅在 client 启动时按需加载
     void import("@saas/identity-platform-msw/browser").then(({ setupBrowserMocks }) =>
       setupBrowserMocks().catch(() => {
@@ -52,13 +45,11 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BackendProvider>
-        <TenantProvider>
-          <SelectionProvider>
-            <HttpClientInstaller>{children}</HttpClientInstaller>
-          </SelectionProvider>
-        </TenantProvider>
-      </BackendProvider>
+      <TenantProvider>
+        <SelectionProvider>
+          <HttpClientInstaller>{children}</HttpClientInstaller>
+        </SelectionProvider>
+      </TenantProvider>
     </QueryClientProvider>
   );
 }

@@ -4,12 +4,14 @@
 //（orval 从 ../saas-identity-platform-shared/generated/openapi/openapi.yaml 生成，
 // 每个端点对应一个具名函数 + 一个 react-query hook）。
 // 本文件做两件事：
-//   1) 装 axios 拦截器：每次请求从运行时配置（backend-config）拿 baseUrl，
+//   1) 装 axios 拦截器：每次请求从部署期配置（NEXT_PUBLIC_API_BASE_URL）拿 baseUrl，
 //      从 getToken callback 拿 token，写进 Authorization 头
 //   2) 提供 ApiError 封装（low-level fetch 走 axios 错误时统一）
+//
+// ADR-0014：runtime baseUrl 已废弃，改走 env-driven 单 URL。
 
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
-import { getBaseUrl } from "./backend-config";
+import { getApiBaseUrl } from "./backend-config";
 
 export class ApiError extends Error {
   status: number;
@@ -39,7 +41,7 @@ export function toApiError(err: unknown): ApiError {
  */
 export function installHttpClient(getToken: () => string | null): void {
   axios.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-    config.baseURL = getBaseUrl();
+    config.baseURL = getApiBaseUrl();
     const token = getToken();
     if (token) {
       config.headers.set("Authorization", `Bearer ${token}`);
@@ -66,7 +68,7 @@ export async function apiRequest<T>(
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(`${getBaseUrl()}${path}`, {
+  const res = await fetch(`${getApiBaseUrl()}${path}`, {
     method: options.method ?? "GET",
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
@@ -80,4 +82,4 @@ export async function apiRequest<T>(
   return (await res.json()) as T;
 }
 
-export { getBaseUrl, getBackend } from "./backend-config";
+export { getApiBaseUrl, getApiMode, isMswEnabled } from "./backend-config";

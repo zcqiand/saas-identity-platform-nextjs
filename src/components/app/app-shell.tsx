@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { SidebarNav, type NavItem } from "./sidebar-nav";
 import { TenantSwitcher } from "@/components/tenant-switcher";
-import { BackendSwitcher } from "./backend-switcher";
+import { BackendBadge } from "./backend-badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
@@ -159,7 +159,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     </Button>
   );
 
-  const footerExtras = <BackendSwitcher />;
+  const footerExtras = <BackendBadge />;
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-white to-slate-100">

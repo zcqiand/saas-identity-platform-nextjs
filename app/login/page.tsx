@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTenant } from "@/state/tenant-context";
-import { useBackend } from "@/state/backend-context";
+import { getApiMode } from "@/api/backend-config";
 import { authLogin } from "@/api/endpoints/endpoints";
 import { toApiError } from "@/api/http-client";
 import { toast } from "sonner";
@@ -32,7 +32,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const router = useRouter();
   const { login } = useTenant();
-  const { backend } = useBackend();
+  const apiMode = getApiMode();
   const [submitting, setSubmitting] = useState(false);
   const [ssoReturn, setSsoReturn] = useState<{ redirect: string; state: string } | null>(null);
   // RFC 6749 §4.1.1 授权码范式：lab 后端（confidential client）已替浏览器领到 code，
@@ -147,7 +147,7 @@ export default function LoginPage() {
         apiErr.status === 401
           ? "用户名或密码错误"
           : apiErr.status === 0
-            ? `后端不可达（${backend}）：${apiErr.message}`
+            ? `后端不可达（${apiMode}）：${apiErr.message}`
             : apiErr.message;
       toast.error(msg);
     } finally {
@@ -210,7 +210,7 @@ export default function LoginPage() {
                   <span>
                     关注微信公众号{" "}
                     <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-amber-200">
-                      SaaS 实战派
+                      南荣相如
                     </code>
                     ，回复「演示」
                   </span>
@@ -222,7 +222,7 @@ export default function LoginPage() {
                   <span>
                     关注小红书{" "}
                     <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-amber-200">
-                      @SaaS 实战派
+                      @南荣相如
                     </code>
                     ，查看置顶笔记
                   </span>
@@ -230,19 +230,8 @@ export default function LoginPage() {
               </ul>
             </div>
 
-            <div className="text-xs text-slate-500 space-y-1">
-              <p className="font-medium text-slate-700">演示账号（用户名公开，密码见上方）</p>
-              <ul className="font-mono space-y-0.5">
-                {DEMO_ACCOUNTS.map((a) => (
-                  <li key={a.username}>
-                    {a.username} · {a.tenant}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
             <p className="text-xs text-slate-400">
-              当前后端模式：<span className="font-medium text-slate-700">{backend}</span>
+              当前后端模式：<span className="font-medium text-slate-700">{apiMode}</span>
             </p>
 
             {ssoReturn && (

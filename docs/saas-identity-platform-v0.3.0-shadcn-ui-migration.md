@@ -35,8 +35,10 @@ v0.3.0 一次性把这 4 件事做完：UI 库 + 布局 + 全 page 改写 + 文�
 
 ### 4. 范围：全面重构（9 page + 3 组件 + AppShell + 路由）
 - 9 page 全部用 shadcn-ui 组件（保留 `data-fn` 锚点 1:1）
-- 3 组件迁移（backend-switcher / crud-dialog / tenant-switcher）+ 8 个新镜像（page-header / data-table / empty-state / confirm-dialog / field / pagination-bar / status-badge / sidebar-nav）+ AppShell
+- 3 组件迁移（~~backend-switcher~~ → v0.4.0 删除 / crud-dialog / tenant-switcher）+ 8 个新镜像（page-header / data-table / empty-state / confirm-dialog / field / pagination-bar / status-badge / sidebar-nav）+ AppShell
 - 14 个 shadcn-ui 组件（button / card / dialog / input / textarea / label / select / checkbox / dropdown-menu / separator / badge / skeleton / table / alert-dialog + sonner）
+
+> 2026-08-20 增注（ADR-0014）：backend-switcher 在 v0.4.0 已删除；改用 `src/components/app/backend-badge.tsx`（无交互 mode 标签）+ env 配置。
 
 ## 组件映射表（React → Next.js）
 
