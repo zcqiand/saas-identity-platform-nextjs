@@ -1,16 +1,63 @@
-// /api/v1/me/menus — M09.F03.I04
+// /api/v1/me/menus?appCode=<code> — M09.F03.I04
 //
-// TypeSpec: tsp/routes/me.tsp getMyMenus(): Record<EffectiveMenuNode[]>
-// 当前用户的有效菜单（按 app 分组，返回 appCode → 树形菜单）
+// TypeSpec: getMyMenus(appCode): EffectiveMenuNode[]
+// 返回当前用户在指定 appCode 下的有效菜单（树形）。
 //
-// Phase 5 简化：返回当前 tenant 的所有 active menus（按 appId 分组到 appCode）
-// 不做完整 role → menu 的 JOIN 计算（Phase 6 接 role_menu_grants 后做）
+// demo 模式：直接读 saas-msw 的 JSON fixtures 文件（用 fs.readFile 避开
+// `with { type: "json" }` 在 Next.js webpack 下的解析歧义）。Phase 6 接 DB。
+// 跨仓 lab-nextjs 反代时 CORS + 跨实例都通过这层 Route Handler。
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and } from "drizzle-orm";
-import { db } from "@/db";
-import { menus, apps } from "@/db/schema";
-import { claimsFromAuthHeader, verifyPathTenant } from "@/lib/tenant-guard";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+type App = {
+  id: string;
+  code: string;
+  status: string;
+};
+type Menu = {
+  id: string;
+  appId: string;
+  parentId?: string | null;
+  status: string;
+  sortOrder: number;
+  code: string;
+  name: string;
+  path?: string;
+  icon?: string;
+  type: string;
+};
+type RoleMenuGrant = { roleId: string; menuIds: string[] };
+
+// 直接读 saas-msw 的 JSON fixtures（避开 `with { type: "json" }` 解析问题）。
+// SEEDS_DIR = saas-msw/src/seeds/ —— Next.js dev 时 cwd = 项目根；prod build
+// 时也以同项目布局打包，所以 `../saas-identity-platform-msw/src/seeds/` 跨仓读。
+const SEEDS_DIR = resolve(process.cwd(), "../saas-identity-platform-msw/src/seeds");
+
+// 加 fallback：cwd 路径不通时切 node_modules/...
+let FIXTURES: { apps: App[]; menus: Menu[]; grants: RoleMenuGrant[] };
+try {
+  FIXTURES = {
+    apps: JSON.parse(readFileSync(resolve(SEEDS_DIR, "apps.json"), "utf8")) as App[],
+    menus: JSON.parse(readFileSync(resolve(SEEDS_DIR, "menus.json"), "utf8")) as Menu[],
+    grants: JSON.parse(
+      readFileSync(resolve(SEEDS_DIR, "role-menu-grants.json"), "utf8"),
+    ) as RoleMenuGrant[],
+  };
+} catch (e1) {
+  const FALLBACK_DIR = resolve(process.cwd(), "node_modules/@saas/identity-platform-msw/src/seeds");
+  FIXTURES = {
+    apps: JSON.parse(readFileSync(resolve(FALLBACK_DIR, "apps.json"), "utf8")) as App[],
+    menus: JSON.parse(readFileSync(resolve(FALLBACK_DIR, "menus.json"), "utf8")) as Menu[],
+    grants: JSON.parse(
+      readFileSync(resolve(FALLBACK_DIR, "role-menu-grants.json"), "utf8"),
+    ) as RoleMenuGrant[],
+  };
+}
+const fixtureApps = FIXTURES.apps;
+const fixtureMenus = FIXTURES.menus;
+const fixtureRoleMenuGrants = FIXTURES.grants;
 
 type EffectiveMenuNode = {
   id: string;
@@ -25,49 +72,78 @@ type EffectiveMenuNode = {
   children: EffectiveMenuNode[];
 };
 
-function toEffectiveMenuNode(m: typeof menus.$inferSelect): EffectiveMenuNode {
-  return {
-    id: m.id,
-    appId: m.appId,
-    parentId: m.parentId ?? undefined,
-    code: m.code,
-    name: m.name,
-    path: m.path ?? undefined,
-    icon: m.icon ?? undefined,
-    type: m.type,
-    sortOrder: m.sortOrder,
-    children: [] as ReturnType<typeof toEffectiveMenuNode>[],
+/** 在 fixtures 上按 appCode 构造树（无 RBAC；saas-msw 的 /me/menus handler 同款） */
+function fromFixtures(appCode: string): EffectiveMenuNode[] {
+  const app = fixtureApps.find((a) => a.code === appCode && a.status === "active");
+  if (!app) return [];
+
+  const acmeAdminGrant = fixtureRoleMenuGrants.find(
+    (g) => g.roleId === "00000000-0000-0000-0000-000000000001-role-admin",
+  );
+  const allowed = new Set(acmeAdminGrant?.menuIds ?? []);
+
+  const tree = (parentId: string | undefined, appId: string): EffectiveMenuNode[] => {
+    // JSON 解析后 parentId 是 null（不是 undefined）；normalize 后再做 === 比较
+    const wantParent = parentId ?? null;
+    return fixtureMenus
+      .filter(
+        (m) => m.appId === appId && (m.parentId ?? null) === wantParent && m.status === "active",
+      )
+      .filter((m) => allowed.has(m.id) || !parentId)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((m) => ({
+        id: m.id,
+        appId: m.appId,
+        parentId: m.parentId ?? undefined,
+        code: m.code,
+        name: m.name,
+        path: m.path ?? undefined,
+        icon: m.icon ?? undefined,
+        type: m.type,
+        sortOrder: m.sortOrder,
+        children: tree(m.id, m.appId),
+      }));
   };
+
+  return tree(undefined, app.id);
 }
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  // 用 path-agnostic tenant-guard（JWT 需含 tenant_id claim）
-  const claims = verifyPathTenant(null, req.headers.get("authorization"));
-  if (!claims.tenant_id) {
+  try {
+    const url = new URL(req.url);
+    const appCode = url.searchParams.get("appCode");
+    if (!appCode) {
+      return NextResponse.json(
+        {
+          code: "BAD_REQUEST",
+          message: "appCode query parameter is required",
+        },
+        { status: 400 },
+      );
+    }
+    const result = fromFixtures(appCode);
+    console.log(
+      "[me/menus] cwd=",
+      process.cwd(),
+      "apps=",
+      fixtureApps.length,
+      "menus=",
+      fixtureMenus.length,
+      "grants=",
+      fixtureRoleMenuGrants.length,
+      "firstApp=",
+      fixtureApps[0]?.code,
+      "result=",
+      result.length,
+    );
+    return NextResponse.json(result);
+  } catch (err) {
     return NextResponse.json(
-      { code: "BAD_REQUEST", message: "JWT missing tenant_id; need /me/tenants/:id/switch first" },
-      { status: 400 },
+      {
+        code: "INTERNAL_ERROR",
+        message: (err as Error).message,
+      },
+      { status: 500 },
     );
   }
-  const tenantId = claims.tenant_id;
-
-  // Phase 5 占位：返回 tenant 所有 active menus（按 app 分组）
-  // Phase 6 加 role_menu_grants JOIN 后改为「按 user role 过滤」
-  const rows = await db
-    .select({
-      menu: menus,
-      appCode: apps.code,
-    })
-    .from(menus)
-    .innerJoin(apps, eq(menus.appId, apps.id))
-    .where(eq(menus.status, "active"))
-    .orderBy(apps.code, menus.sortOrder);
-
-  const grouped: Record<string, ReturnType<typeof toEffectiveMenuNode>[]> = {};
-  for (const r of rows) {
-    const code = r.appCode;
-    if (!grouped[code]) grouped[code] = [];
-    grouped[code]!.push(toEffectiveMenuNode(r.menu));
-  }
-  return NextResponse.json(grouped);
 }

@@ -32,17 +32,27 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     if (!mounted) return;
     if (!isAuthenticated && pathname !== "/login") {
       router.replace("/login");
+      return;
     }
     if (isAuthenticated && pathname === "/login") {
+      // SSO 回跳路径：让 /login 的 onSubmit 自己处理。两种范式都放行：
+      //   旧 ?redirect=…（token 直传）；新 RFC 6749 授权码 ?code=…&redirect_uri=…
+      // （登录页 oauthReturn 分支负责把 code+state 带回 redirect_uri）。
+      // 只认旧范式会把已登录用户的授权码回跳抢去 /tenants，code 永远回不到 RP。
+      const sp =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search)
+          : null;
+      const hasSsoReturn =
+        !!sp && (!!sp.get("redirect") || (!!sp.get("code") && !!sp.get("redirect_uri")));
+      if (hasSsoReturn) return;
       router.replace("/tenants");
     }
   }, [mounted, isAuthenticated, pathname, router]);
 
   // 未 mount 之前：服务端 / 客户端首屏统一渲染 loader 占位，避免 mismatch
   if (!mounted) {
-    return (
-      <p style={{ padding: 24 }}>跳转登录中…</p>
-    );
+    return <p style={{ padding: 24 }}>跳转登录中…</p>;
   }
 
   // /login 路由不包 AppShell

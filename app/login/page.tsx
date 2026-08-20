@@ -35,6 +35,13 @@ export default function LoginPage() {
   const { backend } = useBackend();
   const [submitting, setSubmitting] = useState(false);
   const [ssoReturn, setSsoReturn] = useState<{ redirect: string; state: string } | null>(null);
+  // RFC 6749 §4.1.1 授权码范式：lab 后端（confidential client）已替浏览器领到 code，
+  // saas 登录页只负责认证资源所有者，成功后 302 redirect_uri?code&state（§4.1.2）。
+  const [oauthReturn, setOauthReturn] = useState<{
+    redirectUri: string;
+    code: string;
+    state: string;
+  } | null>(null);
 
   // 解析 SSO ?redirect=&state=（lab RP 跳来时带）
   // 用 window.location.search 直接读，不依赖 useSearchParams 的 Suspense 时序。
@@ -43,6 +50,13 @@ export default function LoginPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const sp = new URLSearchParams(window.location.search);
+    // 授权码分支优先：lab 后端 /sso/authorize 领 code 后跳来（带 code+redirect_uri+state）
+    const oauthCode = sp.get("code");
+    const oauthRedirect = sp.get("redirect_uri");
+    if (oauthCode && oauthRedirect) {
+      setOauthReturn({ redirectUri: oauthRedirect, code: oauthCode, state: sp.get("state") ?? "" });
+      return;
+    }
     const raw = sp.get("redirect");
     if (!raw) return;
     let redirect = raw;
@@ -53,6 +67,22 @@ export default function LoginPage() {
     }
     setSsoReturn({ redirect, state: sp.get("state") ?? "" });
   }, []);
+
+  // RFC 6749 §4.1.2：授权码回跳不依赖 onSubmit —— 资源所有者已登录（saas session
+  // 已在）时无需再认证，解析出 code+redirect_uri 即刻回跳。否则已登录用户落在
+  // 登录页没表单可提交，code 永远回不到 RP（RequireAuth 已放行本页渲染）。
+  useEffect(() => {
+    if (!oauthReturn || typeof window === "undefined") return;
+    try {
+      const target = new URL(oauthReturn.redirectUri);
+      target.searchParams.set("code", oauthReturn.code);
+      if (oauthReturn.state) target.searchParams.set("state", oauthReturn.state);
+      console.log("[SSO/login] auto oauth redirect (already authenticated) ->", target.toString());
+      window.location.href = target.toString();
+    } catch (err) {
+      console.error("[SSO/login] auto oauth redirect failed:", err);
+    }
+  }, [oauthReturn]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -74,6 +104,22 @@ export default function LoginPage() {
       // 用 setTimeout(0) 让 React 先把 setSession 的 re-render 跑完、RequireAuth
       // 的 useEffect 决定「不抢着跳 /tenants」之后，再做导航，避免 race。
       setTimeout(() => {
+        // RFC 6749 §4.1.2 授权码回跳优先：redirect_uri?code=...&state=... 原样透传。
+        // code 是 lab 后端领的一次性授权码，saas 只做资源所有者认证，不消费它。
+        if (oauthReturn) {
+          try {
+            const target = new URL(oauthReturn.redirectUri);
+            target.searchParams.set("code", oauthReturn.code);
+            if (oauthReturn.state) target.searchParams.set("state", oauthReturn.state);
+            const url = target.toString();
+            console.log("[SSO/login] oauth code redirect ->", url);
+            window.location.href = url;
+          } catch (err) {
+            console.error("[SSO/login] oauth redirect build failed:", err);
+            toast.error("OAuth 回跳 URL 构造失败");
+          }
+          return;
+        }
         if (ssoReturn) {
           try {
             // lab msw 发的 redirect 通常是 path（"/" 或 "/select-tenant" 等）。
