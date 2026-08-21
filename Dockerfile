@@ -25,6 +25,11 @@ WORKDIR /app
 # 硬约束：npm 依赖一律走 npmmirror（CLAUDE.md §2）。
 RUN npm config set registry https://registry.npmmirror.com
 
+# node:24-slim 默认无 git / ca-certificates,装上以 clone sibling 仓
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
 # 拉 sibling 仓（file: 依赖 + gen:shared 需要 sibling 存在）
 # msw: package.json 的 @saas/identity-platform-msw@file:../saas-identity-platform-msw
 # shared: npm run gen:shared 调 ../saas-identity-platform-shared/scripts/codegen/emit-openapi.ts
