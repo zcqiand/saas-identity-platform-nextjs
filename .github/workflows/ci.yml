@@ -35,9 +35,13 @@ jobs:
       # shared-openapi.yaml 生成 src/api/endpoints/(gitignored,见 CLAUDE.md §3)
       - name: gen:shared
         run: npm run gen:shared
-      # 本仓用 PostgreSQL(不在 CI 起),build 阶段不连 DB;DATABASE_URL 在 deploy 阶段才需要
+      # 本仓用 PostgreSQL(不在 CI 起),build 阶段不连 DB;但 next build "Collecting page data"
+      # 会 import 数据库路由代码 → 触发 nextjs-full-stack §凭据 检查,DATABASE_URL 缺值即 throw。
+      # 用占位符 URL 让 build 通过(实际 deploy 阶段由 saas.env / SAAS_DATABASE_URL secret 注入)。
       - name: Build
         run: npm run build
+        env:
+          DATABASE_URL: "postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public"
       - name: L1 format
         run: npx --no prettier --check src tests
       - name: L2 lint
