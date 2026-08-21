@@ -10,7 +10,7 @@
 #
 # 与姊妹仓 lab-management-system-nextjs.sh 的差异:
 #   - 数据库:PostgreSQL 远程,DATABASE_URL 从 saas.env 注入(无本地 ./data 卷)
-#   - 容器内是 Node(next start :3000)→ -p 127.0.0.1:8065:3000
+#   - 容器内是 Node(next start :3000)→ -p 127.0.0.1:8022:3000
 #   - 密钥走 ./saas.env(DATABASE_URL + JWT_SIGNING_KEY),由 setup-vps.sh 生成,
 #     只存在于 VPS
 #
@@ -25,7 +25,7 @@ VERSION="${3:-latest}"
 IMAGE="${USERNAME}/saas-identity-platform-nextjs:${VERSION}"
 BASE="/home/deploy/saas-identity-platform-nextjs"
 CONTAINER_NAME="saas-identity-platform-nextjs"
-HOST_PORT=8065
+HOST_PORT=8022
 
 if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
   echo "Usage: $0 <DOCKER_USERNAME> <DOCKER_PASSWORD> [VERSION]" >&2
