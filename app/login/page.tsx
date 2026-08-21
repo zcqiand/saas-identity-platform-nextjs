@@ -5,8 +5,11 @@
 // 提交：调 authLogin（orval 1:1 端点函数）；成功后写 tenant-context session；
 // 失败：toast.error（sonner）。
 //
-// SSO 返回：URL 带 ?redirect=<lab-callback> 时，登录成功后跳回那里（带 token+state）。
-//          没有 ?redirect= 时落回 /tenants 默认路径。
+// SSO 返回（OAuth 2.0 授权码模式，RFC 6749）：URL 带 ?code=&redirect_uri=&state=
+// （lab RP 经 /api/auth/sso/authorize 领 code 后跳来）。saas 认证资源所有者后，
+// 302 redirect_uri?code&state（§4.1.2）原样透传给 RP。
+// 旧 ?token= 捷径（?redirect=&state= 把 JWT 放 URL）已删除：与 lab-* 子仓的
+// OAuth 2.0 code 流不匹配 + JWT 泄漏到 referer/log。
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -34,7 +37,6 @@ export default function LoginPage() {
   const { login } = useTenant();
   const apiMode = getApiMode();
   const [submitting, setSubmitting] = useState(false);
-  const [ssoReturn, setSsoReturn] = useState<{ redirect: string; state: string } | null>(null);
   // RFC 6749 §4.1.1 授权码范式：lab 后端（confidential client）已替浏览器领到 code，
   // saas 登录页只负责认证资源所有者，成功后 302 redirect_uri?code&state（§4.1.2）。
   const [oauthReturn, setOauthReturn] = useState<{
@@ -43,29 +45,17 @@ export default function LoginPage() {
     state: string;
   } | null>(null);
 
-  // 解析 SSO ?redirect=&state=（lab RP 跳来时带）
+  // 解析 OAuth 2.0 authorize 回跳：?code=&redirect_uri=&state=
   // 用 window.location.search 直接读，不依赖 useSearchParams 的 Suspense 时序。
-  // URLSearchParams.get 在某些浏览器/Next.js 版本下对 redirect 这种
-  // 「已被 URLSearchParams.set 编码过」的值不再二次解码，统一 decodeURIComponent 兜底。
+  // 旧 ?redirect=&state= 捷径已删 — 不再解析（与 lab-* 子仓 OAuth code 流一致）。
   useEffect(() => {
     if (typeof window === "undefined") return;
     const sp = new URLSearchParams(window.location.search);
-    // 授权码分支优先：lab 后端 /sso/authorize 领 code 后跳来（带 code+redirect_uri+state）
     const oauthCode = sp.get("code");
     const oauthRedirect = sp.get("redirect_uri");
     if (oauthCode && oauthRedirect) {
       setOauthReturn({ redirectUri: oauthRedirect, code: oauthCode, state: sp.get("state") ?? "" });
-      return;
     }
-    const raw = sp.get("redirect");
-    if (!raw) return;
-    let redirect = raw;
-    try {
-      redirect = decodeURIComponent(raw);
-    } catch {
-      // 已是 decoded 形式；保留原值
-    }
-    setSsoReturn({ redirect, state: sp.get("state") ?? "" });
   }, []);
 
   // RFC 6749 §4.1.2：授权码回跳不依赖 onSubmit —— 资源所有者已登录（saas session
@@ -90,7 +80,6 @@ export default function LoginPage() {
     try {
       const res = await authLogin({ username, password });
       const data = res.data;
-      console.log("[SSO/login] authLogin OK, ssoReturn=", ssoReturn);
       login({
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
@@ -100,12 +89,11 @@ export default function LoginPage() {
         currentTenantId: data.currentTenantId,
         tenantCode: null,
       });
-      // SSO 回跳：把 token + state 拼到 redirect URL，让 RP 拿
+      // OAuth 2.0 code 回跳：把 code+state 原样透传给 RP 的 redirect_uri。
       // 用 setTimeout(0) 让 React 先把 setSession 的 re-render 跑完、RequireAuth
       // 的 useEffect 决定「不抢着跳 /tenants」之后，再做导航，避免 race。
+      // 旧 ?token= 捷径已删 — 不再有 LAB_BASE 回跳逻辑。
       setTimeout(() => {
-        // RFC 6749 §4.1.2 授权码回跳优先：redirect_uri?code=...&state=... 原样透传。
-        // code 是 lab 后端领的一次性授权码，saas 只做资源所有者认证，不消费它。
         if (oauthReturn) {
           try {
             const target = new URL(oauthReturn.redirectUri);
@@ -120,25 +108,6 @@ export default function LoginPage() {
           }
           return;
         }
-        if (ssoReturn) {
-          try {
-            // lab msw 发的 redirect 通常是 path（"/" 或 "/select-tenant" 等）。
-            // new URL(path) 需要 base —— 没有就抛 "Invalid URL"。
-            // 同时支持全 URL 形式（lab 给绝对地址 / saas 间调）。
-            const LAB_BASE = process.env.NEXT_PUBLIC_LAB_BASE_URL ?? "http://localhost:5173";
-            const target = new URL(ssoReturn.redirect, LAB_BASE);
-            target.searchParams.set("token", data.accessToken);
-            if (ssoReturn.state) target.searchParams.set("state", ssoReturn.state);
-            const url = target.toString();
-            console.log("[SSO/login] window.location ->", url);
-            window.location.href = url;
-          } catch (err) {
-            console.error("[SSO/login] SSO redirect build failed:", err);
-            toast.error("SSO 回跳 URL 构造失败");
-          }
-          return;
-        }
-        console.log("[SSO/login] no ssoReturn, router.push /tenants");
         router.push("/tenants");
       }, 0);
     } catch (err) {
@@ -161,7 +130,7 @@ export default function LoginPage() {
         <CardHeader className="space-y-2">
           <CardTitle className="text-lg">SaaS 多租户身份平台</CardTitle>
           <CardDescription>
-            {ssoReturn
+            {oauthReturn
               ? "有外部应用通过 SSO 请求登录，登录后将自动返回"
               : "使用账号密码登录管理控制台"}
           </CardDescription>
@@ -233,12 +202,6 @@ export default function LoginPage() {
             <p className="text-xs text-slate-400">
               当前后端模式：<span className="font-medium text-slate-700">{apiMode}</span>
             </p>
-
-            {ssoReturn && (
-              <p className="text-xs text-blue-600 break-all">
-                SSO 登录后返回：{ssoReturn.redirect}
-              </p>
-            )}
           </div>
         </CardContent>
       </Card>
