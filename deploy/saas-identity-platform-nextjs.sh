@@ -56,6 +56,16 @@ if ! grep -q '^JWT_SIGNING_KEY=' "$BASE/saas.env"; then
   printf 'JWT_TTL_SECONDS=3600\n' >> "$BASE/saas.env"
 fi
 
+# 补 NEXT_PUBLIC_* 走真后端 (MSW 关,同源 API_BASE_URL 空 → 本仓 Route Handler)
+if ! grep -q '^NEXT_PUBLIC_ENABLE_MSW=' "$BASE/saas.env"; then
+  echo "→ append NEXT_PUBLIC_ENABLE_MSW=false + NEXT_PUBLIC_API_BASE_URL="
+  umask 077
+  printf 'NEXT_PUBLIC_ENABLE_MSW=false\n' >> "$BASE/saas.env"
+  printf 'NEXT_PUBLIC_API_BASE_URL=\n' >> "$BASE/saas.env"
+  printf 'NEXT_PUBLIC_LAB_BASE_URL=https://lab-nextjs.xiangru.uk\n' >> "$BASE/saas.env"
+  printf 'NEXT_PUBLIC_LAB_APP_CODE=lab-management\n' >> "$BASE/saas.env"
+fi
+
 echo "→ image: $IMAGE"
 echo "→ docker login"
 printf '%s' "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
