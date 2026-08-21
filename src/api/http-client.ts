@@ -82,4 +82,4 @@ export async function apiRequest<T>(
   return (await res.json()) as T;
 }
 
-export { getApiBaseUrl, getApiMode, isMswEnabled } from "./backend-config";
+export { getApiBaseUrl, getApiMode } from "./backend-config";
