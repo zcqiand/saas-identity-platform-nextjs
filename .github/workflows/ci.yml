@@ -84,18 +84,15 @@ jobs:
       - name: Pull image and restart container on VPS
         uses: appleboy/ssh-action@v1
         # appleboy/ssh-action@v1 的 ${{ secrets.* }} 不会自动进 SSH 远端 shell;
-        # 必须在 step env 把 secret 注入 GitHub Actions env,再在 envs: 列出要转发的名字
-        # (envs 顺序按 `with.envs` 解析,逗号分隔)
+        # step env 注入 Actions env,with.envs 列出要转发的名字 (逗号分隔)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DATABASE_URL_PROD: ${{ secrets.DATABASE_URL_PROD }}
-          SAAS_DATABASE_URL: ${{ secrets.SAAS_DATABASE_URL }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           # 不传 fingerprint,走 TOFU
-          envs: DATABASE_URL,DATABASE_URL_PROD,SAAS_DATABASE_URL
+          envs: DATABASE_URL
           script: |
             # 自举: 首次部署无 /home/deploy/<repo>/ 时自动建 + 拉 deploy 脚本
             # saas.env: 缺时从 env DATABASE_URL 自举,deploy script 也支持
@@ -108,14 +105,12 @@ jobs:
               curl -fsSL "https://raw.githubusercontent.com/zcqiand/${REPO}/refs/heads/master/deploy/${REPO}.sh" -o "$REPO.sh"
               chmod +x "$REPO.sh"
             fi
-            echo "→ env on remote: DATABASE_URL_set=$([ -n "${DATABASE_URL:-}" ] && echo yes || echo no) DATABASE_URL_PROD_set=$([ -n "${DATABASE_URL_PROD:-}" ] && echo yes || echo no) SAAS_DATABASE_URL_set=$([ -n "${SAAS_DATABASE_URL:-}" ] && echo yes || echo no)"
+            echo "→ env on remote: DATABASE_URL_set=$([ -n "${DATABASE_URL:-}" ] && echo yes || echo no)"
             if [ "$REPO" = "saas-identity-platform-nextjs" ] && [ ! -f saas.env ]; then
-              # 优先级:DATABASE_URL (仓代码官方名) > DATABASE_URL_PROD (setup-vps.sh 文档) > SAAS_DATABASE_URL (历史)
-              export DATABASE_URL="${DATABASE_URL:-${DATABASE_URL_PROD:-${SAAS_DATABASE_URL:-}}}"
               if [ -n "$DATABASE_URL" ]; then
                 echo "→ saas.env will be bootstrapped by deploy script from DATABASE_URL env"
               else
-                echo "WARN: saas.env missing and none of DATABASE_URL / DATABASE_URL_PROD / SAAS_DATABASE_URL secret set, deploy script will fail-fast"
+                echo "ERROR: saas.env missing and DATABASE_URL secret not set, deploy script will fail-fast" >&2
               fi
             fi
             sh "$REPO.sh" "${{ secrets.DOCKER_USERNAME }}" "${{ secrets.DOCKER_PASSWORD }}" "${{ github.ref_name }}"
