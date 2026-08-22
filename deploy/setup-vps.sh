@@ -109,16 +109,25 @@ if [ ! -f "$TEMPLATE" ]; then
   exit 2
 fi
 
+# CERT_BASENAME:cert 文件 basename（不含扩展名），默认 your-cert。
+# 用环境变量或第 2 个位置参数覆盖。cert/key 必须在 /etc/nginx/ssl/${CERT_BASENAME}.{crt,key}。
+CERT_BASENAME="${CERT_BASENAME:-${2:-your-cert}}"
+log "render → /etc/nginx/sites-available/${DOMAIN} (cert=${CERT_BASENAME})"
 TARGET="/etc/nginx/sites-available/${DOMAIN}"
-log "render → $TARGET"
-sed "s/saas.YOUR_DOMAIN/${DOMAIN}/g" "$TEMPLATE" > "$TARGET"
+sed \
+  -e "s/saas.YOUR_DOMAIN/${DOMAIN}/g" \
+  -e "s|/etc/nginx/ssl/your-cert.crt|/etc/nginx/ssl/${CERT_BASENAME}.crt|g" \
+  -e "s|/etc/nginx/ssl/your-cert.key|/etc/nginx/ssl/${CERT_BASENAME}.key|g" \
+  "$TEMPLATE" > "$TARGET"
 
 # ── 6. 启用 + 解决 default_server 冲突 ─────────────
-# saas 用 default_server（lab-management vhost 反代另起另一端口）。
-log "enable site, drop sites-enabled/default"
+# saas vhost 不持有 default_server（同 VPS lab 若占了 :80 default_server,saas 这边
+# 重复声明 nginx -t 会直接报错——务必先装 saas 并把 default 占位收掉，或确认另一仓
+# 也明确不加 default_server）。
+log "enable site, drop sites-enabled/default if no other default_server holder"
 ln -sf "$TARGET" "/etc/nginx/sites-enabled/${DOMAIN}"
-# 仅在 sites-enabled/default 真实存在时删（lab 也可能跑在这台 VPS）
-# 真正 default_server 留给本仓 nginx 内部 listen 80 default_server 声明
+# 仅在 sites-enabled/default 真实存在 且 没有别的 vhost 持有 default_server 时删。
+# 有的话留给那个 vhost 的 default_server 声明继续生效（防裸 IP 暴露归那个 vhost 管）。
 if [ -f /etc/nginx/sites-enabled/default ] && ! grep -l "default_server" /etc/nginx/sites-enabled/* 2>/dev/null | grep -v "${DOMAIN}" >/dev/null; then
   rm -f /etc/nginx/sites-enabled/default
 fi
@@ -131,6 +140,6 @@ systemctl reload nginx
 
 log "saas VPS 配置完成"
 log "剩下手工:"
-log "  1) cert:/etc/nginx/ssl/your-cert.{crt,key}（复用 lab 的可跳过）"
+log "  1) cert:/etc/nginx/ssl/${CERT_BASENAME}.{crt,key}（复用 lab 的可跳过）"
 log "  2) ssh-copy-id -i ~/.ssh/id_ed25519_gh-deploy.pub deploy@$(hostname -I | awk '{print $1}')（lab 已做可跳过）"
 log "  3) saas repo GitHub Secrets: DOCKER_USERNAME / DOCKER_PASSWORD / VPS_HOST / VPS_USER / VPS_SSH_KEY / DATABASE_URL_PROD"
