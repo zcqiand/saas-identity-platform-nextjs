@@ -38,12 +38,13 @@ import { createHash } from "node:crypto";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const NEXTJS_ROOT = resolve(__dirname, "..");
-// seed JSON 候选目录（按优先级）：
-//   1. 本仓 src/seeds/                  —— 跨端 fixture 拷贝（v0.4.1 起独立托管）
+// seed JSON 候选目录（按优先级，与 src/lib/demo-seeds.ts 对齐）：
+//   1. <NEXTJS_ROOT>/seeds              —— Docker 构建期从 saas-msw clone 拷入
+//                                         （standalone runtime 只有这个；Dockerfile line 57
+//                                          + runtime stage COPY --from=builder /app/seeds ./seeds）
 //   2. ../saas-identity-platform-msw/src/seeds —— sibling 仓（dev 期间 fallback）
-// 与 src/lib/demo-seeds.ts 同样的 fallback 链
 const SEEDS_CANDIDATE_DIRS = [
-  resolve(NEXTJS_ROOT, "src/seeds"),
+  resolve(NEXTJS_ROOT, "seeds"),
   resolve(NEXTJS_ROOT, "../saas-identity-platform-msw/src/seeds"),
 ];
 
