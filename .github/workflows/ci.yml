@@ -101,10 +101,10 @@ jobs:
             DEPLOY_DIR="/home/deploy/$REPO"
             mkdir -p "$DEPLOY_DIR"
             cd "$DEPLOY_DIR"
-            if [ ! -f "$REPO.sh" ]; then
-              curl -fsSL "https://raw.githubusercontent.com/zcqiand/${REPO}/refs/heads/master/deploy/${REPO}.sh" -o "$REPO.sh"
-              chmod +x "$REPO.sh"
-            fi
+            # 每次 deploy 都拉最新 deploy 脚本(不是只在缺失时拉),否则 VPS 上缓存的旧版
+# (无 saas.env 自举逻辑)会让新部署 fail。脚本内 idempotent。
+            curl -fsSL "https://raw.githubusercontent.com/zcqiand/${REPO}/refs/heads/master/deploy/${REPO}.sh" -o "$REPO.sh"
+            chmod +x "$REPO.sh"
             echo "→ env on remote: DATABASE_URL_set=$([ -n "${DATABASE_URL:-}" ] && echo yes || echo no)"
             if [ "$REPO" = "saas-identity-platform-nextjs" ] && [ ! -f saas.env ]; then
               if [ -n "$DATABASE_URL" ]; then
