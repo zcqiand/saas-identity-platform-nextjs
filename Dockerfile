@@ -61,6 +61,11 @@ RUN cp -r ../saas-identity-platform-msw/src/seeds ./seeds
 # .github/workflows/ci.yml line 41-44 的占位模式。
 ARG DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public
 ENV DATABASE_URL=${DATABASE_URL}
+# NEXT_PUBLIC_* 在 Next.js 是 build 时烤进 client bundle, runtime 不会从 saas.env 重读。
+# 不显式传 → env undefined → backend-config.ts ?? fallback 到 "http://localhost:5174" (dev 默认)
+# → 浏览器 fetch localhost:CORS fail。 显式 "" 让 bundle 烤进空串 → 浏览器用同源相对路径。
+ENV NEXT_PUBLIC_API_BASE_URL=""
+ENV NEXT_PUBLIC_API_MODE=nextjs
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
