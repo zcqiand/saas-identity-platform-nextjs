@@ -102,13 +102,15 @@ jobs:
             fi
             if [ "$REPO" = "saas-identity-platform-nextjs" ] && [ ! -f saas.env ]; then
               # saas-identity-platform-nextjs.sh 也会自举:从 $DATABASE_URL env 生成
-              # 完整 saas.env(密钥随机)。GitHub Secret 名: SAAS_DATABASE_URL (向后兼容)
-              # 或 DATABASE_URL_PROD (setup-vps.sh 文档里的官方名)。
-              export DATABASE_URL="${DATABASE_URL_PROD:-${SAAS_DATABASE_URL:-}}"
+              # 完整 saas.env(密钥随机)。GitHub Secret 名优先级:
+              #   DATABASE_URL              ← 仓代码用的官方名（用户在 settings/secrets/actions 配的）
+              #   DATABASE_URL_PROD         ← setup-vps.sh 文档里的官方名（向后兼容）
+              #   SAAS_DATABASE_URL         ← 历史名（向后兼容）
+              export DATABASE_URL="${DATABASE_URL:-${DATABASE_URL_PROD:-${SAAS_DATABASE_URL:-}}}"
               if [ -n "$DATABASE_URL" ]; then
                 echo "→ saas.env will be bootstrapped by deploy script from DATABASE_URL env"
               else
-                echo "WARN: saas.env missing and neither DATABASE_URL_PROD nor SAAS_DATABASE_URL secret set, deploy script will fail-fast"
+                echo "WARN: saas.env missing and none of DATABASE_URL / DATABASE_URL_PROD / SAAS_DATABASE_URL secret set, deploy script will fail-fast"
               fi
             fi
             sh "$REPO.sh" "${{ secrets.DOCKER_USERNAME }}" "${{ secrets.DOCKER_PASSWORD }}" "${{ github.ref_name }}"
