@@ -42,6 +42,12 @@ jobs:
         run: npm run build
         env:
           DATABASE_URL: "postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public"
+          # NEXT_PUBLIC_* 在 Next.js 是 build 时烤进 client bundle,不会 runtime 重读 saas.env。
+          # 不显式传会让 env undefined → backend-config.ts ?? fallback 到
+          # "http://localhost:5174" (dev 默认),prod 浏览器就 fetch localhost:5174 触发 CORS。
+          # 显式 "" 让 build 烤进空串 → 浏览器用同源相对路径,nginx 反代 :8022 容器。
+          NEXT_PUBLIC_API_BASE_URL: ""
+          NEXT_PUBLIC_API_MODE: "nextjs"
       - name: L1 format
         run: npx --no prettier --check src tests
       - name: L2 lint
