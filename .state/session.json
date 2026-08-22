@@ -1,11 +1,33 @@
 {
-  "schema": 1,
-  "last_session_at": "2026-08-19",
-  "last_session_summary": "Phase 5: HS256 + jose 真签发/验签收口。src/lib/jwt.ts 加 signToken + verifyToken；5 个 Route Handler (login/refresh/oidc-callback/oauth-token 双 grantType/switch-tenant) 切真签发；verifyPathTenant async + JwtParseError 转 TenantGuardError；所有 23 个 admin/tenants/me 路由调用 await 化；6 个测试文件加 // @vitest-environment node (jsdom TextEncoder Uint8Array 与 Node 不同类)；L0-L5 全绿 / 软告警 0 条",
-  "open_items": [
-    "M03.F03.I06 全局 SSO logout 无 OpenAPI 端点；保留规划",
-    "oauth-store 进程内 Map 无 TTL 后台清理；当前仅按需 evict，Phase 6 切 Redis",
-    "M03.F02.I03 OIDC dev echo 与真 IdP 集成留远期",
-    "Phase 5 后 nextjs 已不再依赖 alg:none dev 占位；遗留 debugJwtPayload 不验签 helper 仅单元测试使用"
-  ]
+  "schema": 2,
+  "project": "saas-identity-platform-nextjs",
+  "current_task": "Post-Phase-3 frontend 集成收尾：5 page 切 orval useAdminTenantsGetTenant + 拷 13 BFF seed JSON + scripts/seed-db.mjs 接入 + 注释清理",
+  "last_session_at": "2026-08-22",
+  "last_session_summary": "5 page 改 hook；新建 src/seeds/ 13 JSON 拷入；scripts/seed-db.mjs 接入 SEEDS_CANDIDATE_DIRS；providers.tsx + demo-seeds.ts 注释清理；删 mocks/{handlers,node}.ts；commit bf7de28 + tag v0.7.5-20260822 pushed",
+  "done": [
+    "5 page (tenants/[tenantId]/{users,audit,api-keys,roles,roles/[roleId]/menus}/page.tsx) inline useQuery → useAdminTenantsGetTenant；useQuery import 收掉（仅 audit/menus 还用）",
+    "app-shell.tsx:52 用的是 adminTenantsListTenants，不在 scope",
+    "新建 src/seeds/：13 JSON 从 ../saas-identity-platform-msw/src/seeds/ 拷入（数量对齐 manifest: tenants=3/users=5/roles=4/permissions=4/role-permissions=13/memberships=5/api-keys=2/apps=3/menus=41/role-menu-grants=3/audit-events=3/audit-retention-policies=3 + manifest）",
+    "scripts/seed-db.mjs: 接入 SEEDS_CANDIDATE_DIRS fallback 链（src/seeds 优先，msw sibling 兜底）；删 MSW_SEEDS_DIR 常量；node --check + JSON 加载 dry-run 通过",
+    "src/components/providers.tsx: 删「MSW 启动门控由 getBackend() 改为 isMswEnabled()」过时注释",
+    "src/lib/demo-seeds.ts: 移除 node_modules/@saas/identity-platform-msw/src/seeds 兜底项（ADR-0012 后不再 import msw 包）",
+    "src/mocks/handlers.ts + src/mocks/node.ts 删除",
+    "next.config.js + .env.example + src/api/env.ts + src/api/backend-config.ts: 原本已干净（与 ADR-0012 B 强度 + ADR-0014 一致）",
+    "gate L0/L1/L2/L3/L4/L5 全绿 exit 0（86 功能条目 0 软告警）",
+    "commit bf7de28 + tag v0.7.5-20260822 + push origin/master"
+  ],
+  "next": [
+    "无（本批原子收尾）"
+  ],
+  "open_questions": [
+    ".env.local / .env.production 仍含 NEXT_PUBLIC_ENABLE_MSW —— 任务仅指明 .env.example/.env.test，不修改用户 dev/prod shell env；新 sprint 决定是否清"
+  ],
+  "dont": [
+    "不要再 inline useQuery 包 adminTenantsGetTenant —— 一律走 useAdminTenantsGetTenant hook",
+    "不要删 src/seeds/ —— BFF runtime 真在读",
+    "不要把 MSW_SEEDS_DIR 常量加回 scripts/seed-db.mjs —— SEEDS_CANDIDATE_DIRS fallback 已覆盖",
+    "不要在 src/app/api/[...msw]/route.ts 写 MSW handler（CLAUDE.md §2 硬约束）",
+    "不要 demo 密码（CLAUDE.md §2 硬约束）"
+  ],
+  "active_branch": "master"
 }
