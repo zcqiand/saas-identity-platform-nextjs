@@ -55,6 +55,7 @@
     "jsdom": "^25.0.0",
     "lucide-react": "^1.31.0",
     "orval": "^7.5.0",
+    "pg": "^8.23.0",
     "postcss": "^8.5.26",
     "prettier": "^3.4.0",
     "server-only": "^0.0.1",
