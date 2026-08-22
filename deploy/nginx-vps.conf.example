@@ -15,14 +15,8 @@
 #   - HTTPS 终结在 VPS（持 cert）
 #   - proxy_pass 到本机容器端口 8022（由 docker run -p 127.0.0.1:8022:3000 决定）
 #
-# 注意:本 vhost 持有 default_server（监听 :80 default_server; return 444;），拦截
-# 未声明 Host 头的请求，避免裸 IP 暴露。同一台 VPS 上若 lab 也跑 :80 default_server，
-# 重复声明 nginx -t 直接报错——务必先装 saas（或任意一个）并把 default 占位收掉。
-
-server {
-    listen 80 default_server;
-    return 444;
-}
+# 注意:不持有 default_server。同一台 VPS 上若 lab 也跑 :80 default_server，saas 这
+# 边重复声明 nginx -t 直接报错——务必先装 saas（或任意一个）并把 default 占位收掉。
 
 server {
     listen 80;
