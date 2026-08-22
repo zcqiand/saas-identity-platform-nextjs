@@ -3,10 +3,9 @@
 // Providers 容器：QueryClient + TenantProvider + SelectionProvider
 // 在 layout.tsx 用 <Providers> 包裹 children（layout.tsx 本身是 server component）
 //
-// v0.4.0（ADR-0014）：删 BackendProvider；MSW 启动门控由 getBackend() 改为 isMswEnabled()。
+// v0.4.0（ADR-0014）：删 BackendProvider。
 // v0.3.0（ADR-0012 B 强度）：完全删除 MSW Service Worker 模式 —— dev 路径走独立
-// HTTP server（@saas/identity-platform-msw/src/server.ts 起在 :5174），不再需要
-// isMswEnabled 门控 + dynamic import(@saas/.../browser)。
+// HTTP server（@saas/identity-platform-msw/src/server.ts 起在 :5174）。
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";

@@ -4,8 +4,9 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  useAdminTenantsGetTenant,
   useTenantRolesListRoles,
   useTenantUsersAssignRoles,
   useTenantUsersCreateUser,
@@ -32,7 +33,6 @@ import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { CrudDialog, type FieldDef } from "@/components/app/crud-dialog";
 import { toApiError } from "@/api/http-client";
 import { toast } from "sonner";
-import { getTenant } from "@saas/identity-platform-msw";
 
 const FIELDS: FieldDef[] = [
   { name: "username", label: "用户名", required: true, placeholder: "alice" },
@@ -57,7 +57,12 @@ const EDIT_FIELDS = FIELDS.filter((f) => f.name !== "username");
 export default function UserListPage({ params }: { params: Promise<{ tenantId: string }> }) {
   const { tenantId } = use(params);
   const qc = useQueryClient();
-  const tenant = tenantId ? (getTenant(tenantId) ?? null) : null;
+  // getTenant via orval-generated useAdminTenantsGetTenant hook（ADR-0012 运行时 import 清零）。
+  // 异步取租户名，加载中/失败显示 fallback。
+  const tenantQ = useAdminTenantsGetTenant(tenantId, {
+    query: { enabled: !!tenantId },
+  });
+  const tenant = tenantQ.data?.data ?? null;
   const tenantLabel = tenant ? `租户 ${tenant.name}（${tenant.code}）` : "租户未知";
 
   const usersQ = useTenantUsersListUsers(tenantId);

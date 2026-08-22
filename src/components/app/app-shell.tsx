@@ -28,7 +28,8 @@ import { BackendBadge } from "./backend-badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
-import { getTenant } from "@saas/identity-platform-msw";
+import { useQuery } from "@tanstack/react-query";
+import { adminTenantsListTenants } from "@/api/endpoints/endpoints";
 import { useTenant } from "@/state/tenant-context";
 import { useSelection } from "@/state/selection-context";
 
@@ -48,7 +49,19 @@ const SUB_PATH_LABEL: Record<string, string> = {
   apps: "应用",
 };
 
+// 面包屑租户名：getTenant（msw 包内嵌 fixtures）的 HTTP 替代（ADR-0012 运行时
+// import 清零）。拉一次租户列表建 id->tenant 字典；加载中/未命中显示「未知租户」。
+function useTenantMap(): Map<string, { id: string; name: string; code: string }> {
+  const q = useQuery({
+    queryKey: ["adminTenantsListTenants", "breadcrumb"],
+    queryFn: async () => (await adminTenantsListTenants()).data.items,
+    staleTime: Infinity,
+  });
+  return new Map((q.data ?? []).map((t) => [t.id, t]));
+}
+
 function useBreadcrumbs(pathname: string, fallbackTenantId: string): Crumb[] {
+  const tenantById = useTenantMap();
   if (pathname === "/tenants" || pathname === "/") {
     return [{ label: "首页", to: "/tenants", icon: <Home className="h-3.5 w-3.5" /> }];
   }
@@ -63,7 +76,7 @@ function useBreadcrumbs(pathname: string, fallbackTenantId: string): Crumb[] {
     const prev = i > 0 ? segments[i - 1] : null;
     if (seg === "tenants" && i + 1 < segments.length) continue;
     if (prev === "tenants") {
-      const tenant = getTenant(seg) ?? getTenant(fallbackTenantId);
+      const tenant = tenantById.get(seg) ?? tenantById.get(fallbackTenantId);
       if (tenant) {
         crumbs.push({ label: tenant.name, to: path, hint: tenant.code });
       } else {

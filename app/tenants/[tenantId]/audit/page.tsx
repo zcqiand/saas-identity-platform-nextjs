@@ -3,7 +3,10 @@
 // M06.F01 — tenant-scoped 审计日志（只读）
 
 import { use } from "react";
-import { useTenantAuditListAuditEvents } from "@/api/endpoints/endpoints";
+import {
+  useAdminTenantsGetTenant,
+  useTenantAuditListAuditEvents,
+} from "@/api/endpoints/endpoints";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +20,6 @@ import {
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/app/page-header";
 import { toast } from "sonner";
-import { getTenant } from "@saas/identity-platform-msw";
 
 const ACTION_LABEL: Record<string, string> = {
   user_created: "创建用户",
@@ -45,7 +47,12 @@ const ACTION_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
 
 export default function AuditListPage({ params }: { params: Promise<{ tenantId: string }> }) {
   const { tenantId } = use(params);
-  const tenant = tenantId ? getTenant(tenantId) ?? null : null;
+  // getTenant via orval-generated useAdminTenantsGetTenant hook（ADR-0012 运行时 import 清零）。
+  // 异步取租户名，加载中/失败显示 fallback。
+  const tenantQ = useAdminTenantsGetTenant(tenantId, {
+    query: { enabled: !!tenantId },
+  });
+  const tenant = tenantQ.data?.data ?? null;
   const tenantLabel = tenant ? `租户 ${tenant.name}（${tenant.code}）` : "租户未知";
   const q = useTenantAuditListAuditEvents(tenantId);
   const events = q.data?.data?.items ?? [];

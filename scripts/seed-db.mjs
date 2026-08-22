@@ -38,10 +38,14 @@ import { createHash } from "node:crypto";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const NEXTJS_ROOT = resolve(__dirname, "..");
-const MSW_SEEDS_DIR = resolve(
-  NEXTJS_ROOT,
-  "../saas-identity-platform-msw/src/seeds",
-);
+// seed JSON 候选目录（按优先级）：
+//   1. 本仓 src/seeds/                  —— 跨端 fixture 拷贝（v0.4.1 起独立托管）
+//   2. ../saas-identity-platform-msw/src/seeds —— sibling 仓（dev 期间 fallback）
+// 与 src/lib/demo-seeds.ts 同样的 fallback 链
+const SEEDS_CANDIDATE_DIRS = [
+  resolve(NEXTJS_ROOT, "src/seeds"),
+  resolve(NEXTJS_ROOT, "../saas-identity-platform-msw/src/seeds"),
+];
 
 // 借 nextjs 的 pg driver（与 sync-db.mjs 同套路；shared 仓禁 runtime 依赖）
 const require = createRequire(resolve(NEXTJS_ROOT, "package.json"));
@@ -74,7 +78,16 @@ function resolveId(id) {
 }
 
 function loadJson(name) {
-  return JSON.parse(readFileSync(resolve(MSW_SEEDS_DIR, name), "utf-8"));
+  for (const dir of SEEDS_CANDIDATE_DIRS) {
+    try {
+      return JSON.parse(readFileSync(resolve(dir, name), "utf-8"));
+    } catch {
+      // try next candidate
+    }
+  }
+  throw new Error(
+    `seed '${name}' not found in any of: ${SEEDS_CANDIDATE_DIRS.join(", ")}`,
+  );
 }
 
 const client = new pg.Client({

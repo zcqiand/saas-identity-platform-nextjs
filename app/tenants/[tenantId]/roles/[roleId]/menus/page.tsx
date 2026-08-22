@@ -7,6 +7,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   adminAppMenusListMenus,
   useAdminAppsListApps,
+  useAdminTenantsGetTenant,
   useTenantRoleMenusListRoleMenus,
   useTenantRoleMenusSetRoleMenus,
 } from "@/api/endpoints/endpoints";
@@ -16,7 +17,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/app/page-header";
 import { toApiError } from "@/api/http-client";
 import { toast } from "sonner";
-import { getTenant } from "@saas/identity-platform-msw/fixtures";
 
 export default function RoleMenuGrantPage({
   params,
@@ -26,7 +26,12 @@ export default function RoleMenuGrantPage({
   const { tenantId, roleId } = use(params);
   const appsQ = useAdminAppsListApps();
   const apps = appsQ.data?.data?.items ?? [];
-  const tenant = tenantId ? getTenant(tenantId) ?? null : null;
+  // getTenant via orval-generated useAdminTenantsGetTenant hook（ADR-0012 运行时 import 清零）。
+  // 异步取租户名，加载中/失败显示 fallback。
+  const tenantQ = useAdminTenantsGetTenant(tenantId, {
+    query: { enabled: !!tenantId },
+  });
+  const tenant = tenantQ.data?.data ?? null;
   const tenantLabel = tenant ? `${tenant.name}（${tenant.code}）` : "未知租户";
   // 一次性拉所有 app 的 menus（修 apps[0] bug：之前每张 Card 共享同一份 menus）
   const groupsQ = useQuery({

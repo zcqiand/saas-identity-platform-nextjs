@@ -51,6 +51,10 @@ RUN npm install --install-links --legacy-peer-deps --no-audit --no-fund
 # standalone build 不需要 DB 连接（除非某 route 顶层 open DB）：gen:shared 只读
 # yaml，不连 DB；sync-db / seed-db 留到 runtime entrypoint 跑。
 COPY . .
+# demo seed JSON 拷进仓内 ./seeds（src/lib/demo-seeds.ts 首选路径）：
+# /api/v1/apps/[code] 与 /api/v1/me/menus 的数据源。sibling clone 不进 runtime
+# 层，不拷则 standalone 运行时读不到（旧版 fs 读 ../saas-... 在容器里必然 miss）。
+RUN cp -r ../saas-identity-platform-msw/src/seeds ./seeds
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
@@ -72,6 +76,8 @@ COPY --from=builder --chown=node:node /app/public ./public
 # scripts/：sync-db / seed-db，entrypoint.sh 会调用
 COPY --from=builder --chown=node:node /app/scripts ./scripts
 COPY --from=builder --chown=node:node /app/package.json ./package.json
+# demo seed JSON（apps/menus/role-menu-grants，BFF 路由数据源）
+COPY --from=builder --chown=node:node /app/seeds ./seeds
 
 # data/ 占位（PG 模式下不真用，但避免 entrypoint 写 /data 时无目录）
 RUN mkdir -p /data && chown -R node:node /data
