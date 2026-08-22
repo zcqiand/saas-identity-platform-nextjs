@@ -79,16 +79,14 @@ COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 COPY --from=builder --chown=node:node /app/public ./public
 
-# standalone 默认只 trace app/ pages/ src/ 入口路径下的 import 图。
-# scripts/sync-db.mjs 用 createRequire + pg,但 pg 是 devDep（CLAUDE.md §3 硬约束）,
-# 不在 trace 图里 → .next/standalone/node_modules/ 没有 pg。
-# 显式从 builder /app/node_modules/ 拷 pg + transitives（scripts/ runtime 启动时
-# require 才能命中）。postgres-js（postgres@3.4.5 已在 deps）走自己的路径,
-# 不动。
-COPY --from=builder --chown=node:node /app/node_modules/pg ./node_modules/pg
-COPY --from=builder --chown=node:node /app/node_modules/pg-types ./node_modules/pg-types
-COPY --from=builder --chown=node:node /app/node_modules/pgpass ./node_modules/pgpass
-COPY --from=builder --chown=node:node /app/node_modules/pg-int8 ./node_modules/pg-int8
+# standalone 默认只 trace app/ pages/ src/ 入口路径下的 import 图,scripts/ 不在
+# 范围 → .next/standalone/node_modules/ 是最小集,scripts/sync-db.mjs runtime
+# require('pg') 找不到。pg 是 devDep(CLAUDE.md §3 硬约束不能升 dependencies),
+# transitives(pg-types → postgres-array/date/bytea/interval,pgpass,pg-int8 等)
+# 数量多且版本相关,逐个 COPY 易漏。
+# 用 builder 全量 node_modules 覆盖 standalone minimal set —— runtime 镜像略大,
+# 但 sync-db.mjs 必能命中所有 transitives。
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 
 # scripts/：sync-db / seed-db，entrypoint.sh 会调用
 COPY --from=builder --chown=node:node /app/scripts ./scripts
