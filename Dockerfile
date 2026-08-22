@@ -79,6 +79,17 @@ COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 COPY --from=builder --chown=node:node /app/public ./public
 
+# standalone 默认只 trace app/ pages/ src/ 入口路径下的 import 图。
+# scripts/sync-db.mjs 用 createRequire + pg,但 pg 是 devDep（CLAUDE.md §3 硬约束）,
+# 不在 trace 图里 → .next/standalone/node_modules/ 没有 pg。
+# 显式从 builder /app/node_modules/ 拷 pg + transitives（scripts/ runtime 启动时
+# require 才能命中）。postgres-js（postgres@3.4.5 已在 deps）走自己的路径,
+# 不动。
+COPY --from=builder --chown=node:node /app/node_modules/pg ./node_modules/pg
+COPY --from=builder --chown=node:node /app/node_modules/pg-types ./node_modules/pg-types
+COPY --from=builder --chown=node:node /app/node_modules/pgpass ./node_modules/pgpass
+COPY --from=builder --chown=node:node /app/node_modules/pg-int8 ./node_modules/pg-int8
+
 # scripts/：sync-db / seed-db，entrypoint.sh 会调用
 COPY --from=builder --chown=node:node /app/scripts ./scripts
 COPY --from=builder --chown=node:node /app/package.json ./package.json
