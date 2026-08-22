@@ -71,6 +71,38 @@ if ! grep -q '^DATABASE_URL=' "$BASE/saas.env"; then
   exit 1
 fi
 
+# nginx vhost 自举（缺时创建,不 reload —— reload 要 root）:
+# 检测 /etc/nginx/sites-enabled/<NGINX_DOMAIN> 是否存在;缺时从 nginx-vps.conf.example
+# 模板渲染,做 symlink。reload 需 sudo,留给手工:
+#   sudo nginx -t && sudo systemctl reload nginx
+NGINX_DOMAIN="${NGINX_DOMAIN:-saas-nextjs.xiangru.uk}"
+NGINX_CERT_BASENAME="${NGINX_CERT_BASENAME:-xiangru-uk}"
+NGINX_SITES_AVAILABLE="/etc/nginx/sites-available"
+NGINX_SITES_ENABLED="/etc/nginx/sites-enabled"
+NGINX_VHOST_FILE="${NGINX_SITES_AVAILABLE}/${NGINX_DOMAIN}"
+NGINX_VHOST_LINK="${NGINX_SITES_ENABLED}/${NGINX_DOMAIN}"
+NGINX_TEMPLATE="${BASE}/nginx-vps.conf.example"
+
+# 拉模板（deploy/ 目录随仓库 deploy 脚本一起,但首次拉时可能不存在,补一下）
+if [ ! -f "${NGINX_TEMPLATE}" ]; then
+  echo "→ fetching nginx-vps.conf.example template"
+  curl -fsSL "https://raw.githubusercontent.com/zcqiand/saas-identity-platform-nextjs/refs/heads/master/deploy/nginx-vps.conf.example" -o "${NGINX_TEMPLATE}"
+fi
+
+if [ -e "${NGINX_VHOST_LINK}" ] || [ -e "${NGINX_VHOST_FILE}" ]; then
+  echo "→ nginx vhost ${NGINX_VHOST_FILE} already exists, skip bootstrap"
+else
+  echo "→ nginx vhost missing, bootstrapping ${NGINX_VHOST_FILE} (domain=${NGINX_DOMAIN} cert=${NGINX_CERT_BASENAME})"
+  umask 022
+  sed \
+    -e "s/saas.YOUR_DOMAIN/${NGINX_DOMAIN}/g" \
+    -e "s|/etc/nginx/ssl/your-cert.crt|/etc/nginx/ssl/${NGINX_CERT_BASENAME}.crt|g" \
+    -e "s|/etc/nginx/ssl/your-cert.key|/etc/nginx/ssl/${NGINX_CERT_BASENAME}.key|g" \
+    "${NGINX_TEMPLATE}" > "${NGINX_VHOST_FILE}"
+  ln -sf "${NGINX_VHOST_FILE}" "${NGINX_VHOST_LINK}"
+  echo "→ nginx vhost created. To enable: sudo nginx -t && sudo systemctl reload nginx"
+fi
+
 # 必要时补 JWT_SIGNING_KEY(JWT 是 Phase 5 上;HS256 真签发需要这个密钥,与
 # springboot/aspnetcore 同步)。已有则不覆盖,避免失效所有登录态。
 if ! grep -q '^JWT_SIGNING_KEY=' "$BASE/saas.env"; then
