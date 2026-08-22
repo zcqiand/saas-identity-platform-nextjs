@@ -41,7 +41,12 @@ COPY package.json package-lock.json ./
 # (file path 版本,无具体版本号),旧 lockfile 锁了 0.1.0 → npm ci 严格不匹配。
 # npm install 按 package.json + sibling 实际版本安装,自动重写 lockfile。
 # --legacy-peer-deps 兼容某些宽松 peer 依赖。
-RUN npm install --legacy-peer-deps --no-audit --no-fund
+# --install-links: file: 依赖打包复制进 node_modules 而不是 symlink 回 sibling clone。
+#   symlink 时 TS/webpack 解析到 clone 真实路径(/saas-identity-platform-msw/src)，
+#   clone 没装依赖，import "msw" 往上找不到 -> build 阶段 module not found。
+#   复制后 msw/faker 等依赖提升到 /app/node_modules，解析恢复。
+#   dev 本地不传此 flag（symlink 直连 sibling 源码，改即生效）。
+RUN npm install --install-links --legacy-peer-deps --no-audit --no-fund
 
 # standalone build 不需要 DB 连接（除非某 route 顶层 open DB）：gen:shared 只读
 # yaml，不连 DB；sync-db / seed-db 留到 runtime entrypoint 跑。
