@@ -8,8 +8,12 @@
 //
 // 服务端 env（route handler / drizzle / 等）：
 //   DATABASE_URL、SAAS_CORS_ALLOWED_ORIGINS、JWT_* 见 .env.example
+//
+// ?? 而非 ||：env 对象在模块加载时构造，烤进 client bundle。
+// 空串 "" 在 prod 是「同源」（nginx 反代），|| 会把空串吞回 "http://localhost:5174"
+// → 浏览器 fetch localhost:CORS fail。?? 只在 null/undefined 时 fallback。
 export const env = {
   NEXT_PUBLIC_API_BASE_URL:
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5174",
-  NEXT_PUBLIC_API_MODE: process.env.NEXT_PUBLIC_API_MODE || "msw-http",
+    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5174",
+  NEXT_PUBLIC_API_MODE: process.env.NEXT_PUBLIC_API_MODE ?? "msw-http",
 } as const;
