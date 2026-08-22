@@ -15,9 +15,12 @@
 import { env } from "./env";
 
 export function getApiBaseUrl(): string {
-  return env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5174";
+  // 用 ?? 而非 ||：prod 部署 saas.env NEXT_PUBLIC_API_BASE_URL="" 时
+  // 应走同源相对路径（nginx 反代到 127.0.0.1:8022 容器）,"" 不是 nullish
+  // 必须保留。dev 没设 env 时 fallback 到 msw-http :5174。
+  return env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5174";
 }
 
 export function getApiMode(): string {
-  return env.NEXT_PUBLIC_API_MODE || "msw-http";
+  return env.NEXT_PUBLIC_API_MODE ?? "msw-http";
 }
