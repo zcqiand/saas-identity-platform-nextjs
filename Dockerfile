@@ -55,6 +55,12 @@ COPY . .
 # /api/v1/apps/[code] 与 /api/v1/me/menus 的数据源。sibling clone 不进 runtime
 # 层，不拷则 standalone 运行时读不到（旧版 fs 读 ../saas-... 在容器里必然 miss）。
 RUN cp -r ../saas-identity-platform-msw/src/seeds ./seeds
+# next build 的 "Collecting page data" 会 import 路由 handler → 触发 @/db 模块加载
+# （src/db/index.ts:13-18 在模块顶层 throw if !DATABASE_URL）。给个占位 URL 让 build 过，
+# runtime 真正的 DATABASE_URL 由 deploy/ 阶段 saas.env 注入（ADR-0009）。镜像对齐
+# .github/workflows/ci.yml line 41-44 的占位模式。
+ARG DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public
+ENV DATABASE_URL=${DATABASE_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
