@@ -32,12 +32,38 @@ if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
   exit 2
 fi
 
-# saas.env 自举保护:缺失时 fail fast。saas.env 含 DATABASE_URL,绝不能由 CI 凭空
-# 写一个默认 URL(它会触发对 saas_dev 的生产容器写入,跨域事故)。setup-vps.sh
-# 必须先跑过。
+# saas.env 自举保护:缺失时,如 $DATABASE_URL 在环境里,自动生成(密钥随机);
+# 否则 fail fast(避免凭空写默认 URL 触发对 saas_dev 的生产事故)。
+# setup-vps.sh 仍是首推(VPS 一次性,生成 nginx + saas.env + cert),本分支仅
+# 给"先有 DATABASE_URL 临时上线"的场景。
 if [ ! -f "$BASE/saas.env" ]; then
-  echo "ERROR: $BASE/saas.env missing. Run setup-vps.sh first." >&2
-  exit 1
+  if [ -n "${DATABASE_URL:-}" ]; then
+    echo "→ bootstrapping $BASE/saas.env from env DATABASE_URL"
+    umask 077
+    SECRET="$(openssl rand -hex 32)"
+    {
+      printf 'DATABASE_URL=%s\n' "$DATABASE_URL"
+      printf 'JWT_SIGNING_KEY=%s\n' "$SECRET"
+      printf 'JWT_ISSUER=saas-identity-platform\n'
+      printf 'JWT_AUDIENCE=saas-identity-platform-clients\n'
+      printf 'JWT_TTL_SECONDS=3600\n'
+      printf 'LOCKOUT_MAX_FAILS=5\n'
+      printf 'LOCKOUT_WINDOW_MIN=15\n'
+      printf 'LOCKOUT_COOLDOWN_MIN=30\n'
+      printf 'OAUTH_CODE_TTL=600\n'
+      printf 'OAUTH_REFRESH_TTL=604800\n'
+      printf 'SAAS_CORS_ALLOWED_ORIGINS=https://saas.YOUR_DOMAIN,https://lab-nextjs.xiangru.uk\n'
+      printf 'NEXT_PUBLIC_ENABLE_MSW=false\n'
+      printf 'NEXT_PUBLIC_API_BASE_URL=\n'
+      printf 'NEXT_PUBLIC_LAB_BASE_URL=https://lab-nextjs.xiangru.uk\n'
+      printf 'NEXT_PUBLIC_LAB_APP_CODE=lab-management\n'
+    } > "$BASE/saas.env"
+    chown deploy:deploy "$BASE/saas.env" 2>/dev/null || true
+    chmod 600 "$BASE/saas.env"
+  else
+    echo "ERROR: $BASE/saas.env missing. Set DATABASE_URL env or run setup-vps.sh first." >&2
+    exit 1
+  fi
 fi
 # 校验 saas.env 里有 DATABASE_URL
 if ! grep -q '^DATABASE_URL=' "$BASE/saas.env"; then

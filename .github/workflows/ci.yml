@@ -101,18 +101,14 @@ jobs:
               chmod +x "$REPO.sh"
             fi
             if [ "$REPO" = "saas-identity-platform-nextjs" ] && [ ! -f saas.env ]; then
-              if [ -n "$SAAS_DATABASE_URL" ]; then
-                {
-                  printf 'DATABASE_URL=%s\n' "$SAAS_DATABASE_URL"
-                  printf 'NEXT_PUBLIC_ENABLE_MSW=false\n'
-                  printf 'NEXT_PUBLIC_API_BASE_URL=\n'
-                  printf 'NEXT_PUBLIC_LAB_BASE_URL=https://lab-nextjs.xiangru.uk\n'
-                  printf 'NEXT_PUBLIC_LAB_APP_CODE=lab-management\n'
-                } > saas.env
-                chmod 600 saas.env
-                echo "→ saas.env bootstrapped from secret (DATABASE_URL + NEXT_PUBLIC_ENABLE_MSW=false)"
+              # saas-identity-platform-nextjs.sh 也会自举:从 $DATABASE_URL env 生成
+              # 完整 saas.env(密钥随机)。GitHub Secret 名: SAAS_DATABASE_URL (向后兼容)
+              # 或 DATABASE_URL_PROD (setup-vps.sh 文档里的官方名)。
+              export DATABASE_URL="${DATABASE_URL_PROD:-${SAAS_DATABASE_URL:-}}"
+              if [ -n "$DATABASE_URL" ]; then
+                echo "→ saas.env will be bootstrapped by deploy script from DATABASE_URL env"
               else
-                echo "WARN: saas.env missing and SAAS_DATABASE_URL secret not set, deploy script will fail-fast"
+                echo "WARN: saas.env missing and neither DATABASE_URL_PROD nor SAAS_DATABASE_URL secret set, deploy script will fail-fast"
               fi
             fi
             sh "$REPO.sh" "${{ secrets.DOCKER_USERNAME }}" "${{ secrets.DOCKER_PASSWORD }}" "${{ github.ref_name }}"
