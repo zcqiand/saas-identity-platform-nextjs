@@ -1,0 +1,4 @@
+# 占位 —— 让 `public/` 不空，Dockerfile runtime stage 的
+# `COPY --from=builder /app/public ./public` 才能复制（空目录在
+# Docker build context 中 `COPY . .` 不会保留）。
+# 如未来真放静态资源（favicon / robots.txt 等），可删除本文件。
