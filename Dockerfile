@@ -88,6 +88,11 @@ COPY --from=builder --chown=node:node /app/public ./public
 # 但 sync-db.mjs 必能命中所有 transitives。
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 
+# sync-db.mjs 读 sibling 仓 ../saas-identity-platform-shared/sql/migrations。
+# sibling 仓 git clone 在 builder stage /app 父目录下，运行时容器里没有 ——
+# 显式 COPY 到容器同绝对路径，sync-db.mjs 不用改。
+COPY --from=builder --chown=node:node /saas-identity-platform-shared/sql/migrations /saas-identity-platform-shared/sql/migrations
+
 # scripts/：sync-db / seed-db，entrypoint.sh 会调用
 COPY --from=builder --chown=node:node /app/scripts ./scripts
 COPY --from=builder --chown=node:node /app/package.json ./package.json
