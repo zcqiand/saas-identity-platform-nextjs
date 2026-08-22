@@ -96,7 +96,7 @@ else
   umask 022
   sed \
     -e "s/saas.YOUR_DOMAIN/${NGINX_DOMAIN}/g" \
-    -e "s|/etc/nginx/ssl/your-cert.crt|/etc/nginx/ssl/${NGINX_CERT_BASENAME}.crt|g" \
+    -e "s|/etc/nginx/ssl/your-cert.cert|/etc/nginx/ssl/${NGINX_CERT_BASENAME}.cert|g" \
     -e "s|/etc/nginx/ssl/your-cert.key|/etc/nginx/ssl/${NGINX_CERT_BASENAME}.key|g" \
     "${NGINX_TEMPLATE}" > "${NGINX_VHOST_FILE}"
   ln -sf "${NGINX_VHOST_FILE}" "${NGINX_VHOST_LINK}"
