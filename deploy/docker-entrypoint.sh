@@ -38,7 +38,9 @@ if [ "${ROW_COUNT}" = "0" ]; then
 fi
 
 echo "→ sync-db (apply Flyway V*.sql from shared/, tracking __schema_migrations)"
-node scripts/sync-db.mjs
+# --incremental：基于 tracking 表只跑未记录的 V 文件，库非空不 ABORT
+# （mirror lab-nextjs v0.3.43 fix：全量模式只用于空库手动重建）。
+node scripts/sync-db.mjs --incremental
 
 if [ "$FIRST" = 1 ]; then
   echo "→ first run: seeding demo data from MSW seeds/*.json"
