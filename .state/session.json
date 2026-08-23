@@ -1,34 +1,36 @@
 {
   "schema": 2,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "Phase 6 接 DB（me/menus + apps/[code]） + demo-seeds/Dockerfile 清理",
-  "last_session_at": "2026-08-23",
-  "last_session_summary": "BFF /me/menus 与 /apps/[code] 从 fs 读 seed JSON 迁到 drizzle 直查 PG，RBAC 从写死 acme admin 改为 JWT 真实身份（claims.sub → memberships.roleIds → role_menu_grants）；删 src/lib/demo-seeds.ts + Dockerfile builder 的 sibling seeds 拷贝；runtime COPY 改用 tracked 源码 src/seeds；commit cba2c8d + 45bb56a + tag v0.7.39-20260823",
+  "current_task": "middleware CORS for /api/v1/* — 跨仓 lab-nextjs 浏览器直连放行",
+  "last_session_at": "2026-08-24",
+  "last_session_summary": "lab 侧边栏 502 根因是 lab /api/saas/* BFF proxy 不转 JWT（把 saas 接 DB 后必返的 401 包成 502）。saas 新增项目根 middleware.ts 读 SAAS_CORS_ALLOWED_ORIGINS（.env.example:47 已预留，本仓镜像 springboot SAAS_CORS_ALLOWED_ORIGINS / aspnetcore Saas.Cors.AllowedOrigins）放行 /api/v1/:path* 跨域 OPTIONS + 响应头；非 allowlist origin 不挂 Allow-Origin（浏览器层拦）；不挂 Allow-Origin: *（spec 要求 credential + Authorization 时必须 echo 具体 origin）；空 env fail-safe。前置依赖：lab v0.3.47 删 proxy + sidebar-nav 改浏览器直连带 Bearer。Commit e11246b + 6f288f8 + tag v0.7.40/v0.7.41-20260824 pushed",
   "done": [
-    "app/api/v1/me/menus/route.ts：drizzle 实现。JWT 必填 → claims.sub = users.id；tenant_memberships 拉 roleIds（status != 'removed'）；role_menu_grants 按 roleId IN (...) 聚合 allowed menuIds；apps 按 code/UUID 解析 → menus 建树，一级节点始终可见，子节点须在授权集内（与旧 seed 版同语义）",
-    "app/api/v1/apps/[code]/route.ts：drizzle select 公开列（id/code/name/desc/icon/status），按 code + status='active' 过滤，免鉴权",
-    "src/lib/demo-seeds.ts：删除（commit (a) 之后零引用）",
-    "Dockerfile builder：去掉 'RUN cp -r ../saas-identity-platform-msw/src/seeds ./seeds' —— sibling 仓不再需要在 build 期被拷成 ./seeds",
-    "Dockerfile runtime：'COPY --from=builder /app/seeds ./seeds' 改为 'COPY --from=builder /app/src/seeds ./src/seeds' —— 直接拷 tracked 源码",
-    "scripts/seed-db.mjs：SEEDS_CANDIDATE_DIRS 优先 <NEXTJS_ROOT>/src/seeds，sibling 仓保留为 dev fallback",
-    "src/seeds/menus.json + src/seeds/manifest.json + src/state/selection-context.tsx：app 语义键 app-lab → lab-management（与父仓 c15172e 推进 saas-msw 2b2c125 对齐）",
+    "middleware.ts（项目根，与 app/ 平级；Next.js 15 不识别 src/middleware.ts 与 app/middleware.ts）：matcher ['/api/v1/:path*']；读 process.env.SAAS_CORS_ALLOWED_ORIGINS（逗号分隔）；OPTIONS 预检 204 + 完整 CORS 头（Allow-Origin 回显 + Vary: Origin + Allow-Credentials: true + Allow-Methods/Headers + Max-Age: 86400）；其他方法 next() 后挂 Allow-Origin + Vary: Origin + Allow-Credentials + Expose-Headers",
+    "不 import @/db 等模块顶层 throw 的模块（src/db/index.ts:13-18 缺 DATABASE_URL 抛错），仅做 env 读取 + header 拼装；不挂 Allow-Origin: *；空 env fail-safe（任何 origin 都不放行）",
+    "tests/integration/middleware-cors.test.ts：直接调 middleware 函数（不起 server）锁契约 —— allowlist origin → 完整头 / 非 allowlist origin → 无 Allow-Origin / 无 Origin 头服务端到服务端 / 空 env fail-safe / 实际请求 GET 透传 + 挂头",
+    "部署顺序 CRITICAL —— saas middleware 先于 lab proxy drop 部署（颠倒浏览器直接撞 CORS 比 502 还糟）",
+    "VPS saas.env 已补 SAAS_CORS_ALLOWED_ORIGINS=https://lab-nextjs.xiangru.uk；prod 实测 preflight 204 + Allow-Origin + Vary: Origin 全部正确",
     "gate L0/L1/L2/L3/L4/L5 全绿 exit 0（86 功能条目 0 软告警）",
-    "commit cba2c8d + 45bb56a + tag v0.7.39-20260823 + push origin/master（after）"
+    "commit e11246b + 6f288f8 + tag v0.7.40-20260824 + v0.7.41-20260824 + push origin/master"
   ],
   "next": [
-    "无（Phase 6 原子收尾；下次 sprint 再看是否 bump package.json 到 0.7.39）"
+    "deploy/saas-identity-platform-nextjs.sh 改成 idempotent CORS env append（mirror lab.sh:60-83 模式）—— 当前脚本只在首启 bootstrap 时写 SAAS_CORS_ALLOWED_ORIGINS，已有 VPS saas.env 不会被覆盖，但下次 deploy 重跑不会更新，运维风险；本次顺手做",
+    "生产部署要不要 bump package.json 字段 version（仍 0.2.0，代码头注 v0.7.x）"
   ],
   "open_questions": [
     ".env.local / .env.production 仍含 NEXT_PUBLIC_ENABLE_MSW —— 任务仅指明 .env.example/.env.test，不修改用户 dev/prod shell env；新 sprint 决定是否清",
-    "生产部署要不要 bump package.json 字段 version（仍 0.2.0，代码头注 v0.7.x）"
+    "lab deploy 镜像还没拉 v0.3.47/v0.3.48；saas middleware 已生效（实测 204 + Allow-Origin 回来），等 VPS 拉 lab 镜像后浏览器直连 NEXT_PUBLIC_SAAS_BASE_URL/api/v1/* 即可"
   ],
   "dont": [
-    "不要再 inline useQuery 包 adminTenantsGetTenant —— 一律走 useAdminTenantsGetTenant hook",
-    "不要把 src/seeds/*.json 当 BFF 运行时数据源（BFF 已迁 drizzle；src/seeds 只给 seed-db.mjs 灌首启）",
+    "不要再写 inline useQuery 包 adminTenantsGetTenant —— 一律走 useAdminTenantsGetTenant hook",
+    "不要再把 src/seeds/*.json 当 BFF 运行时数据源（BFF 已迁 drizzle；src/seeds 只给 seed-db.mjs 灌首启）",
     "不要再恢复 src/lib/demo-seeds.ts 或 fs 读 JSON 路径 —— ADR-0012 B 强度下 BFF 路由一律走 PG",
     "不要把后端模式写到 .env/.env.example/next.config.js proxy（ADR-0014）",
     "不要在 src/app/api/[...msw]/route.ts 写 MSW handler（CLAUDE.md §2 硬约束）",
-    "不要 demo 密码（CLAUDE.md §2 硬约束）"
+    "不要 demo 密码（CLAUDE.md §2 硬约束）",
+    "不要在 middleware.ts 里挂 Access-Control-Allow-Origin: * —— spec 要求 credential + Authorization 时必须 echo 具体 origin",
+    "不要在 middleware.ts 里 import @/db —— 模块顶层缺 DATABASE_URL 会抛错",
+    "不要把 middleware.ts 放到 src/middleware.ts 或 app/middleware.ts —— saas App Router 在根 app/，Next.js 15 只识别项目根 middleware.ts"
   ],
   "active_branch": "master"
 }
