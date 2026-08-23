@@ -51,10 +51,6 @@ RUN npm install --install-links --legacy-peer-deps --no-audit --no-fund
 # standalone build 不需要 DB 连接（除非某 route 顶层 open DB）：gen:shared 只读
 # yaml，不连 DB；sync-db / seed-db 留到 runtime entrypoint 跑。
 COPY . .
-# demo seed JSON 拷进仓内 ./seeds（src/lib/demo-seeds.ts 首选路径）：
-# /api/v1/apps/[code] 与 /api/v1/me/menus 的数据源。sibling clone 不进 runtime
-# 层，不拷则 standalone 运行时读不到（旧版 fs 读 ../saas-... 在容器里必然 miss）。
-RUN cp -r ../saas-identity-platform-msw/src/seeds ./seeds
 # next build 的 "Collecting page data" 会 import 路由 handler → 触发 @/db 模块加载
 # （src/db/index.ts:13-18 在模块顶层 throw if !DATABASE_URL）。给个占位 URL 让 build 过，
 # runtime 真正的 DATABASE_URL 由 deploy/ 阶段 saas.env 注入（ADR-0009）。镜像对齐
@@ -105,8 +101,10 @@ COPY --from=builder --chown=node:node /saas-identity-platform-shared/sql/migrati
 # scripts/：sync-db / seed-db，entrypoint.sh 会调用
 COPY --from=builder --chown=node:node /app/scripts ./scripts
 COPY --from=builder --chown=node:node /app/package.json ./package.json
-# demo seed JSON（apps/menus/role-menu-grants，BFF 路由数据源）
-COPY --from=builder --chown=node:node /app/seeds ./seeds
+# 种子 JSON（apps/menus/grants 等，scripts/seed-db.mjs 灌库用）。
+# v0.7.38 起 BFF 路由不再读 JSON，src/lib/demo-seeds.ts 已删；这份 seed 仅给
+# seed-db.mjs 灌首启数据用。直接拷 tracked 源码 src/seeds（sibling 仓不再依赖）。
+COPY --from=builder --chown=node:node /app/src/seeds ./src/seeds
 
 # data/ 占位（PG 模式下不真用，但避免 entrypoint 写 /data 时无目录）
 RUN mkdir -p /data && chown -R node:node /data

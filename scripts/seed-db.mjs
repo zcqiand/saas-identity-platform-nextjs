@@ -38,13 +38,15 @@ import { createHash } from "node:crypto";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const NEXTJS_ROOT = resolve(__dirname, "..");
-// seed JSON 候选目录（按优先级，与 src/lib/demo-seeds.ts 对齐）：
-//   1. <NEXTJS_ROOT>/seeds              —— Docker 构建期从 saas-msw clone 拷入
-//                                         （standalone runtime 只有这个；Dockerfile line 57
-//                                          + runtime stage COPY --from=builder /app/seeds ./seeds）
-//   2. ../saas-identity-platform-msw/src/seeds —— sibling 仓（dev 期间 fallback）
+// seed JSON 候选目录（按优先级）：
+//   1. <NEXTJS_ROOT>/src/seeds          —— tracked 源码树（Dockerfile runtime stage
+//                                         COPY --from=builder /app/src/seeds ./src/seeds）。
+//                                         容器与 dev 都首选这个，与 sibling 仓脱钩。
+//   2. ../saas-identity-platform-msw/src/seeds —— sibling 仓（dev 期间 fallback，
+//                                              仍可能有人手动 cp 进去调试）
+// 注：src/lib/demo-seeds.ts 已删（BFF 路由不再 fs 读 JSON）；这里只服务首启灌种子。
 const SEEDS_CANDIDATE_DIRS = [
-  resolve(NEXTJS_ROOT, "seeds"),
+  resolve(NEXTJS_ROOT, "src/seeds"),
   resolve(NEXTJS_ROOT, "../saas-identity-platform-msw/src/seeds"),
 ];
 
