@@ -27,6 +27,10 @@ BASE="/home/deploy/saas-identity-platform-nextjs"
 CONTAINER_NAME="saas-identity-platform-nextjs"
 HOST_PORT=8022
 
+# nginx domain（v0.7.40 middleware 跨域白名单要用到，提前到 bootstrap 块之前）
+NGINX_DOMAIN="${NGINX_DOMAIN:-saas-nextjs.xiangru.uk}"
+NGINX_CERT_BASENAME="${NGINX_CERT_BASENAME:-xiangru-uk}"
+
 if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
   echo "Usage: $0 <DOCKER_USERNAME> <DOCKER_PASSWORD> [VERSION]" >&2
   exit 2
@@ -52,7 +56,7 @@ if [ ! -f "$BASE/saas.env" ]; then
       printf 'LOCKOUT_COOLDOWN_MIN=30\n'
       printf 'OAUTH_CODE_TTL=600\n'
       printf 'OAUTH_REFRESH_TTL=604800\n'
-      printf 'SAAS_CORS_ALLOWED_ORIGINS=https://saas.YOUR_DOMAIN,https://lab-nextjs.xiangru.uk\n'
+      printf 'SAAS_CORS_ALLOWED_ORIGINS=https://%s,https://lab-nextjs.xiangru.uk\n' "$NGINX_DOMAIN"
       printf 'NEXT_PUBLIC_ENABLE_MSW=false\n'
       printf 'NEXT_PUBLIC_API_BASE_URL=\n'
       printf 'NEXT_PUBLIC_LAB_BASE_URL=https://lab-nextjs.xiangru.uk\n'
@@ -75,8 +79,6 @@ fi
 # 检测 /etc/nginx/sites-enabled/<NGINX_DOMAIN> 是否存在;缺时从 nginx-vps.conf.example
 # 模板渲染,做 symlink。reload 需 sudo,留给手工:
 #   sudo nginx -t && sudo systemctl reload nginx
-NGINX_DOMAIN="${NGINX_DOMAIN:-saas-nextjs.xiangru.uk}"
-NGINX_CERT_BASENAME="${NGINX_CERT_BASENAME:-xiangru-uk}"
 NGINX_SITES_AVAILABLE="/etc/nginx/sites-available"
 NGINX_SITES_ENABLED="/etc/nginx/sites-enabled"
 NGINX_VHOST_FILE="${NGINX_SITES_AVAILABLE}/${NGINX_DOMAIN}"
@@ -122,6 +124,15 @@ if ! grep -q '^NEXT_PUBLIC_ENABLE_MSW=' "$BASE/saas.env"; then
   printf 'NEXT_PUBLIC_API_BASE_URL=\n' >> "$BASE/saas.env"
   printf 'NEXT_PUBLIC_LAB_BASE_URL=https://lab-nextjs.xiangru.uk\n' >> "$BASE/saas.env"
   printf 'NEXT_PUBLIC_LAB_APP_CODE=lab-management\n' >> "$BASE/saas.env"
+fi
+
+# 补 SAAS_CORS_ALLOWED_ORIGINS（v0.7.40 middleware 必需；与 lab.sh:60-83
+# 模式同款，已有则不覆盖，运维手工补的 prod origin 不会丢）。
+# bootstrap 那段（line 39-67）首启会写；后续 deploy 重跑只会缺失时 append。
+if ! grep -q '^SAAS_CORS_ALLOWED_ORIGINS=' "$BASE/saas.env"; then
+  echo "→ append SAAS_CORS_ALLOWED_ORIGINS to existing $BASE/saas.env"
+  umask 077
+  printf 'SAAS_CORS_ALLOWED_ORIGINS=https://%s,https://lab-nextjs.xiangru.uk\n' "$NGINX_DOMAIN" >> "$BASE/saas.env"
 fi
 
 echo "→ image: $IMAGE"
