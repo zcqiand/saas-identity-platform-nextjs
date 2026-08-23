@@ -1,31 +1,32 @@
 {
   "schema": 2,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "Post-Phase-3 frontend 集成收尾：5 page 切 orval useAdminTenantsGetTenant + 拷 13 BFF seed JSON + scripts/seed-db.mjs 接入 + 注释清理",
-  "last_session_at": "2026-08-22",
-  "last_session_summary": "5 page 改 hook；新建 src/seeds/ 13 JSON 拷入；scripts/seed-db.mjs 接入 SEEDS_CANDIDATE_DIRS；providers.tsx + demo-seeds.ts 注释清理；删 mocks/{handlers,node}.ts；commit bf7de28 + tag v0.7.5-20260822 pushed",
+  "current_task": "Phase 6 接 DB（me/menus + apps/[code]） + demo-seeds/Dockerfile 清理",
+  "last_session_at": "2026-08-23",
+  "last_session_summary": "BFF /me/menus 与 /apps/[code] 从 fs 读 seed JSON 迁到 drizzle 直查 PG，RBAC 从写死 acme admin 改为 JWT 真实身份（claims.sub → memberships.roleIds → role_menu_grants）；删 src/lib/demo-seeds.ts + Dockerfile builder 的 sibling seeds 拷贝；runtime COPY 改用 tracked 源码 src/seeds；commit cba2c8d + 45bb56a + tag v0.7.39-20260823",
   "done": [
-    "5 page (tenants/[tenantId]/{users,audit,api-keys,roles,roles/[roleId]/menus}/page.tsx) inline useQuery → useAdminTenantsGetTenant；useQuery import 收掉（仅 audit/menus 还用）",
-    "app-shell.tsx:52 用的是 adminTenantsListTenants，不在 scope",
-    "新建 src/seeds/：13 JSON 从 ../saas-identity-platform-msw/src/seeds/ 拷入（数量对齐 manifest: tenants=3/users=5/roles=4/permissions=4/role-permissions=13/memberships=5/api-keys=2/apps=3/menus=41/role-menu-grants=3/audit-events=3/audit-retention-policies=3 + manifest）",
-    "scripts/seed-db.mjs: 接入 SEEDS_CANDIDATE_DIRS fallback 链（src/seeds 优先，msw sibling 兜底）；删 MSW_SEEDS_DIR 常量；node --check + JSON 加载 dry-run 通过",
-    "src/components/providers.tsx: 删「MSW 启动门控由 getBackend() 改为 isMswEnabled()」过时注释",
-    "src/lib/demo-seeds.ts: 移除 node_modules/@saas/identity-platform-msw/src/seeds 兜底项（ADR-0012 后不再 import msw 包）",
-    "src/mocks/handlers.ts + src/mocks/node.ts 删除",
-    "next.config.js + .env.example + src/api/env.ts + src/api/backend-config.ts: 原本已干净（与 ADR-0012 B 强度 + ADR-0014 一致）",
+    "app/api/v1/me/menus/route.ts：drizzle 实现。JWT 必填 → claims.sub = users.id；tenant_memberships 拉 roleIds（status != 'removed'）；role_menu_grants 按 roleId IN (...) 聚合 allowed menuIds；apps 按 code/UUID 解析 → menus 建树，一级节点始终可见，子节点须在授权集内（与旧 seed 版同语义）",
+    "app/api/v1/apps/[code]/route.ts：drizzle select 公开列（id/code/name/desc/icon/status），按 code + status='active' 过滤，免鉴权",
+    "src/lib/demo-seeds.ts：删除（commit (a) 之后零引用）",
+    "Dockerfile builder：去掉 'RUN cp -r ../saas-identity-platform-msw/src/seeds ./seeds' —— sibling 仓不再需要在 build 期被拷成 ./seeds",
+    "Dockerfile runtime：'COPY --from=builder /app/seeds ./seeds' 改为 'COPY --from=builder /app/src/seeds ./src/seeds' —— 直接拷 tracked 源码",
+    "scripts/seed-db.mjs：SEEDS_CANDIDATE_DIRS 优先 <NEXTJS_ROOT>/src/seeds，sibling 仓保留为 dev fallback",
+    "src/seeds/menus.json + src/seeds/manifest.json + src/state/selection-context.tsx：app 语义键 app-lab → lab-management（与父仓 c15172e 推进 saas-msw 2b2c125 对齐）",
     "gate L0/L1/L2/L3/L4/L5 全绿 exit 0（86 功能条目 0 软告警）",
-    "commit bf7de28 + tag v0.7.5-20260822 + push origin/master"
+    "commit cba2c8d + 45bb56a + tag v0.7.39-20260823 + push origin/master（after）"
   ],
   "next": [
-    "无（本批原子收尾）"
+    "无（Phase 6 原子收尾；下次 sprint 再看是否 bump package.json 到 0.7.39）"
   ],
   "open_questions": [
-    ".env.local / .env.production 仍含 NEXT_PUBLIC_ENABLE_MSW —— 任务仅指明 .env.example/.env.test，不修改用户 dev/prod shell env；新 sprint 决定是否清"
+    ".env.local / .env.production 仍含 NEXT_PUBLIC_ENABLE_MSW —— 任务仅指明 .env.example/.env.test，不修改用户 dev/prod shell env；新 sprint 决定是否清",
+    "生产部署要不要 bump package.json 字段 version（仍 0.2.0，代码头注 v0.7.x）"
   ],
   "dont": [
     "不要再 inline useQuery 包 adminTenantsGetTenant —— 一律走 useAdminTenantsGetTenant hook",
-    "不要删 src/seeds/ —— BFF runtime 真在读",
-    "不要把 MSW_SEEDS_DIR 常量加回 scripts/seed-db.mjs —— SEEDS_CANDIDATE_DIRS fallback 已覆盖",
+    "不要把 src/seeds/*.json 当 BFF 运行时数据源（BFF 已迁 drizzle；src/seeds 只给 seed-db.mjs 灌首启）",
+    "不要再恢复 src/lib/demo-seeds.ts 或 fs 读 JSON 路径 —— ADR-0012 B 强度下 BFF 路由一律走 PG",
+    "不要把后端模式写到 .env/.env.example/next.config.js proxy（ADR-0014）",
     "不要在 src/app/api/[...msw]/route.ts 写 MSW handler（CLAUDE.md §2 硬约束）",
     "不要 demo 密码（CLAUDE.md §2 硬约束）"
   ],
