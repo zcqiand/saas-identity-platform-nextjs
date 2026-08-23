@@ -78,6 +78,10 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+# sync-db.mjs 在 runtime /app/scripts/,默认算法 MIGRATIONS_DIR=/app/sql/migrations 不存在。
+# Dockerfile 把 sibling migrations 拷到 /saas-identity-platform-shared/sql/migrations,
+# 这里显式指过去。
+ENV MIGRATIONS_DIR=/saas-identity-platform-shared/sql/migrations
 
 # standalone/server.js 是 Next 生成的入口
 COPY --from=builder --chown=node:node /app/.next/standalone ./
