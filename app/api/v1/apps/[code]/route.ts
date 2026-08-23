@@ -5,34 +5,36 @@
 // 免鉴权（接入方侧边栏/标题要显示应用名，不能强制管理员 JWT）；
 // 只返回展示字段（id/code/name/description/icon/status），不暴露 OAuth 字段。
 //
-// demo 模式：读 seed JSON（src/lib/demo-seeds.ts，ADR-0012 运行时 import 清零
-// 后不再 JS import saas-msw 包）。Phase 6 接 DB 后换成 drizzle 查询 apps 表的公开列。
+// v0.7.38 接 DB（此前 demo 模式读烘进镜像的 seed JSON，"Phase 6 接 DB" 欠账）。
 
 import { NextResponse } from "next/server";
-import { loadSeedJson } from "@/lib/demo-seeds";
-
-type App = {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
-  icon?: string;
-  status: string;
-};
+import { and, eq } from "drizzle-orm";
+import { db } from "@/db";
+import { apps } from "@/db/schema";
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ code: string }> },
 ) {
   const { code } = await params;
-  const apps = loadSeedJson<App[]>("apps.json");
-  const app = apps.find((a) => a.code === code && a.status === "active");
+  const rows = await db
+    .select({
+      id: apps.id,
+      code: apps.code,
+      name: apps.name,
+      description: apps.description,
+      icon: apps.icon,
+      status: apps.status,
+    })
+    .from(apps)
+    .where(and(eq(apps.code, code), eq(apps.status, "active")))
+    .limit(1);
+  const app = rows[0];
   if (!app) {
     return NextResponse.json(
       { code: "NOT_FOUND", message: `App '${code}' not found` },
       { status: 404 },
     );
   }
-  const { id, name, description, icon, status } = app;
-  return NextResponse.json({ id, code, name, description, icon, status });
+  return NextResponse.json(app);
 }

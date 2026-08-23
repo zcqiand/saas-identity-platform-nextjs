@@ -12,26 +12,19 @@
 //
 // 默认值（首次访问、未持久化场景）：
 //   - 租户 = msw 仓 TENANT_IDS.acme / 名称 "ACME Corp"
-//   - 应用 = app-lab / 名称 "建筑工程实验室管理系统"
+//   - 应用 = lab-management / 名称 "建筑工程实验室管理系统"
 //
 // CLAUDE.md §2 硬规则：必须 lazy initializer 同步 hydrate，禁止 useState(default) + useEffect(load)
 // 反模式（会在首次挂载闪 default 再切到 localStorage 值）。
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 
 const TENANT_STORAGE_KEY = "saas.selected.tenant";
 const APP_STORAGE_KEY = "saas.selected.app";
 
 const DEFAULT_TENANT_ID = "00000000-0000-0000-0000-000000000001";
 const DEFAULT_TENANT_NAME = "ACME Corp";
-const DEFAULT_APP_ID = "app-lab";
+const DEFAULT_APP_ID = "lab-management";
 const DEFAULT_APP_NAME = "建筑工程实验室管理系统";
 
 export interface Selection {

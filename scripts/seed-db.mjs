@@ -9,7 +9,7 @@
 //  - 合法 UUID（仅 tenants.id）：resolveId 透传
 //  - 超长可读串（users/roles/api_keys/memberships/audit_events 的 id，形如
 //    "00000000-...-000001-user-alice"）：resolveId -> 确定性 UUID
-//  - 语义键（apps.id "app-lab"、menus.id "m-lab-dash"）：resolveId -> 确定性 UUID
+//  - 语义键（apps.id "lab-management"、menus.id "m-lab-dash"）：resolveId -> 确定性 UUID
 //  所有【id 与指向它的 FK】用同一个 resolveId(原值)，保证 FK 一致
 //  （如 memberships.user_id 与 users.id 同 key -> 同 UUID）。
 //  确定性来自 sha256：同一字符串永远映射到同一 UUID。

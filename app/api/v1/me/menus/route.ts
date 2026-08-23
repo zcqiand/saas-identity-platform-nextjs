@@ -3,98 +3,40 @@
 // TypeSpec: getMyMenus(appCode): EffectiveMenuNode[]
 // 返回当前用户在指定 appCode 下的有效菜单（树形）。
 //
-// demo 模式：读 seed JSON（src/lib/demo-seeds.ts，ADR-0012 运行时 import 清零
-// 后不再 JS import saas-msw 包）。Phase 6 接 DB。
+// v0.7.38 接 DB（此前 demo 模式读烘进镜像的 seed JSON，"Phase 6 接 DB" 欠账；
+// 也修掉写死 acme admin 的 RBAC 假设）：
+//   1. JWT 必填（401）-> claims.sub = users.id
+//   2. tenant_memberships 拉用户全部 roleIds（status != removed）
+//   3. role_menu_grants 按 roleId IN (...) 聚合 allowed menuIds
+//   4. apps 按 code/UUID 解析 -> menus 建树：一级节点始终可见，子节点须在
+//      授权集内（与旧 seed 版语义一致）
 // 跨仓 lab-nextjs 反代时 CORS + 跨实例都通过这层 Route Handler。
 
 import { NextRequest, NextResponse } from "next/server";
-import { loadSeedJson } from "@/lib/demo-seeds";
+import { and, eq, ne, asc, inArray } from "drizzle-orm";
+import { db } from "@/db";
+import { apps, menus, tenantMemberships, roleMenuGrants } from "@/db/schema";
+import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
+import { resolveAppId } from "@/lib/app-resolver";
 
-type App = {
-  id: string;
-  code: string;
-  status: string;
-};
-type Menu = {
-  id: string;
-  appId: string;
-  parentId?: string | null;
-  status: string;
-  sortOrder: number;
-  code: string;
-  name: string;
-  path?: string;
-  icon?: string;
-  type: string;
-};
-type RoleMenuGrant = { roleId: string; menuIds: string[] };
-
-// 惰性加载：模块顶层读会在 build 期（seeds 未就位时）炸；首个请求再读。
-// msw 不持久化，demo 数据只读不写，进程内缓存安全。
-let _fixtures: { apps: App[]; menus: Menu[]; grants: RoleMenuGrant[] } | null = null;
-function fixtures() {
-  if (!_fixtures) {
-    _fixtures = {
-      apps: loadSeedJson<App[]>("apps.json"),
-      menus: loadSeedJson<Menu[]>("menus.json"),
-      grants: loadSeedJson<RoleMenuGrant[]>("role-menu-grants.json"),
-    };
-  }
-  return _fixtures;
-}
-
-type EffectiveMenuNode = {
+type MenuRow = {
   id: string;
   appId: string;
-  parentId?: string;
+  parentId: string | null;
   code: string;
   name: string;
-  path?: string;
-  icon?: string;
+  path: string | null;
+  icon: string | null;
   type: string;
   sortOrder: number;
-  children: EffectiveMenuNode[];
 };
 
-/** 在 seed 上按 appCode 构造树（无 RBAC；saas-msw 的 /me/menus handler 同款） */
-function fromFixtures(appCode: string): EffectiveMenuNode[] {
-  const { apps, menus, grants } = fixtures();
-  const app = apps.find((a) => a.code === appCode && a.status === "active");
-  if (!app) return [];
-
-  const acmeAdminGrant = grants.find(
-    (g) => g.roleId === "00000000-0000-0000-0000-000000000001-role-admin",
-  );
-  const allowed = new Set(acmeAdminGrant?.menuIds ?? []);
-
-  const tree = (parentId: string | undefined, appId: string): EffectiveMenuNode[] => {
-    // JSON 解析后 parentId 是 null（不是 undefined）；normalize 后再做 === 比较
-    const wantParent = parentId ?? null;
-    return menus
-      .filter(
-        (m) => m.appId === appId && (m.parentId ?? null) === wantParent && m.status === "active",
-      )
-      .filter((m) => allowed.has(m.id) || !parentId)
-      .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map((m) => ({
-        id: m.id,
-        appId: m.appId,
-        parentId: m.parentId ?? undefined,
-        code: m.code,
-        name: m.name,
-        path: m.path ?? undefined,
-        icon: m.icon ?? undefined,
-        type: m.type,
-        sortOrder: m.sortOrder,
-        children: tree(m.id, m.appId),
-      }));
-  };
-
-  return tree(undefined, app.id);
-}
+type EffectiveMenuNode = MenuRow & { children: EffectiveMenuNode[] };
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
+    const claims = await verifyPathTenant(null, req.headers.get("authorization"));
+
     const url = new URL(req.url);
     const appCode = url.searchParams.get("appCode");
     if (!appCode) {
@@ -106,15 +48,88 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         { status: 400 },
       );
     }
-    const result = fromFixtures(appCode);
-    return NextResponse.json(result);
-  } catch (err) {
-    return NextResponse.json(
-      {
-        code: "INTERNAL_ERROR",
-        message: (err as Error).message,
-      },
-      { status: 500 },
-    );
+    if (!claims.sub) {
+      return NextResponse.json(
+        { code: "UNAUTHORIZED", message: "JWT missing sub claim" },
+        { status: 401 },
+      );
+    }
+
+    // 1. app（code 或 UUID 均可，与 admin 路由同款 resolver；校验 active）
+    const appId = await resolveAppId(appCode);
+    if (!appId) {
+      return NextResponse.json(
+        { code: "NOT_FOUND", message: `App '${appCode}' not found` },
+        { status: 404 },
+      );
+    }
+    const appRows = await db
+      .select({ id: apps.id })
+      .from(apps)
+      .where(and(eq(apps.id, appId), eq(apps.status, "active")))
+      .limit(1);
+    if (appRows.length === 0) {
+      return NextResponse.json(
+        { code: "NOT_FOUND", message: `App '${appCode}' not active` },
+        { status: 404 },
+      );
+    }
+
+    // 2. 用户全部角色（跨租户聚合，与 /me 的 memberships 视角一致）
+    const memberships = await db
+      .select({ roleIds: tenantMemberships.roleIds })
+      .from(tenantMemberships)
+      .where(
+        and(
+          eq(tenantMemberships.userId, claims.sub),
+          ne(tenantMemberships.status, "removed"),
+        ),
+      );
+    const roleIds = Array.from(new Set(memberships.flatMap((m) => m.roleIds)));
+
+    // 3. 角色的菜单授权集
+    const allowed = new Set<string>();
+    if (roleIds.length > 0) {
+      const grants = await db
+        .select({ menuIds: roleMenuGrants.menuIds })
+        .from(roleMenuGrants)
+        .where(inArray(roleMenuGrants.roleId, roleIds));
+      for (const g of grants) for (const id of g.menuIds) allowed.add(id);
+    }
+
+    // 4. 该 app 的全部 active 菜单（一次取回，内存建树）
+    const rows = await db
+      .select({
+        id: menus.id,
+        appId: menus.appId,
+        parentId: menus.parentId,
+        code: menus.code,
+        name: menus.name,
+        path: menus.path,
+        icon: menus.icon,
+        type: menus.type,
+        sortOrder: menus.sortOrder,
+      })
+      .from(menus)
+      .where(and(eq(menus.appId, appId), eq(menus.status, "active")))
+      .orderBy(asc(menus.sortOrder), asc(menus.code));
+
+    // 建树：一级节点始终可见，子节点须在授权集内（旧 seed 版同语义）
+    const byParent = new Map<string | null, MenuRow[]>();
+    for (const m of rows) {
+      const key = m.parentId ?? null;
+      if (!byParent.has(key)) byParent.set(key, []);
+      byParent.get(key)!.push(m);
+    }
+    const build = (parentId: string | null): EffectiveMenuNode[] =>
+      (byParent.get(parentId) ?? [])
+        .filter((m) => parentId === null || allowed.has(m.id))
+        .map((m) => ({ ...m, children: build(m.id) }));
+
+    return NextResponse.json(build(null));
+  } catch (e) {
+    const guardResp = tenantGuardErrorToNextResponse(e);
+    if (guardResp) return guardResp;
+    throw e;
   }
 }
