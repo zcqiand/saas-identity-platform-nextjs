@@ -128,7 +128,7 @@ export default function LoginPage() {
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-100 via-white to-slate-200 p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-2">
-          <CardTitle className="text-lg">SaaS 多租户身份平台</CardTitle>
+          <CardTitle className="text-lg">SaaS 多租户多应用身份平台</CardTitle>
           <CardDescription>
             {oauthReturn
               ? "有外部应用通过 SSO 请求登录，登录后将自动返回"

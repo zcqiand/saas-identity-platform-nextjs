@@ -32,11 +32,11 @@ interface SidebarNavProps {
 
 export function SidebarNav({
   items,
-  title = "SaaS 多租户身份平台",
+  title = "SaaS 多租户多应用身份平台",
   subtitle = "Identity Platform",
   footerAction,
   footerExtras,
-  version = "v0.2.0 · 多租户身份平台",
+  version = "v0.2.0 · SaaS 多租户多应用身份平台",
 }: SidebarNavProps) {
   const pathname = usePathname();
   const groups = items.reduce<Record<string, NavItem[]>>((acc, item) => {
@@ -46,7 +46,10 @@ export function SidebarNav({
   const orderedGroups = Object.keys(groups);
 
   return (
-    <aside className="w-60 shrink-0 bg-slate-900 text-white flex flex-col" data-testid="sidebar-nav">
+    <aside
+      className="w-60 shrink-0 bg-slate-900 text-white flex flex-col"
+      data-testid="sidebar-nav"
+    >
       <div className="px-5 py-5 border-b border-white/10">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-md bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-sm font-bold">
