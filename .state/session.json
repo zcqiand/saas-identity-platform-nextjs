@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "middleware CORS for /api/v1/* — 跨仓 lab-nextjs 浏览器直连放行",
+  "current_task": "prod SSO 全链验证完成（2026-08-26）：middleware CORS 实测生效（lab-nextjs origin preflight 204 + actual 回显）",
   "last_session_at": "2026-08-24",
   "last_session_summary": "lab 侧边栏 502 根因是 lab /api/saas/* BFF proxy 不转 JWT（把 saas 接 DB 后必返的 401 包成 502）。saas 新增项目根 middleware.ts 读 SAAS_CORS_ALLOWED_ORIGINS（.env.example:47 已预留，本仓镜像 springboot SAAS_CORS_ALLOWED_ORIGINS / aspnetcore Saas.Cors.AllowedOrigins）放行 /api/v1/:path* 跨域 OPTIONS + 响应头；非 allowlist origin 不挂 Allow-Origin（浏览器层拦）；不挂 Allow-Origin: *（spec 要求 credential + Authorization 时必须 echo 具体 origin）；空 env fail-safe。前置依赖：lab v0.3.47 删 proxy + sidebar-nav 改浏览器直连带 Bearer。Commit e11246b + 6f288f8 + tag v0.7.40/v0.7.41-20260824 pushed",
   "done": [
@@ -14,12 +14,11 @@
     "commit e11246b + 6f288f8 + tag v0.7.40-20260824 + v0.7.41-20260824 + push origin/master"
   ],
   "next": [
-    "deploy/saas-identity-platform-nextjs.sh 改成 idempotent CORS env append（mirror lab.sh:60-83 模式）—— 当前脚本只在首启 bootstrap 时写 SAAS_CORS_ALLOWED_ORIGINS，已有 VPS saas.env 不会被覆盖，但下次 deploy 重跑不会更新，运维风险；本次顺手做",
-    "生产部署要不要 bump package.json 字段 version（仍 0.2.0，代码头注 v0.7.x）"
+    "CORS allowlist 目前只含 saas-nextjs/lab-nextjs 两 origin —— lab-react 菜单走 lab 后端缓存不需要直连，但若未来 lab-react/vue 要直连 saas 需扩 SAAS_CORS_ALLOWED_ORIGINS",
+    "deploy 脚本 idempotent append 已落地（SAAS_CORS_ALLOWED_ORIGINS 缺失时 append），无需再改"
   ],
   "open_questions": [
-    ".env.local / .env.production 仍含 NEXT_PUBLIC_ENABLE_MSW —— 任务仅指明 .env.example/.env.test，不修改用户 dev/prod shell env；新 sprint 决定是否清",
-    "lab deploy 镜像还没拉 v0.3.47/v0.3.48；saas middleware 已生效（实测 204 + Allow-Origin 回来），等 VPS 拉 lab 镜像后浏览器直连 NEXT_PUBLIC_SAAS_BASE_URL/api/v1/* 即可"
+    "NEXT_PUBLIC_ENABLE_MSW 在 .env.local/.env.production 的清理仍待定"
   ],
   "dont": [
     "不要再写 inline useQuery 包 adminTenantsGetTenant —— 一律走 useAdminTenantsGetTenant hook",
