@@ -2,7 +2,7 @@
   {
     "id": "lab-management",
     "code": "lab-management",
-    "name": "建筑工程建筑工程实验室管理系统",
+    "name": "建筑工程实验室管理系统",
     "description": "建筑工程质量检测实验室信息化管理系统",
     "icon": "FlaskConical",
     "sortOrder": 1,

@@ -34,7 +34,12 @@ import { toast } from "sonner";
 
 const FIELDS: FieldDef[] = [
   { name: "code", label: "Code", required: true, placeholder: "lab-management" },
-  { name: "name", label: "名称", required: true, placeholder: "建筑工程建筑工程实验室管理系统" },
+  {
+    name: "name",
+    label: "名称",
+    required: true,
+    placeholder: "建筑工程实验室管理系统",
+  },
   { name: "clientId", label: "Client ID", required: true, placeholder: "lab-mgmt" },
   { name: "icon", label: "图标（lucide 名称）", placeholder: "FlaskConical" },
   { name: "sortOrder", label: "排序", type: "number", defaultValue: 0 },
