@@ -11,8 +11,11 @@ coverage/
 tsconfig.tsbuildinfo
 
 # 本地环境变量（含凭据，不进 git）
-.env*
+.env
+.env.local
+.env.*.local
 !.env.example
+!.env.test
 
 # Claude 临时文件
 .claude/
