@@ -77,7 +77,7 @@
     }
   ],
   "notes": [
-    "v0.4.0 app 清单调整：3 个应用 = 建筑工程实验室管理系统 (lab-management) + ERP (app-erp) + CRM (app-crm)。原来 iam-console/oa-portal 弃用。",
+    "v0.4.0 app 清单调整：3 个应用 = 建筑工程建筑工程实验室管理系统 (lab-management) + ERP (app-erp) + CRM (app-crm)。原来 iam-console/oa-portal 弃用。",
     "app id 采用 backup 风格语义键 (lab-management/app-erp/app-crm)，不再 UUID 字符串。TypeSpec @format(\"uuid\") 是 hint 而非强约束，运行时类型仍是 string。",
     "menus.json 从 backup 全面导入 27 个 lab 菜单（5 group + 22 page）+ 7 erp + 7 新造 crm = 41 条。",
     "backup 字段映射：sort→sortOrder、enabled(true→active, false→disabled)、无 path → group type、有 path → page type。",

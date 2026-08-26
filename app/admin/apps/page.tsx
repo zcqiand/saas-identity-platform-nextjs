@@ -12,11 +12,7 @@ import {
   useAdminAppsSetAppStatus,
   useAdminAppsUpdateApp,
 } from "@/api/endpoints/endpoints";
-import type {
-  App,
-  CreateAppRequest,
-  UpdateAppRequest,
-} from "@/api/endpoints/endpoints.schemas";
+import type { App, CreateAppRequest, UpdateAppRequest } from "@/api/endpoints/endpoints.schemas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -38,7 +34,7 @@ import { toast } from "sonner";
 
 const FIELDS: FieldDef[] = [
   { name: "code", label: "Code", required: true, placeholder: "lab-management" },
-  { name: "name", label: "名称", required: true, placeholder: "建筑工程实验室管理系统" },
+  { name: "name", label: "名称", required: true, placeholder: "建筑工程建筑工程实验室管理系统" },
   { name: "clientId", label: "Client ID", required: true, placeholder: "lab-mgmt" },
   { name: "icon", label: "图标（lucide 名称）", placeholder: "FlaskConical" },
   { name: "sortOrder", label: "排序", type: "number", defaultValue: 0 },
@@ -75,7 +71,10 @@ function toAppInput(values: Record<string, unknown>): CreateAppRequest {
     status: (values.status as "active" | "disabled") ?? "active",
     isFirstParty: Boolean(values.isFirstParty),
     scopes: values.scopesText
-      ? String(values.scopesText).split(",").map((s) => s.trim()).filter(Boolean)
+      ? String(values.scopesText)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
       : [],
     grantTypes: ["authorization_code", "client_credentials"],
     redirectUris: [],
@@ -120,7 +119,10 @@ export default function AppListPage() {
           status: values.status as "active" | "disabled",
           isFirstParty: Boolean(values.isFirstParty),
           scopes: values.scopesText
-            ? String(values.scopesText).split(",").map((s) => s.trim()).filter(Boolean)
+            ? String(values.scopesText)
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)
             : [],
         },
       });
