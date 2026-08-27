@@ -112,12 +112,16 @@ export default function LoginPage() {
       }, 0);
     } catch (err) {
       const apiErr = toApiError(err);
+      // M03.F01.I02 - 423 (aspnetcore) / 429 (nextjs Route Handler) =
+      // 失败 5 次锁定（后端 15min 自动解锁）
       const msg =
-        apiErr.status === 401
-          ? "用户名或密码错误"
-          : apiErr.status === 0
-            ? `后端不可达（${apiMode}）：${apiErr.message}`
-            : apiErr.message;
+        apiErr.status === 423 || apiErr.status === 429
+          ? "账号已被锁定，请 15 分钟后再试"
+          : apiErr.status === 401
+            ? "用户名或密码错误"
+            : apiErr.status === 0
+              ? `后端不可达（${apiMode}）：${apiErr.message}`
+              : apiErr.message;
       toast.error(msg);
     } finally {
       setSubmitting(false);
