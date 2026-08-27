@@ -92,7 +92,6 @@ if [ ! -f "$BASE/saas.env" ]; then
     printf 'OAUTH_CODE_TTL=600\n'
     printf 'OAUTH_REFRESH_TTL=604800\n'
     printf 'SAAS_CORS_ALLOWED_ORIGINS=https://saas.YOUR_DOMAIN,https://lab-domain.example\n'
-    printf 'NEXT_PUBLIC_LAB_BASE_URL=https://lab-domain.example\n'
   } > "$BASE/saas.env"
   chown deploy:deploy "$BASE/saas.env"
   chmod 600 "$BASE/saas.env"

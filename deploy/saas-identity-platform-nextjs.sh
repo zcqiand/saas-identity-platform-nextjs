@@ -57,10 +57,7 @@ if [ ! -f "$BASE/saas.env" ]; then
       printf 'OAUTH_CODE_TTL=600\n'
       printf 'OAUTH_REFRESH_TTL=604800\n'
       printf 'SAAS_CORS_ALLOWED_ORIGINS=https://%s,https://lab-nextjs.xiangru.uk\n' "$NGINX_DOMAIN"
-      printf 'NEXT_PUBLIC_ENABLE_MSW=false\n'
       printf 'NEXT_PUBLIC_API_BASE_URL=\n'
-      printf 'NEXT_PUBLIC_LAB_BASE_URL=https://lab-nextjs.xiangru.uk\n'
-      printf 'NEXT_PUBLIC_LAB_APP_CODE=lab-management\n'
     } > "$BASE/saas.env"
     chown deploy:deploy "$BASE/saas.env" 2>/dev/null || true
     chmod 600 "$BASE/saas.env"
@@ -116,14 +113,11 @@ if ! grep -q '^JWT_SIGNING_KEY=' "$BASE/saas.env"; then
   printf 'JWT_TTL_SECONDS=3600\n' >> "$BASE/saas.env"
 fi
 
-# 补 NEXT_PUBLIC_* 走真后端 (MSW 关,同源 API_BASE_URL 空 → 本仓 Route Handler)
-if ! grep -q '^NEXT_PUBLIC_ENABLE_MSW=' "$BASE/saas.env"; then
-  echo "→ append NEXT_PUBLIC_ENABLE_MSW=false + NEXT_PUBLIC_API_BASE_URL="
+# 补 NEXT_PUBLIC_API_BASE_URL= (同源空 → 本仓 Route Handler; MSW 已删 ADR-0012)
+if ! grep -q '^NEXT_PUBLIC_API_BASE_URL=' "$BASE/saas.env"; then
+  echo "→ append NEXT_PUBLIC_API_BASE_URL="
   umask 077
-  printf 'NEXT_PUBLIC_ENABLE_MSW=false\n' >> "$BASE/saas.env"
   printf 'NEXT_PUBLIC_API_BASE_URL=\n' >> "$BASE/saas.env"
-  printf 'NEXT_PUBLIC_LAB_BASE_URL=https://lab-nextjs.xiangru.uk\n' >> "$BASE/saas.env"
-  printf 'NEXT_PUBLIC_LAB_APP_CODE=lab-management\n' >> "$BASE/saas.env"
 fi
 
 # 补 SAAS_CORS_ALLOWED_ORIGINS（v0.7.40 middleware 必需；与 lab.sh:60-83
