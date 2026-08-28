@@ -58,6 +58,8 @@ if [ ! -f "$BASE/saas.env" ]; then
       printf 'OAUTH_REFRESH_TTL=604800\n'
       printf 'SAAS_CORS_ALLOWED_ORIGINS=https://%s,https://lab-nextjs.xiangru.uk\n' "$NGINX_DOMAIN"
       printf 'NEXT_PUBLIC_API_BASE_URL=\n'
+      # 2026-08-28 key 对齐:key 集合与 .env.production 由 suite L0.5 check_deploy_parity 锁死
+      printf 'NEXT_PUBLIC_API_MODE=nextjs\n'
     } > "$BASE/saas.env"
     chown deploy:deploy "$BASE/saas.env" 2>/dev/null || true
     chmod 600 "$BASE/saas.env"
@@ -118,6 +120,13 @@ if ! grep -q '^NEXT_PUBLIC_API_BASE_URL=' "$BASE/saas.env"; then
   echo "→ append NEXT_PUBLIC_API_BASE_URL="
   umask 077
   printf 'NEXT_PUBLIC_API_BASE_URL=\n' >> "$BASE/saas.env"
+fi
+
+# 2026-08-28 key 对齐: 补 NEXT_PUBLIC_API_MODE(老 env-file 停在 key 集合扩充前)
+if ! grep -q '^NEXT_PUBLIC_API_MODE=' "$BASE/saas.env"; then
+  echo "→ append NEXT_PUBLIC_API_MODE=nextjs"
+  umask 077
+  printf 'NEXT_PUBLIC_API_MODE=nextjs\n' >> "$BASE/saas.env"
 fi
 
 # 补 SAAS_CORS_ALLOWED_ORIGINS（v0.7.40 middleware 必需；与 lab.sh:60-83
