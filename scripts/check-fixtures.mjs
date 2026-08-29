@@ -4,6 +4,7 @@ import {
   apps,
   menus,
   roleMenuGrants,
+  ROLE_IDS,
 } from "@saas/identity-platform-msw";
 
 console.log("apps.length=", apps.length);
@@ -13,9 +14,9 @@ console.log("roleMenuGrants.length=", roleMenuGrants.length);
 const app = apps.find((a) => a.code === "lab-management");
 console.log("found app:", app ? { id: app.id, code: app.code, status: app.status } : null);
 
-const grant = roleMenuGrants.find(
-  (g) => g.roleId === "00000000-0000-0000-0000-000000000001-role-admin",
-);
+// 2026-08-29：种子 ID 收敛为 canonical UUID（shared V016），
+// 改用 msw 派生的 ROLE_IDS，不再拼字符串。
+const grant = roleMenuGrants.find((g) => g.roleId === ROLE_IDS.acmeAdmin);
 console.log("found grant:", grant ? { menuIds: grant.menuIds.length } : null);
 
 const allowed = new Set(grant?.menuIds ?? []);

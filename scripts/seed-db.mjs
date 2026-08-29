@@ -6,10 +6,10 @@
 // seed 无数据，不灌，保持空）。
 //
 // 关键映射（PG 列强类型 uuid，而 MSW seeds 的 id 混用三种格式）：
-//  - 合法 UUID（仅 tenants.id）：resolveId 透传
+//  - 2026-08-29 起全部 id 都是 canonical UUID（shared V016）：resolveId 纯透传
 //  - 超长可读串（users/roles/api_keys/memberships/audit_events 的 id，形如
-//    "00000000-...-000001-user-alice"）：resolveId -> 确定性 UUID
-//  - 语义键（apps.id "lab-management"、menus.id "m-lab-dash"）：resolveId -> 确定性 UUID
+//    历史上是 "00000000-...-000001-user-alice" 这类可读串，靠 resolveId 哈希
+//    —— 那套已废弃，塞回可读串会被 resolveId fail-fast 拒绝
 //  所有【id 与指向它的 FK】用同一个 resolveId(原值)，保证 FK 一致
 //  （如 memberships.user_id 与 users.id 同 key -> 同 UUID）。
 //  确定性来自 sha256：同一字符串永远映射到同一 UUID。
@@ -76,8 +76,23 @@ function keyToUuid(key) {
   uuidCache.set(key, uuid);
   return uuid;
 }
+// 2026-08-29：种子 ID 已在 shared V016 收敛为可读 UUID 字面量，msw JSON 同步改写，
+// 故正常路径下每个 id 都已是合法 UUID，resolveId 就是透传。
+//
+// 保留 keyToUuid 只作为**报错线索**：一旦有人往 seeds 里塞回非 UUID 的可读串，
+// 立刻 fail-fast 指出是哪个值，而不是静默哈希成一个新 UUID —— 静默哈希正是
+// 四套 ID 体系并存的成因（见 shared/sql/migrations/V016 文件头）。
 function resolveId(id) {
-  return id && UUID_RE.test(id) ? id : keyToUuid(id);
+  if (id && UUID_RE.test(id)) return id;
+  throw new Error(
+    `[seed-db] 种子 id 不是合法 UUID: ${JSON.stringify(id)}
+` +
+      `  种子 ID 规范见 shared/sql/migrations/V016__seed_family_fixtures.sql 文件头。
+` +
+      `  不要用可读串当 id —— 它会被静默哈希，导致 msw / PG / 各后端 id 分叉。
+` +
+      `  （若确实需要派生，请显式调用 keyToUuid 并说明理由）`,
+  );
 }
 
 function loadJson(name) {
@@ -181,7 +196,7 @@ try {
     "permissions",
     ["id", "code", "name", "description", "created_at"],
     permissions.map((p) => [
-      resolveId(p.code), p.code, p.name, p.description ?? null, new Date().toISOString(),
+      resolveId(p.id), p.code, p.name, p.description ?? null, new Date().toISOString(),
     ]),
   );
   console.log(`[seed-db] permissions: ${permissions.length}`);
@@ -190,9 +205,11 @@ try {
   await insertAll(
     "role_permissions",
     ["role_id", "permission_id", "granted_at"],
-    rolePermissions.map((rp) => [
-      resolveId(rp.roleId), resolveId(rp.permissionCode), new Date().toISOString(),
-    ]),
+    rolePermissions.map((rp) => {
+      const perm = permissions.find((p) => p.code === rp.permissionCode);
+      if (!perm) throw new Error(`[seed-db] role_permissions 引用了不存在的 permission code: ${rp.permissionCode}`);
+      return [resolveId(rp.roleId), resolveId(perm.id), new Date().toISOString()];
+    }),
   );
   console.log(`[seed-db] role_permissions: ${rolePermissions.length}`);
 
