@@ -1,35 +1,19 @@
 {
   "schema": 2,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "prod SSO 全链验证完成（2026-08-26）：middleware CORS 实测生效（lab-nextjs origin preflight 204 + actual 回显）",
-  "last_session_at": "2026-08-24",
-  "last_session_summary": "lab 侧边栏 502 根因是 lab /api/saas/* BFF proxy 不转 JWT（把 saas 接 DB 后必返的 401 包成 502）。saas 新增项目根 middleware.ts 读 SAAS_CORS_ALLOWED_ORIGINS（.env.example:47 已预留，本仓镜像 springboot SAAS_CORS_ALLOWED_ORIGINS / aspnetcore Saas.Cors.AllowedOrigins）放行 /api/v1/:path* 跨域 OPTIONS + 响应头；非 allowlist origin 不挂 Allow-Origin（浏览器层拦）；不挂 Allow-Origin: *（spec 要求 credential + Authorization 时必须 echo 具体 origin）；空 env fail-safe。前置依赖：lab v0.3.47 删 proxy + sidebar-nav 改浏览器直连带 Bearer。Commit e11246b + 6f288f8 + tag v0.7.40/v0.7.41-20260824 pushed",
+  "current_task": "env 对齐 + V009 数据修复上线(v0.7.51)",
+  "last_session_at": "2026-08-29",
+  "last_session_summary": "deploy 脚本补 NEXT_PUBLIC_API_MODE;.env.production untrack;.env.local 补齐 example 全集。v0.7.49 部署因 shared V015 双 FK 炸 crash loop(见 saas-shared session),V016 编号无效,V009 修复后 v0.7.50 仍带旧 V016(镜像 build 时序),v0.7.51 GREEN:V009+V015 全应用,app id 归一 11111111-...,28 menus,alice 挂 admin(修了 prod alice roleIds:[] 老问题)",
   "done": [
-    "middleware.ts（项目根，与 app/ 平级；Next.js 15 不识别 src/middleware.ts 与 app/middleware.ts）：matcher ['/api/v1/:path*']；读 process.env.SAAS_CORS_ALLOWED_ORIGINS（逗号分隔）；OPTIONS 预检 204 + 完整 CORS 头（Allow-Origin 回显 + Vary: Origin + Allow-Credentials: true + Allow-Methods/Headers + Max-Age: 86400）；其他方法 next() 后挂 Allow-Origin + Vary: Origin + Allow-Credentials + Expose-Headers",
-    "不 import @/db 等模块顶层 throw 的模块（src/db/index.ts:13-18 缺 DATABASE_URL 抛错），仅做 env 读取 + header 拼装；不挂 Allow-Origin: *；空 env fail-safe（任何 origin 都不放行）",
-    "tests/integration/middleware-cors.test.ts：直接调 middleware 函数（不起 server）锁契约 —— allowlist origin → 完整头 / 非 allowlist origin → 无 Allow-Origin / 无 Origin 头服务端到服务端 / 空 env fail-safe / 实际请求 GET 透传 + 挂头",
-    "部署顺序 CRITICAL —— saas middleware 先于 lab proxy drop 部署（颠倒浏览器直接撞 CORS 比 502 还糟）",
-    "VPS saas.env 已补 SAAS_CORS_ALLOWED_ORIGINS=https://lab-nextjs.xiangru.uk；prod 实测 preflight 204 + Allow-Origin + Vary: Origin 全部正确",
-    "gate L0/L1/L2/L3/L4/L5 全绿 exit 0（86 功能条目 0 软告警）",
-    "commit e11246b + 6f288f8 + tag v0.7.40-20260824 + v0.7.41-20260824 + push origin/master"
+    "deploy/saas-identity-platform-nextjs.sh 补 NEXT_PUBLIC_API_MODE append 段",
+    "v0.7.51-20260829 部署 GREEN,/ 和 /login 200,/api/health 是 404 属正常(无此路由,CI 探活走容器内端口)"
   ],
   "next": [
-    "CORS allowlist 目前只含 saas-nextjs/lab-nextjs 两 origin —— lab-react 菜单走 lab 后端缓存不需要直连，但若未来 lab-react/vue 要直连 saas 需扩 SAAS_CORS_ALLOWED_ORIGINS",
-    "deploy 脚本 idempotent append 已落地（SAAS_CORS_ALLOWED_ORIGINS 缺失时 append），无需再改"
+    "验收:lab 前端登录 → /api/v1/me/menus 应返回 26+ 菜单树(此前 saas 侧空树)"
   ],
-  "open_questions": [
-    "NEXT_PUBLIC_ENABLE_MSW 在 .env.local/.env.production 的清理仍待定"
-  ],
+  "open_questions": [],
   "dont": [
-    "不要再写 inline useQuery 包 adminTenantsGetTenant —— 一律走 useAdminTenantsGetTenant hook",
-    "不要再把 src/seeds/*.json 当 BFF 运行时数据源（BFF 已迁 drizzle；src/seeds 只给 seed-db.mjs 灌首启）",
-    "不要再恢复 src/lib/demo-seeds.ts 或 fs 读 JSON 路径 —— ADR-0012 B 强度下 BFF 路由一律走 PG",
-    "不要把后端模式写到 .env/.env.example/next.config.js proxy（ADR-0014）",
-    "不要在 src/app/api/[...msw]/route.ts 写 MSW handler（CLAUDE.md §2 硬约束）",
-    "不要 demo 密码（CLAUDE.md §2 硬约束）",
-    "不要在 middleware.ts 里挂 Access-Control-Allow-Origin: * —— spec 要求 credential + Authorization 时必须 echo 具体 origin",
-    "不要在 middleware.ts 里 import @/db —— 模块顶层缺 DATABASE_URL 会抛错",
-    "不要把 middleware.ts 放到 src/middleware.ts 或 app/middleware.ts —— saas App Router 在根 app/，Next.js 15 只识别项目根 middleware.ts"
+    "src/seeds/apps.json 的 id/clientId 仍是旧值(lab-management/lab-mgmt)——首启 seed 路径,若全库重建会再灌随机 id 行,与 V009 固定 id 收敛冲突;后续应同步改 UUID 或废 json seed 走 SQL"
   ],
   "active_branch": "master"
 }
