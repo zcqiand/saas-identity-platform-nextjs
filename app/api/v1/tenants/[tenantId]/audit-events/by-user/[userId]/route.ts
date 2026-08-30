@@ -3,7 +3,7 @@
 // TypeSpec: listAuditEventsByUser(@path tenantId, @path userId, @query page?, @query pageSize?)
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { auditEvents } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
@@ -19,16 +19,23 @@ export async function GET(
     const page = Math.max(0, Number(url.searchParams.get("page") ?? 0));
     const pageSize = Math.min(100, Math.max(1, Number(url.searchParams.get("pageSize") ?? 20)));
 
+    // 2026-08-30 contract-test M96.F02.I13: 必须同时按 tenantId + userId 过滤
+    // (此前仅按 userId 跨租户泄漏, 误读路径)
+    const where = and(
+      eq(auditEvents.tenantId, tenantId),
+      eq(auditEvents.actorUserId, userId),
+    );
+
     const totalResult = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(auditEvents)
-      .where(eq(auditEvents.actorUserId, userId));
+      .where(where);
     const total = totalResult[0]?.count ?? 0;
 
     const items = await db
       .select()
       .from(auditEvents)
-      .where(eq(auditEvents.actorUserId, userId))
+      .where(where)
       .limit(pageSize)
       .offset(page * pageSize)
       .orderBy(sql`occurred_at DESC`);
