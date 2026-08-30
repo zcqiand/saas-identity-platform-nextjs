@@ -126,7 +126,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         .filter((m) => parentId === null || allowed.has(m.id))
         .map((m) => ({ ...m, children: build(m.id) }));
 
-    return NextResponse.json(build(null));
+    return NextResponse.json({ [appCode]: build(null) });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;
