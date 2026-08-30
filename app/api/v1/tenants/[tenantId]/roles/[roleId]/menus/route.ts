@@ -26,9 +26,10 @@ async function ensureRole(tenantId: string, roleId: string) {
   return r[0];
 }
 
-function toDto(g: typeof roleMenuGrants.$inferSelect) {
+function toDto(g: typeof roleMenuGrants.$inferSelect, tenantId: string) {
   return {
     roleId: g.roleId,
+    tenantId,
     menuIds: g.menuIds,
     updatedAt: g.updatedAt.toISOString(),
   };
@@ -51,14 +52,15 @@ export async function GET(
       .where(eq(roleMenuGrants.roleId, roleId))
       .limit(1);
     if (!g[0]) {
-      // 没有 grant 行返回空
+      // 没有 grant 行返回空(仍带 tenantId 兜底, contract-test 必填字段)
       return NextResponse.json({
         roleId,
+        tenantId,
         menuIds: [],
         updatedAt: new Date().toISOString(),
       });
     }
-    return NextResponse.json(toDto(g[0]));
+    return NextResponse.json(toDto(g[0], tenantId));
   } catch (e) {
     const g = tenantGuardErrorToNextResponse(e);
     if (g) return g;
@@ -97,7 +99,7 @@ export async function PUT(
         set: { menuIds: parsed.data.menuIds, updatedAt: new Date() },
       })
       .returning();
-    return NextResponse.json(toDto(inserted[0]!));
+    return NextResponse.json(toDto(inserted[0]!, tenantId));
   } catch (e) {
     const g = tenantGuardErrorToNextResponse(e);
     if (g) return g;

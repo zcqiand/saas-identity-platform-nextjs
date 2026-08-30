@@ -2,18 +2,29 @@
 //
 // TypeSpec: getRole / updateRole / deleteRole
 // GET / PATCH / DELETE
+//
+// 2026-08-30：contract-test M96.F02.I08 字节对齐
+// - 去 description 字段(msw 真后端不返); 加 permissionIds(join role_permissions → permissions.id)
 
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { roles } from "@/db/schema";
+import { roles, rolePermissions } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const PatchRoleBody = z.object({
   name: z.string().min(1).max(255).optional(),
   description: z.string().optional(),
 });
+
+async function permissionIdsForRole(roleId: string): Promise<string[]> {
+  const rows = await db
+    .select({ permissionId: rolePermissions.permissionId })
+    .from(rolePermissions)
+    .where(eq(rolePermissions.roleId, roleId));
+  return rows.map((r) => r.permissionId);
+}
 
 export async function GET(
   req: NextRequest,
@@ -36,7 +47,7 @@ export async function GET(
       tenantId: r.tenantId,
       code: r.code,
       name: r.name,
-      description: r.description ?? undefined,
+      permissionIds: await permissionIdsForRole(roleId),
       createdAt: r.createdAt.toISOString(),
       updatedAt: r.updatedAt.toISOString(),
     });
@@ -78,7 +89,7 @@ export async function PATCH(
       tenantId: r.tenantId,
       code: r.code,
       name: r.name,
-      description: r.description ?? undefined,
+      permissionIds: await permissionIdsForRole(roleId),
       createdAt: r.createdAt.toISOString(),
       updatedAt: r.updatedAt.toISOString(),
     });

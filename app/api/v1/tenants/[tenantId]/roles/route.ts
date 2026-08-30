@@ -4,12 +4,15 @@
 // - listRoles(@query page?, @query pageSize?): Page<Role>
 // - createRole(@body body: CreateRoleRequest): Role
 // GET / POST
+//
+// 2026-08-30：contract-test M96.F02.I07/I08 字节对齐
+// - 去 description 字段(msw 真后端不返); 加 permissionIds(join role_permissions → permissions.id)
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { roles } from "@/db/schema";
+import { roles, rolePermissions } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const CreateRoleBody = z.object({
@@ -19,6 +22,22 @@ const CreateRoleBody = z.object({
   permissionIds: z.array(z.string().uuid()).optional(),
 });
 
+/** 批量取这些 role 的 permissionId UUID 列表(避免 N+1)。 */
+async function permissionIdsForRoles(roleIds: readonly string[]): Promise<Map<string, string[]>> {
+  const out = new Map<string, string[]>();
+  if (roleIds.length === 0) return out;
+  const rows = await db
+    .select({ roleId: rolePermissions.roleId, permissionId: rolePermissions.permissionId })
+    .from(rolePermissions)
+    .where(inArray(rolePermissions.roleId, [...roleIds]));
+  for (const r of rows) {
+    const arr = out.get(r.roleId);
+    if (arr) arr.push(r.permissionId);
+    else out.set(r.roleId, [r.permissionId]);
+  }
+  return out;
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ tenantId: string }> },
@@ -27,6 +46,7 @@ export async function GET(
     const { tenantId } = await params;
     await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const url = new URL(req.url);
+    // OpenAPI 标准: page=0-indexed, pageSize 默认 20, 上限 100
     const page = Math.max(0, Number(url.searchParams.get("page") ?? 0));
     const pageSize = Math.min(100, Math.max(1, Number(url.searchParams.get("pageSize") ?? 20)));
     const totalResult = await db
@@ -41,13 +61,14 @@ export async function GET(
       .limit(pageSize)
       .offset(page * pageSize)
       .orderBy(sql`created_at DESC`);
+    const perms = await permissionIdsForRoles(items.map((r) => r.id));
     return NextResponse.json({
       items: items.map((r) => ({
         id: r.id,
         tenantId: r.tenantId,
         code: r.code,
         name: r.name,
-        description: r.description ?? undefined,
+        permissionIds: perms.get(r.id) ?? [],
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
       })),
@@ -103,7 +124,7 @@ export async function POST(
       tenantId: r.tenantId,
       code: r.code,
       name: r.name,
-      description: r.description ?? undefined,
+      permissionIds: [], // 新建角色无 permission
       createdAt: r.createdAt.toISOString(),
       updatedAt: r.updatedAt.toISOString(),
     });
