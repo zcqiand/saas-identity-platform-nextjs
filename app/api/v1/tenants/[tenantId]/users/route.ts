@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users, tenantMemberships } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const PAGE_DEFAULT = 20;
@@ -35,7 +35,9 @@ export async function GET(
     );
     const statusParam = url.searchParams.get("status");
 
-    // total + items（一次查询带 count）
+    // 2026-08-30 contract-test：users.role_ids 列是冗余（drizzle/sql[] 占位），
+    // authoritative 在 tenant_memberships.role_ids —— 这里 LEFT JOIN 取。
+    // user 无 membership 时（不应发生，V016 seed 必建）roleIds=[]。
     const where = statusParam
       ? and(eq(users.tenantId, tenantId), eq(users.status, statusParam as "active"))
       : eq(users.tenantId, tenantId);
@@ -54,11 +56,18 @@ export async function GET(
         email: users.email,
         displayName: users.displayName,
         status: users.status,
-        roleIds: sql<string[]>`ARRAY[]::uuid[]`,  // Phase 5：从 tenant_memberships 聚合
+        roleIds: tenantMemberships.roleIds,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
       })
       .from(users)
+      .leftJoin(
+        tenantMemberships,
+        and(
+          eq(tenantMemberships.userId, users.id),
+          eq(tenantMemberships.tenantId, users.tenantId),
+        ),
+      )
       .where(where)
       .limit(pageSize)
       .offset(page * pageSize)
@@ -67,7 +76,7 @@ export async function GET(
     return NextResponse.json({
       items: items.map((u) => ({
         ...u,
-        roleIds: [],  // Phase 5
+        roleIds: u.roleIds ?? [],  // Phase 5：删冗余列后这里不再需要 ??[]
       })),
       page,
       pageSize,

@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users, tenantMemberships } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const UpdateUserBody = z.object({
@@ -27,9 +27,28 @@ export async function GET(
   try {
     const { tenantId, userId } = await params;
     await verifyPathTenant(tenantId, req.headers.get("authorization"));
+    // 2026-08-30 contract-test：users.role_ids 冗余列，authoritative 在 tenant_memberships
+    // LEFT JOIN 同 list 端点（[tenantId]/users/route.ts）的处理。
     const rows = await db
-      .select()
+      .select({
+        id: users.id,
+        tenantId: users.tenantId,
+        username: users.username,
+        email: users.email,
+        displayName: users.displayName,
+        status: users.status,
+        roleIds: tenantMemberships.roleIds,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+      })
       .from(users)
+      .leftJoin(
+        tenantMemberships,
+        and(
+          eq(tenantMemberships.userId, users.id),
+          eq(tenantMemberships.tenantId, users.tenantId),
+        ),
+      )
       .where(and(eq(users.tenantId, tenantId), eq(users.id, userId)))
       .limit(1);
     const u = rows[0];
@@ -43,7 +62,7 @@ export async function GET(
       email: u.email,
       displayName: u.displayName ?? undefined,
       status: u.status,
-      roleIds: (u.roleIds ?? []).map((r) => r),
+      roleIds: u.roleIds ?? [],
       createdAt: u.createdAt.toISOString(),
       updatedAt: u.updatedAt.toISOString(),
     });
