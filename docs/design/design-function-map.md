@@ -18,6 +18,9 @@
 | M04.F03.I07 | app/api/v1/oauth/authorize/route.ts | POST /api/v1/oauth/authorize | apps + users + oauth-store (codes) | M04.F03.I07 | – | 已上线 |
 | M04.F03.I08 | app/api/v1/oauth/token/route.ts | POST /api/v1/oauth/token (grantType=authorization_code) | apps + audit_events + oauth-store | M04.F03.I08 | – | 已上线 |
 | M04.F03.I09 | app/api/v1/oauth/token/route.ts | POST /api/v1/oauth/token (grantType=refresh_token) | oauth-store (refresh rotation) | M04.F03.I09 | – | 已上线 |
+| M01.F01.I02 | app/api/v1/tenants/[tenantId]/users/route.ts (POST handler) | POST /api/v1/tenants/:tenantId/users | users + audit_events (user_created) | M01.F01.I02 | – | 已上线 |
+| M05.F01.I05 | app/api/v1/tenants/[tenantId]/api-keys/[keyId]/route.ts (DELETE handler) | DELETE /api/v1/tenants/:tenantId/api-keys/:keyId | api_keys (hard delete，无 audit) | M05.F01.I05 | – | 已上线 |
+| M09.F02.I02 | app/api/v1/tenants/[tenantId]/roles/[roleId]/menus/route.ts (PUT handler) | PUT /api/v1/tenants/:tenantId/roles/:roleId/menus | role_menu_grants (PK role_id upsert) | M09.F02.I02 | – | 已上线 |
 
 ## 关键基础设施（与本批 auth 直接相关）
 

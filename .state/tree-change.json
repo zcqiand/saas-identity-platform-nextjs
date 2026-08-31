@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "approved": true,
+  "base_sha": "0c48fe778bece325",
+  "summary": "nextjs 本地 function-tree 补登：M05.F01.I05 (DELETE api-key 物理删，route.ts handler 已实装 + @entry 注释触发 L5)",
+  "changes": [
+    {
+      "id": "M05.F01.I05",
+      "action": "新增",
+      "name": "物理删除 DELETE /tenants/{t}/api-keys/{k}（区别于 I03 revoke 软删；幂等——重复删 → 404）",
+      "reason": "写端点第二期：app/api/v1/tenants/[tenantId]/api-keys/[keyId]/route.ts DELETE handler 已实装 + @entry M05.F01.I05 注释触发 L5 引用检测。本地 tree 需登记否则 L5 红。"
+    }
+  ],
+  "sync_files": [
+    "docs/functions/function-tree.md"
+  ]
+}

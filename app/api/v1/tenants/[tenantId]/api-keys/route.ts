@@ -18,6 +18,12 @@ const CreateApiKeyBody = z.object({
   expiresAt: z.string().datetime().optional(),
 });
 
+function isoOr(d: Date | string | null | undefined): string | undefined {
+  if (d == null) return undefined;
+  const dt = d instanceof Date ? d : new Date(d);
+  return Number.isNaN(dt.getTime()) ? undefined : dt.toISOString();
+}
+
 function toDto(k: typeof apiKeys.$inferSelect) {
   return {
     id: k.id,
@@ -26,10 +32,10 @@ function toDto(k: typeof apiKeys.$inferSelect) {
     prefix: k.prefix,
     status: k.status,
     scopes: k.scopes,
-    createdAt: k.createdAt.toISOString(),
-    lastUsedAt: k.lastUsedAt?.toISOString(),
-    expiresAt: k.expiresAt?.toISOString(),
-    revokedAt: k.revokedAt?.toISOString(),
+    createdAt: isoOr(k.createdAt),
+    lastUsedAt: isoOr(k.lastUsedAt),
+    expiresAt: isoOr(k.expiresAt),
+    revokedAt: isoOr(k.revokedAt),
   };
 }
 

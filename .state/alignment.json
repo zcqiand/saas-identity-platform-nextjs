@@ -4,10 +4,15 @@
   "functions": {
     "modules": 9,
     "features": 20,
-    "items": 57
+    "items": 58
   },
-  "warnings_total": 0,
-  "warnings": {},
+  "warnings_total": 2,
+  "warnings": {
+    "已上线但无测试引用": [
+      "M05.F01.I05",
+      "M09.F02.I02"
+    ]
+  },
   "unreachable_shipped": [],
   "function_map": {
     "M00.F01.I01": {
@@ -114,11 +119,15 @@
     },
     "M01.F01.I02": {
       "name": "邀请/创建用户",
-      "status": "规划",
-      "type": "按钮",
+      "status": "已上线",
+      "type": "接口",
       "requirements": [],
-      "flows": [],
-      "designs": [],
+      "flows": [
+        "docs\\design\\flow-function-map.md"
+      ],
+      "designs": [
+        "docs\\design\\design-function-map.md"
+      ],
       "tests": [
         "渲染用户列表，邀请按钮挂 data-fn=M01.F01.I02"
       ],
@@ -531,7 +540,9 @@
       "status": "规划",
       "type": "按钮",
       "requirements": [],
-      "flows": [],
+      "flows": [
+        "docs\\design\\flow-function-map.md"
+      ],
       "designs": [],
       "tests": [],
       "entry": [
@@ -548,6 +559,22 @@
       "tests": [],
       "entry": [
         "app\\tenants\\[tenantId]\\api-keys\\page.tsx"
+      ]
+    },
+    "M05.F01.I05": {
+      "name": "物理删除 API Key（区别于 I03 revoke 软删；幂等——重复删 → 404）",
+      "status": "已上线",
+      "type": "接口",
+      "requirements": [],
+      "flows": [
+        "docs\\design\\flow-function-map.md"
+      ],
+      "designs": [
+        "docs\\design\\design-function-map.md"
+      ],
+      "tests": [],
+      "entry": [
+        "app\\api\\v1\\tenants\\[tenantId]\\api-keys\\[keyId]\\route.ts"
       ]
     },
     "M06.F01.I01": {
@@ -689,11 +716,15 @@
     },
     "M09.F02.I02": {
       "name": "设置角色菜单",
-      "status": "规划",
-      "type": "按钮",
+      "status": "已上线",
+      "type": "接口",
       "requirements": [],
-      "flows": [],
-      "designs": [],
+      "flows": [
+        "docs\\design\\flow-function-map.md"
+      ],
+      "designs": [
+        "docs\\design\\design-function-map.md"
+      ],
       "tests": [],
       "entry": [
         "app\\tenants\\[tenantId]\\roles\\[roleId]\\menus\\page.tsx"

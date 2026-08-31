@@ -113,4 +113,10 @@ POST /api/v1/oauth/token  {grantType: "refresh_token", refreshToken, clientId, t
 
 ### 孤儿功能
 
-（暂无；M03.F01.I02 login lockout 已纳入 M03.F01.I01 login 流程内。后续若新增 已上线 子项无所属流程，列在此段以消软告警。）
+| 子项 ID | 名称 | 类型 | 已上线原因（不在流程图） |
+|---|---|---|---|
+| M01.F01.I02 | 创建用户（POST /tenants/:t/users，status 固定 active，写 user_created 审计） | 接口 | 跨端契约对齐 oracle（saas-msw）+ 共享 PG 真后端；当前无 UI 表单挂 data-fn（不在「登录 → 操作 → 登出」流程内）；后续若挂 UI 入口再迁入流程 |
+| M05.F01.I05 | 物理删 API Key（DELETE /tenants/:t/api-keys/:k，幂等返 204 / 404，无 audit） | 接口 | 跨端契约对齐 oracle；与 M05.F01.I03 revoke 软删并存；tenant admin 操作用，无前端 UI 入口 |
+| M09.F02.I02 | 设置角色菜单（PUT /tenants/:t/roles/:r/menus，整批替换 role_menu_grants） | 接口 | tenant admin 操作用；前端角色管理页 M09.F02 流程图尚未落地（v0.x 路线图） |
+
+（M03.F01.I02 login lockout 已纳入 M03.F01.I01 login 流程内。）
