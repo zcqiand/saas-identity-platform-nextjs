@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
 import { apiKeys } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
+import { writeAudit } from "@/lib/audit";
 
 export async function POST(
   req: NextRequest,
@@ -22,6 +23,13 @@ export async function POST(
     if (!k) {
       return NextResponse.json({ code: "NOT_FOUND", message: "Api key not found" }, { status: 404 });
     }
+    // M06.F03.I01 写端点副作用 — api_key_revoked
+    await writeAudit({
+      tenantId,
+      authHeader: req.headers.get("authorization"),
+      action: "api_key_revoked",
+      metadata: { apiKeyId: k.id },
+    });
     return NextResponse.json({
       id: k.id,
       tenantId: k.tenantId,

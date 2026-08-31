@@ -9,6 +9,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { apiKeys } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
+import { writeAudit } from "@/lib/audit";
 import { randomBytes } from "node:crypto";
 
 const CreateApiKeyBody = z.object({
@@ -92,6 +93,13 @@ export async function POST(
       })
       .returning();
     const k = inserted[0]!;
+    // M06.F03.I01 写端点副作用 — api_key_created
+    await writeAudit({
+      tenantId,
+      authHeader: req.headers.get("authorization"),
+      action: "api_key_created",
+      metadata: { apiKeyId: k.id },
+    });
     return NextResponse.json(
       { apiKey: toDto(k), secret },
       { status: 201 },

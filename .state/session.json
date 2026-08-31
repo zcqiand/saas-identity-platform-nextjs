@@ -1,19 +1,25 @@
 {
   "schema": 2,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "env 对齐 + V009 数据修复上线(v0.7.51)",
-  "last_session_at": "2026-08-29",
-  "last_session_summary": "deploy 脚本补 NEXT_PUBLIC_API_MODE;.env.production untrack;.env.local 补齐 example 全集。v0.7.49 部署因 shared V015 双 FK 炸 crash loop(见 saas-shared session),V016 编号无效,V009 修复后 v0.7.50 仍带旧 V016(镜像 build 时序),v0.7.51 GREEN:V009+V015 全应用,app id 归一 11111111-...,28 menus,alice 挂 admin(修了 prod alice roleIds:[] 老问题)",
+  "current_task": "M06.F03 lib/audit.ts + api-keys POST/revoke 写端点 audit emit 已合入，npx tsc 0/0，gate L0-L5 全 PASS",
+  "last_session_at": "2026-08-31",
   "done": [
-    "deploy/saas-identity-platform-nextjs.sh 补 NEXT_PUBLIC_API_MODE append 段",
-    "v0.7.51-20260829 部署 GREEN,/ 和 /login 200,/api/health 是 404 属正常(无此路由,CI 探活走容器内端口)"
+    "src/lib/audit.ts (新): writeAudit({tenantId, authHeader, action, metadata}) —— actor 从 Bearer token 的 sub claim 解，best-effort catch swallow",
+    "app/api/v1/tenants/[tenantId]/api-keys/route.ts (POST): 主写成功后调 writeAudit('api_key_created', {apiKeyId: k.id})",
+    "app/api/v1/tenants/[tenantId]/api-keys/[keyId]/revoke/route.ts (POST): 主写成功后调 writeAudit('api_key_revoked', {apiKeyId: k.id})"
   ],
   "next": [
-    "验收:lab 前端登录 → /api/v1/me/menus 应返回 26+ 菜单树(此前 saas 侧空树)"
+    "audit-events POST export 端点缺失（其他 3 后端有），下一批补齐",
+    "其他 8 个 AuditAction 4 后端 emit 是下一批"
   ],
-  "open_questions": [],
+  "open_questions": [
+    "AuditAction string union 已对齐 OpenAPI DTO；以后 enum 扩展只动 tsp + emit + regen 4 仓即可，nextjs 侧不需要手改 AuditAction type"
+  ],
   "dont": [
-    "src/seeds/apps.json 的 id/clientId 仍是旧值(lab-management/lab-mgmt)——首启 seed 路径,若全库重建会再灌随机 id 行,与 V009 固定 id 收敛冲突;后续应同步改 UUID 或废 json seed 走 SQL"
+    "不要再用 fetch+token 在 lib/audit 解析 tenantId —— actorUserId 是从 auth header 解 JWT，tenantId 必须是 path 传进来的",
+    "不要再把 audit 失败 throw —— 整个项目约定是 best-effort swallow + console.warn，与 msw handlers-extra 一致"
   ],
-  "active_branch": "master"
+  "last_gate_passed_at": "2026-08-31T10:39+08:00",
+  "active_branch": "master",
+  "ahead_of_origin": "0"
 }
