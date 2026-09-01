@@ -83,7 +83,14 @@ class OAuthStore {
 }
 
 // Module-scope singleton（同一进程内共享；Next.js dev hot-reload 下 reset 行为参见 next dev 文档）
-export const oauthStore = new OAuthStore();
+// 2026-09-01 contract-test I24/I27：长跑 dev 模式下 module 重新求值会重置实例，
+// oauthStore 里的 refresh/code 全丢，I24/I27 在全量套件里报 INVALID_GRANT。
+// 用 globalThis 缓存使实例跨越 module 重求值存活（Next.js 官方推荐模式）。
+const _oauthStore = (globalThis as { __oauthStore?: OAuthStore }).__oauthStore;
+export const oauthStore: OAuthStore = _oauthStore ?? new OAuthStore();
+if (!_oauthStore) {
+  (globalThis as { __oauthStore?: OAuthStore }).__oauthStore = oauthStore;
+}
 
 /** 生成一次性 code 字符串（saas-code-${ts}-${rand}，与 msw handler-extra.ts:370 对齐） */
 export function generateAuthCode(): string {

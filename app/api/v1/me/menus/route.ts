@@ -99,7 +99,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         (byParent.get(parentId) ?? [])
           .filter((m) => parentId === null || allowed.has(m.id))
           .map((m) => ({ ...m, children: build(m.id) }));
-      result[app.code] = build(null);
+      // 2026-09-01 contract-test I05：响应只含「该 app 下至少有一条 grant 内菜单的 app」。
+      // 否则 build(null) 对无 grant 的 app 返 [] 也照样塞 key，与真后端不一致。
+      // 对齐 aspnetcore/springboot（实际 PG 状态）和 msw handler。
+      if (allowed.size > 0 && allRows.some((m) => m.appId === app.id && allowed.has(m.id))) {
+        result[app.code] = build(null);
+      }
     }
     return NextResponse.json(result);
   } catch (e) {

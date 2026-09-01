@@ -86,4 +86,8 @@ class LoginLockout {
   }
 }
 
-export const loginLockout = new LoginLockout();
+export const loginLockout = (globalThis as { __loginLockout?: LoginLockout }).__loginLockout
+  ?? new LoginLockout();
+if (!(globalThis as { __loginLockout?: LoginLockout }).__loginLockout) {
+  (globalThis as { __loginLockout?: LoginLockout }).__loginLockout = loginLockout;
+}
