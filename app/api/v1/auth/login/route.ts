@@ -6,7 +6,7 @@
 // 语义（v0.5.0 auth 批次）：
 // - M03.F01.I01：账号密码登录。bcrypt 比较（手写 PBKDF2 占位；Phase 5 接 argon2）
 // - M03.F01.I02：登录失败锁定。LOCKOUT_MAX_FAILS 阈值 + LOCKOUT_WINDOW_MIN 窗口 + LOCKOUT_COOLDOWN_MIN 冷却
-// - audit_events 写 login_success / login_failed
+// - audit_events 只写 login_success（2026-09-02 M96 对齐：失败事件家族不写）
 // - accessToken 走 HS256 + jose 真签发（Phase 5）；refreshToken 沿用 mock-refresh-${userId} 前缀对齐 msw
 // - JWT_SIGNING_KEY 从 env 读，必须 ≥32 bytes
 
@@ -17,6 +17,7 @@ import { db } from "@/db";
 import { tenants, users, auditEvents } from "@/db/schema";
 import { loginLockout } from "@/lib/login-lockout";
 import { signToken } from "@/lib/jwt";
+import { oauthStore, generateRefreshToken } from "@/lib/oauth-store";
 
 const LoginBody = z.object({
   username: z.string().min(1).max(64),
@@ -27,7 +28,7 @@ const LoginBody = z.object({
 async function writeAudit(
   tenantId: string,
   actorUserId: string | undefined,
-  action: "login_success" | "login_failed",
+  action: "login_success",
   metadata: Record<string, unknown>,
 ): Promise<void> {
   try {
@@ -106,11 +107,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const ok = user && user.passwordHash && (user.passwordHash === `plain:${password}` || user.passwordHash === password);
 
   if (!user || !ok) {
-    // 失败：记一次 + 写 audit
+    // 失败：lockout 计数（内存 loginLockout）。不写 login_failed 审计 ——
+    // 2026-09-02 contract-test M96 audit 覆盖对齐（用户拍板）：msw/springboot/aspnetcore
+    // 均不写失败事件，本仓收敛到家族最小公共集。
     loginLockout.recordFailure(username);
-    if (user) {
-      await writeAudit(user.tenantId, user.id, "login_failed", { username, reason: "bad_credentials" });
-    }
     return NextResponse.json(
       { code: "UNAUTHORIZED", message: "Invalid credentials" },
       { status: 401 },
@@ -119,21 +119,30 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   if (user.status === "suspended" || user.status === "disabled") {
     loginLockout.recordFailure(username);
-    await writeAudit(user.tenantId, user.id, "login_failed", { username, reason: user.status });
     return NextResponse.json(
       { code: "FORBIDDEN", message: `User ${user.status}` },
       { status: 403 },
     );
   }
 
-  // 成功：清零失败计数 + 写 audit + 签 token（accessToken HS256 真签发；refreshToken 沿用 msw 前缀 mock-refresh-）
+  // 成功：清零失败计数 + 写 audit + 签 token。
+  // 2026-09-01 contract-test I24：refreshToken 之前是 `mock-refresh-${userId}` 占位且
+  // 不进 oauthStore —— /auth/refresh 查无此 token 必 400 INVALID_GRANT。
+  // 改为 generateRefreshToken + putRefresh（与 /oauth/token 同款 rotate 语义）。
   loginLockout.clearFailures(username);
   await writeAudit(user.tenantId, user.id, "login_success", { username });
 
   const accessToken = await signToken({ sub: user.id, tenant_id: user.tenantId });
+  const refreshToken = generateRefreshToken(user.id);
+  oauthStore.putRefresh(refreshToken, {
+    appId: "login",
+    userId: user.id,
+    tenantId: user.tenantId,
+    scope: "openid",
+  });
   return NextResponse.json({
     accessToken,
-    refreshToken: `mock-refresh-${user.id}`,
+    refreshToken,
     tokenType: "Bearer",
     expiresIn: 3600,
     userId: user.id,

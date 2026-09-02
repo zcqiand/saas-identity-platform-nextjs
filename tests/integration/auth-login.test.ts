@@ -54,7 +54,8 @@ describe("M03.F01.I01 + M03.F01.I02 /api/v1/auth/login", () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.accessToken).toMatch(/^[\w-]+\.[\w-]+\.[\w-]+$/); // HS256 3 base64url segments
-    expect(json.refreshToken).toBe("mock-refresh-user-id-1");
+    // 2026-09-01 I24 修复后 refreshToken 走 generateRefreshToken（saas-rt- 前缀 + rotate 语义）
+    expect(json.refreshToken).toMatch(/^saas-rt-user-id-1-/);
     expect(json.tokenType).toBe("Bearer");
     expect(json.expiresIn).toBe(3600);
     expect(json.userId).toBe("user-id-1");
@@ -84,6 +85,9 @@ describe("M03.F01.I01 + M03.F01.I02 /api/v1/auth/login", () => {
     expect(res.status).toBe(401);
     const json = await res.json();
     expect(json.code).toBe("UNAUTHORIZED");
+    // 2026-09-02 contract-test M96 audit 覆盖对齐（用户拍板）：login 失败不写 login_failed
+    // （msw/springboot/aspnetcore 均不写；lockout 计数仍走内存 loginLockout，不依赖 audit 表）
+    expect(dbMock.insert, "login 失败不得写 audit_events（对齐 3 真后端）").not.toHaveBeenCalled();
   });
 
   it("M03.F01.I02 returns 429 ACCOUNT_LOCKED after 5 consecutive failures", async () => {
@@ -103,6 +107,8 @@ describe("M03.F01.I01 + M03.F01.I02 /api/v1/auth/login", () => {
     expect(res.status).toBe(429);
     const json = await res.json();
     expect(json.code).toBe("ACCOUNT_LOCKED");
+    // 同上：全程失败路径，不写任何 audit 事件
+    expect(dbMock.insert, "lockout 路径不得写 audit_events").not.toHaveBeenCalled();
   });
 
   it("M03.F01.I01 returns 400 BAD_REQUEST for invalid body", async () => {
