@@ -37,4 +37,4 @@ dev 不接真 IdP，而是从 `apps` 表找 `clientId` 对应 App，从 `users` 
 
 - 设计映射：[../design/design-function-map.md](../design/design-function-map.md) M03.F02.I03 行
 - msw 语义源：`../../saas-identity-platform-msw/src/handlers-extra.ts:315-491`
-- TypeSpec DTO：[../../saas-identity-platform-shared/generated/openapi/openapi.yaml](../../saas-identity-platform-shared/generated/openapi/openapi.yaml) `OidcCallbackRequest`
+- TypeSpec DTO：[../../saas-identity-platform-shared/generated/openapi/openapi.yaml](../../../saas-identity-platform-shared/generated/openapi/openapi.yaml) `OidcCallbackRequest`

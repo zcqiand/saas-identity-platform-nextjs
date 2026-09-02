@@ -3,7 +3,7 @@
 > Next.js 15 + App Router + TS 5.7 + shadcn-ui + Tailwind v4 + Drizzle ORM (Postgres) + jose HS256。**全栈子仓**：同一仓库同时承载 Frontend、Backend Route Handler、DB schema 三种角色——见 [ADR-0008](adr/0008-nextjs-full-stack.md)。与 `saas-identity-platform-react` / `saas-identity-platform-vue` 两个纯前端仓形成鲜明对比。
 
 > **范围**：本文档只描述 *架构*（结构 / 边界 / 数据流 / 决策）。
-> 编码细则见 [docs/conventions/](conventions/)，CLAUDE.md 入口见根目录，技术栈与禁止事项见父仓 [docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md)。
+> 编码细则见 [docs/conventions/](conventions/)，CLAUDE.md 入口见根目录，技术栈与禁止事项见父仓 [docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md)。
 
 ---
 
@@ -13,7 +13,7 @@
 |---|---|
 | 第一次进本仓 | §1 → §2 → §3（前后端分述） |
 | 要加一个新 API 端点 | §3.2 → §4（数据流）→ [ADR-0008](adr/0008-nextjs-full-stack.md) |
-| 要加一张表 / 改字段 | §3.3 → [ADR-0007](../../docs/adr/0007-shared-sql-ssot.md) → §6.2（DB schema SSOT） |
+| 要加一张表 / 改字段 | §3.3 → [ADR-0007](../../../docs/adr/0007-shared-sql-ssot.md) → §6.2（DB schema SSOT） |
 | 想问「为什么这样设计」 | §6（决策索引）→ 对应 ADR |
 | 与 react/vue 仓做对照 | 附录 B（差异对照） |
 
@@ -29,7 +29,7 @@ saas-identity-platform-vue    ─┼─→ 纯前端仓（vite dev server :5103�
 saas-identity-platform-nextjs ─┘
                                  ↑ 本仓
                                  │
-                                 └── 同时是 Backend + DB（App Router 进程 :3000）
+                                 └── 同时是 Backend + DB（App Router 进程 :5101）
 ```
 
 | 维度 | react / vue 仓 | nextjs 仓（本仓） |
@@ -504,11 +504,11 @@ npm run sync-db
 
 | ADR | 主题 | 本仓落地 |
 |---|---|---|
-| [0007](../../docs/adr/0007-shared-sql-ssot.md) | shared SQL 是 DB schema SSOT | `src/db/schema.ts` 镜像 V001..V007；禁 `drizzle-kit generate`；改字段必跑 `gen-shared.sh` |
-| [0009](../../docs/adr/0009-db-credentials-env.md) | DB 凭据走 env | `DATABASE_URL` 从 env 读；缺失 throw；不写硬编码 |
-| [0010](../../docs/adr/0010-aspnetcore-ef-mirrors-sql.md) | EF Migrations 镜像 SQL | （本仓是 Drizzle，类比）schema.ts 镜像 shared SQL |
-| [0011](../../docs/adr/0011-lab-vue-m98-whitelist-mirror.md) | 跨仓 I 镜像白名单豁免 | 跨家族 I 镜像时使用 |
-| [0012](../../docs/adr/0012-msw-as-http-server.md) | msw 升级为 HTTP 服务 | v0.3.0 Service Worker 模式彻底删除；dev 走 msw-http :5100 |
+| [0007](../../../docs/adr/0007-shared-sql-ssot.md) | shared SQL 是 DB schema SSOT | `src/db/schema.ts` 镜像 V001..V007；禁 `drizzle-kit generate`；改字段必跑 `gen-shared.sh` |
+| [0009](../../../docs/adr/0009-db-credentials-env.md) | DB 凭据走 env | `DATABASE_URL` 从 env 读；缺失 throw；不写硬编码 |
+| [0010](../../../docs/adr/0010-aspnetcore-ef-mirrors-sql.md) | EF Migrations 镜像 SQL | （本仓是 Drizzle，类比）schema.ts 镜像 shared SQL |
+| [0011](../../../docs/adr/0011-lab-vue-m98-whitelist-mirror.md) | 跨仓 I 镜像白名单豁免 | 跨家族 I 镜像时使用 |
+| [0012](../../../docs/adr/0012-msw-as-http-server.md) | msw 升级为 HTTP 服务 | v0.3.0 Service Worker 模式彻底删除；dev 走 msw-http :5100 |
 | 隐含 ADR-0014 | env-driven 单 URL | `getApiBaseUrl` / `getApiMode` 2 getter；删 BackendSwitcher / backend-context |
 
 ### 6.3 本仓未来待办（来自 ADR-0008 §Consequences）
@@ -594,11 +594,11 @@ npm run sync-db
 - 本仓全栈决策：[docs/adr/0008-nextjs-full-stack.md](adr/0008-nextjs-full-stack.md)
 - 本仓编码细则：[docs/conventions/](conventions/)（`nextjs-full-stack.md` / `nextjs-env-driven.md` / ...）
 - 本仓迁移指南：[docs/saas-identity-platform-v0.3.0-shadcn-ui-migration.md](saas-identity-platform-v0.3.0-shadcn-ui-migration.md)
-- shared 仓契约：[../saas-identity-platform-shared/](../saas-identity-platform-shared/)
-- msw 仓 mock：[../saas-identity-platform-msw/](../saas-identity-platform-msw/)
-- 父仓架构总览：[../../docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md)
-- 父仓 ADR 总索引：[../../docs/adr/](../../docs/adr/)
-- 跨仓经验教训：[../../memory/](../../memory/)（非入仓，~/.claude/...）
+- shared 仓契约：[../saas-identity-platform-shared/](../../saas-identity-platform-shared/)
+- msw 仓 mock：[../saas-identity-platform-msw/](../../saas-identity-platform-msw/)
+- 父仓架构总览：[../../docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md)
+- 父仓 ADR 总索引：[../../docs/adr/](../../../docs/adr/)
+- 跨仓经验教训：../../memory/（非入仓，~/.claude/...）
 
 ## 附录 D：典型陷阱
 
