@@ -5,9 +5,9 @@
   "scripts": {
     "gen:shared": "tsx scripts/gen-shared.ts",
     "prebuild": "npm run gen:shared",
-    "dev": "next dev",
+    "dev": "next dev -p 5101",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 5101",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"

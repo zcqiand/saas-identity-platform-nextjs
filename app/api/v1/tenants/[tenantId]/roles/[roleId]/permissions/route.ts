@@ -53,12 +53,19 @@ export async function PUT(
       .from(roles)
       .where(and(eq(roles.tenantId, tenantId), eq(roles.id, roleId)))
       .limit(1))[0]!;
+    // 2026-09-01 contract-test I36：SSOT Role 模型含 permissionIds: string[]（GET 侧
+    // 一直回带）；此前 PUT 响应漏此字段，与 msw/springboot/aspnetcore 分叉。
+    const permRows = await db
+      .select({ permissionId: rolePermissions.permissionId })
+      .from(rolePermissions)
+      .where(eq(rolePermissions.roleId, roleId));
     return NextResponse.json({
       id: r.id,
       tenantId: r.tenantId,
       code: r.code,
       name: r.name,
       description: r.description ?? undefined,
+      permissionIds: permRows.map((p) => p.permissionId),
       createdAt: r.createdAt.toISOString(),
       updatedAt: r.updatedAt.toISOString(),
     });

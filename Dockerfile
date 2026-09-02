@@ -2,7 +2,7 @@
 # saas-identity-platform-nextjs — 生产镜像
 #
 #   builder  → 安装 deps + next build（standalone 输出）
-#   runtime  → node:24-slim + standalone server，监听 PORT=3000
+#   runtime  → node:24-slim + standalone server，监听 PORT=5101
 #
 # 数据库：PostgreSQL（远程）。容器内不持有 DB 文件 —— 运行期必须通过
 #         DATABASE_URL 环境变量注入连接串（由 VPS saas.env 注入）。
@@ -11,7 +11,7 @@
 # 迁移 / seed：在 docker-entrypoint.sh 里跑 scripts/sync-db.mjs + scripts/seed-db.mjs
 #         （seed 仅首启执行，靠 __schema_migrations 是否为空判断）。
 #
-# 端口：容器内 next start 监听 :3000；VPS nginx 反代到 publish 出的端口（默认 8065）。
+# 端口：容器内 next start 监听 :5101；VPS nginx 反代到 publish 出的端口（默认 8065）。
 #
 # 节点用户：slim 镜像只有 root；我们用 `node` 用户跑 next（v1.0-007 教训：
 #         chown -R nextjs:nodejs 报 'invalid user'）。
@@ -58,7 +58,7 @@ COPY . .
 ARG DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public
 ENV DATABASE_URL=${DATABASE_URL}
 # NEXT_PUBLIC_* 在 Next.js 是 build 时烤进 client bundle, runtime 不会从 saas.env 重读。
-# 不显式传 → env undefined → backend-config.ts ?? fallback 到 "http://localhost:5174" (dev 默认)
+# 不显式传 → env undefined → backend-config.ts ?? fallback 到 "http://localhost:5100" (dev 默认)
 # → 浏览器 fetch localhost:CORS fail。 显式 "" 让 bundle 烤进空串 → 浏览器用同源相对路径。
 ENV NEXT_PUBLIC_API_BASE_URL=""
 ENV NEXT_PUBLIC_API_MODE=nextjs
@@ -72,7 +72,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
+ENV PORT=5101
 ENV HOSTNAME=0.0.0.0
 # sync-db.mjs 在 runtime /app/scripts/,默认算法 MIGRATIONS_DIR=/app/sql/migrations 不存在。
 # Dockerfile 把 sibling migrations 拷到 /saas-identity-platform-shared/sql/migrations,
@@ -113,10 +113,10 @@ RUN mkdir -p /data && chown -R node:node /data
 COPY --chown=root:root deploy/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-EXPOSE 3000
+EXPOSE 5101
 
 # slim 没有 wget/curl，用 node fetch 探活
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://127.0.0.1:5101/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

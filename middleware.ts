@@ -6,7 +6,7 @@
 //   lab-nextjs 浏览器拿到 Allow-Origin 后才能读响应。
 //
 // 配置来源：
-//   .env.example:47  SAAS_CORS_ALLOWED_ORIGINS=http://localhost:3000,...  （逗号分隔 origin 列表）
+//   .env.example:47  SAAS_CORS_ALLOWED_ORIGINS=http://localhost:5101,...  （逗号分隔 origin 列表）
 //   镜像 springboot SAAS_CORS_ALLOWED_ORIGINS / aspnetcore Saas.Cors.AllowedOrigins，
 //   SSOT 命名不另起。
 //

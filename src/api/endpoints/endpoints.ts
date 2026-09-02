@@ -2178,6 +2178,62 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
       return useMutation(mutationOptions, queryClient);
     }
     
+export const tenantApiKeysDeleteApiKey = (
+    tenantId: string,
+    keyId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<void>> => {
+    
+    
+    return axios.delete(
+      `/api/v1/tenants/${tenantId}/api-keys/${keyId}`,options
+    );
+  }
+
+
+
+export const getTenantApiKeysDeleteApiKeyMutationOptions = <TError = AxiosError<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tenantApiKeysDeleteApiKey>>, TError,{tenantId: string;keyId: string}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof tenantApiKeysDeleteApiKey>>, TError,{tenantId: string;keyId: string}, TContext> => {
+
+const mutationKey = ['tenantApiKeysDeleteApiKey'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof tenantApiKeysDeleteApiKey>>, {tenantId: string;keyId: string}> = (props) => {
+          const {tenantId,keyId} = props ?? {};
+
+          return  tenantApiKeysDeleteApiKey(tenantId,keyId,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TenantApiKeysDeleteApiKeyMutationResult = NonNullable<Awaited<ReturnType<typeof tenantApiKeysDeleteApiKey>>>
+    
+    export type TenantApiKeysDeleteApiKeyMutationError = AxiosError<ErrorResponse>
+
+    export const useTenantApiKeysDeleteApiKey = <TError = AxiosError<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tenantApiKeysDeleteApiKey>>, TError,{tenantId: string;keyId: string}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof tenantApiKeysDeleteApiKey>>,
+        TError,
+        {tenantId: string;keyId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getTenantApiKeysDeleteApiKeyMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
 export const tenantApiKeysRevokeApiKey = (
     tenantId: string,
     keyId: string, options?: AxiosRequestConfig

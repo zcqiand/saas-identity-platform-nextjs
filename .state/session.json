@@ -1,25 +1,31 @@
 {
   "schema": 2,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "M06.F03 lib/audit.ts + api-keys POST/revoke 写端点 audit emit 已合入，npx tsc 0/0，gate L0-L5 全 PASS",
-  "last_session_at": "2026-08-31",
+  "current_task": "2026-09-01 contract-test I24/I27 修好（oauth-store + login-lockout 改 globalThis 兑 HMR module 重求值）+ I05 oracle 一致（me/menus handler 过滤无 grant app）",
+  "last_session_at": "2026-09-01",
   "done": [
-    "src/lib/audit.ts (新): writeAudit({tenantId, authHeader, action, metadata}) —— actor 从 Bearer token 的 sub claim 解，best-effort catch swallow",
-    "app/api/v1/tenants/[tenantId]/api-keys/route.ts (POST): 主写成功后调 writeAudit('api_key_created', {apiKeyId: k.id})",
-    "app/api/v1/tenants/[tenantId]/api-keys/[keyId]/revoke/route.ts (POST): 主写成功后调 writeAudit('api_key_revoked', {apiKeyId: k.id})"
+    "src/lib/oauth-store.ts: oauthStore 单例改 globalThis 缓存，跨 module 重求值存活（2026-09-01 contract-test I24/I27 INVALID_GRANT 根因）",
+    "src/lib/login-lockout.ts: loginLockout 单例同样改 globalThis 缓存",
+    "app/api/v1/me/menus/route.ts: 响应只含「该 app 下至少有一条 grant 内菜单的 app」（oracle 对齐；同 msw handlers-extra.ts:373 同款 bug）",
+    "npm run typecheck 通过",
+    "M06.F03 lib/audit.ts + api-keys POST/revoke 写端点 audit emit（上批）"
   ],
   "next": [
     "audit-events POST export 端点缺失（其他 3 后端有），下一批补齐",
-    "其他 8 个 AuditAction 4 后端 emit 是下一批"
+    "其他 8 个 AuditAction 4 后端 emit 是下一批",
+    "【重要】I15 GET /api-keys 返 nextjs createdAt undefined 需要查 db/schema.ts 的 defaultNow() 是否真生效（怀疑 Drizzle 0.x timestamp 行为差异）",
+    "springboot DateTime.MinValue bug 修完后再跑全量 contract-test，看 nextjs 这边是否还有时间戳相关 fail"
   ],
   "open_questions": [
-    "AuditAction string union 已对齐 OpenAPI DTO；以后 enum 扩展只动 tsp + emit + regen 4 仓即可，nextjs 侧不需要手改 AuditAction type"
+    "nextjs Drizzle `timestamp('created_at', {withTimezone:true}).notNull().defaultNow()` 是不是真在 INSERT 时填充？I15 测试 nextjs 返 createdAt undefined 需要 PG 日志确认",
+    "globalThis 缓存 singleton 在 production 模式（next start）下会不会出问题？目前只验证了 dev 模式"
   ],
   "dont": [
     "不要再用 fetch+token 在 lib/audit 解析 tenantId —— actorUserId 是从 auth header 解 JWT，tenantId 必须是 path 传进来的",
-    "不要再把 audit 失败 throw —— 整个项目约定是 best-effort swallow + console.warn，与 msw handlers-extra 一致"
+    "不要再把 audit 失败 throw —— 整个项目约定是 best-effort swallow + console.warn",
+    "不要再写 module-scope 单例（new Xxx() 直接 export const）—— 长跑 dev 模式 HMR 会重置 singleton，改 globalThis 缓存（与本次 oauth-store/login-lockout 修复同款）"
   ],
-  "last_gate_passed_at": "2026-08-31T10:39+08:00",
+  "last_gate_passed_at": "2026-09-01T22:15+08:00",
   "active_branch": "master",
   "ahead_of_origin": "0"
 }

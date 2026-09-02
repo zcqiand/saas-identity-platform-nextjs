@@ -1,13 +1,17 @@
 // /api/v1/tenants/:tenantId/users/:userId/roles — M01.F02.I01
 //
-// TypeSpec: tsp/routes/tenant-users.tsp assignRoles(@path tenantId, @path userId, @body body: { permissionIds: string[] }): User
+// TypeSpec: tsp/routes/tenant-users.tsp assignRoles(@path tenantId, @path userId, @body body: { roleIds: string[] }): User
 // 整批替换用户 role 列表（PUT 语义）
+//
+// 2026-09-01 contract-test I40：users.roleIds 是冗余列，authoritative 在
+// tenant_memberships.roleIds（家族约定，GET 侧 LEFT JOIN 取真值）。
+// 只写冗余列 = 写完读回 []。本端点同步写两侧。
 
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users, tenantMemberships } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const Body = z.object({
@@ -36,6 +40,30 @@ export async function PUT(
     const u = updated[0];
     if (!u) {
       return NextResponse.json({ code: "NOT_FOUND", message: "User not found" }, { status: 404 });
+    }
+    // authoritative 侧同步：tenant_memberships.roleIds（GET 从这里读真值）
+    const m = await db
+      .select({ id: tenantMemberships.id })
+      .from(tenantMemberships)
+      .where(
+        and(
+          eq(tenantMemberships.tenantId, tenantId),
+          eq(tenantMemberships.userId, userId),
+        ),
+      )
+      .limit(1);
+    if (m[0]) {
+      await db
+        .update(tenantMemberships)
+        .set({ roleIds: parsed.data.roleIds })
+        .where(eq(tenantMemberships.id, m[0].id));
+    } else {
+      await db.insert(tenantMemberships).values({
+        tenantId,
+        userId,
+        roleIds: parsed.data.roleIds,
+        status: "active",
+      });
     }
     return NextResponse.json({
       id: u.id,

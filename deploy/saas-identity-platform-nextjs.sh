@@ -10,7 +10,7 @@
 #
 # 与姊妹仓 lab-management-system-nextjs.sh 的差异:
 #   - 数据库:PostgreSQL 远程,DATABASE_URL 从 saas.env 注入(无本地 ./data 卷)
-#   - 容器内是 Node(next start :3000)→ -p 127.0.0.1:8022:3000
+#   - 容器内是 Node(next start :5101)→ -p 127.0.0.1:8022:5101
 #   - 密钥走 ./saas.env(DATABASE_URL + JWT_SIGNING_KEY),由 setup-vps.sh 生成,
 #     只存在于 VPS
 #
@@ -153,7 +153,7 @@ echo "→ docker run"
 docker run -d \
   --name "$CONTAINER_NAME" \
   --restart unless-stopped \
-  -p "127.0.0.1:${HOST_PORT}:3000" \
+  -p "127.0.0.1:${HOST_PORT}:5101" \
   --env-file "$BASE/saas.env" \
   "$IMAGE"
 

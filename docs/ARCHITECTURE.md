@@ -25,7 +25,7 @@
 
 ```
 saas-identity-platform-react  ─┐
-saas-identity-platform-vue    ─┼─→ 纯前端仓（vite dev server :5173，调外部后端）
+saas-identity-platform-vue    ─┼─→ 纯前端仓（vite dev server :5103，调外部后端）
 saas-identity-platform-nextjs ─┘
                                  ↑ 本仓
                                  │
@@ -42,14 +42,14 @@ saas-identity-platform-nextjs ─┘
 | JWT 签发 | 不签 | `src/lib/jwt.ts`（jose HS256 真签发） |
 | OAuth store | 不存 | `src/lib/oauth-store.ts`（in-memory Map） |
 | TenantGuard | 不调 | `src/lib/tenant-guard.ts`（路径 vs claim 校验） |
-| 端口 | 5173 | 3000（同源；调自己 `app/api/v1/`） |
+| 端口 | 5103 | 5101（同源；调自己 `app/api/v1/`） |
 | CORS | 跨源（需白名单 3000） | 同源（不需要 CORS） |
 
 **含义**：
 
 - 一份 git commit 涵盖前后端 + DB schema 三处改动，PR review 时一并审；
 - 同进程意味着首屏 LCP 比纯前端 nextjs 略大（`import "server-only"` 与 `'use server'` 标记必须严格区分）；
-- 测试用 `next dev` 起 server，fetch `http://localhost:3000/api/v1/...` 是真实路径，不是 mock。
+- 测试用 `next dev` 起 server，fetch `http://localhost:5101/api/v1/...` 是真实路径，不是 mock。
 
 详见 [ADR-0008 §Context](adr/0008-nextjs-full-stack.md)。
 
@@ -141,7 +141,7 @@ saas-identity-platform-nextjs/
 
 ### 3.1 Frontend 层
 
-**职责**：把 backend 返回的数据 + shadcn-ui + 业务组件拼成可见的页面；env-driven 决定调哪个后端（同源 nextjs-self / 跨源 msw-http :5174 / 跨源 aspnetcore / 跨源 springboot）。
+**职责**：把 backend 返回的数据 + shadcn-ui + 业务组件拼成可见的页面；env-driven 决定调哪个后端（同源 nextjs-self / 跨源 msw-http :5100 / 跨源 aspnetcore / 跨源 springboot）。
 
 #### 3.1.1 页面入口
 
@@ -181,7 +181,7 @@ app/
 ```ts
 // src/api/env.ts（唯一 process.env.NEXT_PUBLIC_* 适配点）
 export const env = {
-  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5174",
+  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5100",
   NEXT_PUBLIC_API_MODE: process.env.NEXT_PUBLIC_API_MODE ?? "msw-http",
 } as const;
 
@@ -191,7 +191,7 @@ export function getApiMode(): string { return env.NEXT_PUBLIC_API_MODE; }
 // isMswEnabled() 已删除 — ADR-0012 v0.3.0 Service Worker 模式彻底移除
 ```
 
-**dev 没设 env** → fallback 到 `http://localhost:5174`（saas-msw HTTP server）；**prod 设空串** → 同源相对路径（nginx 反代到 127.0.0.1:8022 容器）。`??` 而非 `||` 是关键（详见 `memory/axios-baseurl-no-path-prefix.md` 与本仓注释）。
+**dev 没设 env** → fallback 到 `http://localhost:5100`（saas-msw HTTP server）；**prod 设空串** → 同源相对路径（nginx 反代到 127.0.0.1:8022 容器）。`??` 而非 `||` 是关键（详见 `memory/axios-baseurl-no-path-prefix.md` 与本仓注释）。
 
 ### 3.2 Backend 层
 
@@ -508,7 +508,7 @@ npm run sync-db
 | [0009](../../docs/adr/0009-db-credentials-env.md) | DB 凭据走 env | `DATABASE_URL` 从 env 读；缺失 throw；不写硬编码 |
 | [0010](../../docs/adr/0010-aspnetcore-ef-mirrors-sql.md) | EF Migrations 镜像 SQL | （本仓是 Drizzle，类比）schema.ts 镜像 shared SQL |
 | [0011](../../docs/adr/0011-lab-vue-m98-whitelist-mirror.md) | 跨仓 I 镜像白名单豁免 | 跨家族 I 镜像时使用 |
-| [0012](../../docs/adr/0012-msw-as-http-server.md) | msw 升级为 HTTP 服务 | v0.3.0 Service Worker 模式彻底删除；dev 走 msw-http :5174 |
+| [0012](../../docs/adr/0012-msw-as-http-server.md) | msw 升级为 HTTP 服务 | v0.3.0 Service Worker 模式彻底删除；dev 走 msw-http :5100 |
 | 隐含 ADR-0014 | env-driven 单 URL | `getApiBaseUrl` / `getApiMode` 2 getter；删 BackendSwitcher / backend-context |
 
 ### 6.3 本仓未来待办（来自 ADR-0008 §Consequences）
@@ -533,7 +533,7 @@ npm run sync-db
 | **oauth-store** | in-memory Map（code + refresh） | `src/lib/oauth-store.ts`；Phase 6 换 Redis |
 | **login-lockout** | 进程内失败计数器 → 429 | `src/lib/login-lockout.ts`；M03.F01.I02 |
 | **env-driven** | env 单 URL 决定后端 | ADR-0014；`getApiBaseUrl()` + `getApiMode()` |
-| **MSW HTTP** | 独立 HTTP 服务跑 msw handlers | ADR-0012；saas-msw :5174；本仓 dev fallback |
+| **MSW HTTP** | 独立 HTTP 服务跑 msw handlers | ADR-0012；saas-msw :5100；本仓 dev fallback |
 | **shadcn-ui** | Radix + Tailwind v4 SFC 组件库 | 14 个 SFC `src/components/ui/`；与 react 仓 1:1 |
 | **lazy initializer** | `useState(() => readXxx())` 同步 hydrate | tenant / selection / backend Provider 必用；禁 `useEffect` |
 | **OAuth 2.0 (本仓实现)** | RFC 6749：authorize/token Route Handler | `src/app/api/v1/oauth/{authorize,token}/route.ts`；grant_type=authorization_code / refresh_token |
@@ -556,13 +556,13 @@ npm run sync-db
 ### 8.2 下游 mock 仓（dev 调试用）
 
 - **msw 仓**：`../saas-identity-platform-msw`（`@saas/identity-platform-msw`）
-  - 独立 HTTP server :5174（`src/server.ts::Express + @mswjs/http-middleware + cors`）
-  - 本仓 dev 没设 `NEXT_PUBLIC_API_BASE_URL` 时 fallback 到 `http://localhost:5174`
+  - 独立 HTTP server :5100（`src/server.ts::Express + @mswjs/http-middleware + cors`）
+  - 本仓 dev 没设 `NEXT_PUBLIC_API_BASE_URL` 时 fallback 到 `http://localhost:5100`
   - fixtures 与本仓 `src/seeds/` 是两套独立的种子数据（msw handlers in-memory vs sync-db 灌 PG）
 
 ### 8.3 横向对照仓
 
-- **react 仓** / **vue 仓**：纯前端；调本仓 backend 时需把 `NEXT_PUBLIC_API_BASE_URL=http://localhost:3000`（CORS allowlist 必须含 3000）
+- **react 仓** / **vue 仓**：纯前端；调本仓 backend 时需把 `NEXT_PUBLIC_API_BASE_URL=http://localhost:5101`（CORS allowlist 必须含 5101）
 - **springboot 仓** / **aspnetcore 仓**：同契约的另一后端实现；三家 HS256 JWT 互认（共享 `JWT_SIGNING_KEY`）
 
 ### 8.4 父仓

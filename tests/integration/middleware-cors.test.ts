@@ -13,7 +13,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
 import { middleware } from "../../middleware";
 
-const ALLOWLIST = "https://lab-nextjs.xiangru.uk,http://localhost:3000";
+const ALLOWLIST = "https://lab-nextjs.xiangru.uk,http://localhost:5101";
 
 function makeReq(opts: {
   method?: string;

@@ -49,5 +49,5 @@ else
   echo "→ not first run, skipping seed (rows in __schema_migrations: ${ROW_COUNT})"
 fi
 
-echo "→ next start -p ${PORT:-3000}"
-exec node server.js -p "${PORT:-3000}"
+echo "→ next start -p ${PORT:-5101}"
+exec node server.js -p "${PORT:-5101}"

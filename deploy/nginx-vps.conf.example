@@ -13,7 +13,7 @@
 # 这份配置的目的:
 #   - saas.YOUR_DOMAIN 的 HTTP 301 到 HTTPS
 #   - HTTPS 终结在 VPS（持 cert）
-#   - proxy_pass 到本机容器端口 8022（由 docker run -p 127.0.0.1:8022:3000 决定）
+#   - proxy_pass 到本机容器端口 8022（由 docker run -p 127.0.0.1:8022:5101 决定）
 #
 # 注意:不持有 default_server。同一台 VPS 上若 lab 也跑 :80 default_server，saas 这
 # 边重复声明 nginx -t 直接报错——务必先装 saas（或任意一个）并把 default 占位收掉。

@@ -26,9 +26,11 @@ export async function POST(
     .where(and(eq(tenantMemberships.userId, claims.sub), eq(tenantMemberships.tenantId, tenantId)))
     .limit(1);
   if (!m[0] || m[0].status === "removed") {
+    // 2026-08-31 contract-test M96.F02.I28：家族统一非成员/不存在 → 404
+    // （msw oracle / aspnetcore / springboot 同款；原 403 FORBIDDEN 与四方分叉）
     return NextResponse.json(
-      { code: "FORBIDDEN", message: "Not a member of this tenant" },
-      { status: 403 },
+      { code: "NOT_FOUND", message: "tenant 不存在或不是该租户成员" },
+      { status: 404 },
     );
   }
   const accessToken = await signToken({ sub: claims.sub, tenant_id: tenantId });
