@@ -74,10 +74,9 @@ if ! grep -q '^DATABASE_URL=' "$BASE/saas.env"; then
   exit 1
 fi
 
-# nginx vhost 自举（缺时创建,不 reload —— reload 要 root）:
-# 检测 /etc/nginx/sites-enabled/<NGINX_DOMAIN> 是否存在;缺时从 nginx-vps.conf.example
-# 模板渲染,做 symlink。reload 需 sudo,留给手工:
-#   sudo nginx -t && sudo systemctl reload nginx
+# nginx vhost 重渲染（每次 deploy 都跑,ADR-0018:容器端口变了 vhost 必须跟）:
+# 模板从 master 拉,渲染后写入 sites-available,symlink sites-enabled,再 sudo nginx -t + reload。
+# diff 检测:内容未变跳过 reload (nginx -t 也省)。
 NGINX_SITES_AVAILABLE="/etc/nginx/sites-available"
 NGINX_SITES_ENABLED="/etc/nginx/sites-enabled"
 NGINX_VHOST_FILE="${NGINX_SITES_AVAILABLE}/${NGINX_DOMAIN}"
@@ -90,18 +89,49 @@ if [ ! -f "${NGINX_TEMPLATE}" ]; then
   curl -fsSL "https://raw.githubusercontent.com/zcqiand/saas-identity-platform-nextjs/refs/heads/master/deploy/nginx-vps.conf.example" -o "${NGINX_TEMPLATE}"
 fi
 
-if [ -e "${NGINX_VHOST_LINK}" ] || [ -e "${NGINX_VHOST_FILE}" ]; then
-  echo "→ nginx vhost ${NGINX_VHOST_FILE} already exists, skip bootstrap"
+# 渲染到临时文件 —— sed 同时覆盖 3 种 placeholder:
+#   Style A (lab-vue/react):      <domain>
+#   Style B/C (nextjs/sp/aspc):   lab.YOUR_DOMAIN / saas.YOUR_DOMAIN
+#   cert 路径: your-cert.{crt,cert} / <domain>.crt → 统一到 ${NGINX_CERT_BASENAME}.cert
+TMP_VHOST="$(mktemp -t vpstpl.XXXXXX)"
+sed \
+  -e "s|<domain>|${NGINX_DOMAIN}|g" \
+  -e "s|lab\.YOUR_DOMAIN|${NGINX_DOMAIN}|g" \
+  -e "s|saas\.YOUR_DOMAIN|${NGINX_DOMAIN}|g" \
+  -e "s|/etc/nginx/ssl/<domain>\.crt|/etc/nginx/ssl/${NGINX_CERT_BASENAME}.cert|g" \
+  -e "s|/etc/nginx/ssl/<domain>\.key|/etc/nginx/ssl/${NGINX_CERT_BASENAME}.key|g" \
+  -e "s|/etc/nginx/ssl/your-cert\.crt|/etc/nginx/ssl/${NGINX_CERT_BASENAME}.cert|g" \
+  -e "s|/etc/nginx/ssl/your-cert\.cert|/etc/nginx/ssl/${NGINX_CERT_BASENAME}.cert|g" \
+  -e "s|/etc/nginx/ssl/your-cert\.key|/etc/nginx/ssl/${NGINX_CERT_BASENAME}.key|g" \
+  "${NGINX_TEMPLATE}" > "${TMP_VHOST}"
+
+# diff 检测:已有 vhost 且内容相同就 skip,不同才重写 + reload
+if [ -e "${NGINX_VHOST_FILE}" ] && diff -q "${TMP_VHOST}" "${NGINX_VHOST_FILE}" >/dev/null 2>&1; then
+  echo "→ nginx vhost ${NGINX_VHOST_FILE} unchanged, skip"
+  rm -f "${TMP_VHOST}"
 else
-  echo "→ nginx vhost missing, bootstrapping ${NGINX_VHOST_FILE} (domain=${NGINX_DOMAIN} cert=${NGINX_CERT_BASENAME})"
-  umask 022
-  sed \
-    -e "s/saas.YOUR_DOMAIN/${NGINX_DOMAIN}/g" \
-    -e "s|/etc/nginx/ssl/your-cert.cert|/etc/nginx/ssl/${NGINX_CERT_BASENAME}.cert|g" \
-    -e "s|/etc/nginx/ssl/your-cert.key|/etc/nginx/ssl/${NGINX_CERT_BASENAME}.key|g" \
-    "${NGINX_TEMPLATE}" > "${NGINX_VHOST_FILE}"
-  ln -sf "${NGINX_VHOST_FILE}" "${NGINX_VHOST_LINK}"
-  echo "→ nginx vhost created. To enable: sudo nginx -t && sudo systemctl reload nginx"
+  echo "→ rendering nginx vhost ${NGINX_VHOST_FILE} (domain=${NGINX_DOMAIN} cert=${NGINX_CERT_BASENAME})"
+  # 写入 sites-available (deploy 用户可能没写权限,需要 sudoers 配 nginx 白名单)
+  if [ -w "${NGINX_SITES_AVAILABLE}" ]; then
+    cp "${TMP_VHOST}" "${NGINX_VHOST_FILE}"
+  else
+    sudo cp "${TMP_VHOST}" "${NGINX_VHOST_FILE}" \
+      || { echo "ERROR: sudo cp ${NGINX_VHOST_FILE} failed"; rm -f "${TMP_VHOST}"; exit 1; }
+  fi
+  # symlink sites-enabled
+  if [ -w "${NGINX_SITES_ENABLED}" ]; then
+    ln -sf "${NGINX_VHOST_FILE}" "${NGINX_VHOST_LINK}"
+  else
+    sudo ln -sf "${NGINX_VHOST_FILE}" "${NGINX_VHOST_LINK}" \
+      || { echo "ERROR: sudo ln ${NGINX_VHOST_LINK} failed"; rm -f "${TMP_VHOST}"; exit 1; }
+  fi
+  rm -f "${TMP_VHOST}"
+  # nginx config test + reload (CI 自动完成,不再依赖手工)
+  echo "→ nginx -t"
+  sudo nginx -t
+  echo "→ systemctl reload nginx"
+  sudo systemctl reload nginx
+  echo "✓ nginx reloaded"
 fi
 
 # 必要时补 JWT_SIGNING_KEY(JWT 是 Phase 5 上;HS256 真签发需要这个密钥,与
