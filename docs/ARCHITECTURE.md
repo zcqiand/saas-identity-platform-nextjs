@@ -191,7 +191,7 @@ export function getApiMode(): string { return env.NEXT_PUBLIC_API_MODE; }
 // isMswEnabled() 已删除 — ADR-0012 v0.3.0 Service Worker 模式彻底移除
 ```
 
-**dev 没设 env** → fallback 到 `http://localhost:5100`（saas-msw HTTP server）；**prod 设空串** → 同源相对路径（nginx 反代到 127.0.0.1:8022 容器）。`??` 而非 `||` 是关键（详见 `memory/axios-baseurl-no-path-prefix.md` 与本仓注释）。
+**dev 没设 env** → fallback 到 `http://localhost:5100`（saas-msw HTTP server）；**prod 设空串** → 同源相对路径（nginx 反代到 127.0.0.1:5101 容器；ADR-0018 host=container=5101）。`??` 而非 `||` 是关键（详见 `memory/axios-baseurl-no-path-prefix.md` 与本仓注释）。
 
 ### 3.2 Backend 层
 

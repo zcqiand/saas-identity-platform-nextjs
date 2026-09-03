@@ -10,7 +10,8 @@
 #
 # 与姊妹仓 lab-management-system-nextjs.sh 的差异:
 #   - 数据库:PostgreSQL 远程,DATABASE_URL 从 saas.env 注入(无本地 ./data 卷)
-#   - 容器内是 Node(next start :5101)→ -p 127.0.0.1:8022:5101
+#   - 容器内 Node(next start :5101)；host=container=5101（ADR-0018 单层 port 方案，
+#     docker run -p 127.0.0.1:5101:5101；saas 家族 X01 段）
 #   - 密钥走 ./saas.env(DATABASE_URL + JWT_SIGNING_KEY),由 setup-vps.sh 生成,
 #     只存在于 VPS
 #
@@ -25,7 +26,6 @@ VERSION="${3:-latest}"
 IMAGE="${USERNAME}/saas-identity-platform-nextjs:${VERSION}"
 BASE="/home/deploy/saas-identity-platform-nextjs"
 CONTAINER_NAME="saas-identity-platform-nextjs"
-HOST_PORT=8022
 
 # nginx domain（v0.7.40 middleware 跨域白名单要用到，提前到 bootstrap 块之前）
 NGINX_DOMAIN="${NGINX_DOMAIN:-saas-nextjs.xiangru.uk}"
@@ -153,7 +153,7 @@ echo "→ docker run"
 docker run -d \
   --name "$CONTAINER_NAME" \
   --restart unless-stopped \
-  -p "127.0.0.1:${HOST_PORT}:5101" \
+  -p "127.0.0.1:5101:5101" \
   --env-file "$BASE/saas.env" \
   "$IMAGE"
 

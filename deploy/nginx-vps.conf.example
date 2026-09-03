@@ -13,7 +13,8 @@
 # 这份配置的目的:
 #   - saas.YOUR_DOMAIN 的 HTTP 301 到 HTTPS
 #   - HTTPS 终结在 VPS（持 cert）
-#   - proxy_pass 到本机容器端口 8022（由 docker run -p 127.0.0.1:8022:5101 决定）
+#   - proxy_pass 到本机容器端口 5101（host=container；ADR-0018 单层 port 方案，
+#     由 docker run -p 127.0.0.1:5101:5101 决定；saas 家族 X01 段）
 #
 # 注意:不持有 default_server。同一台 VPS 上若 lab 也跑 :80 default_server，saas 这
 # 边重复声明 nginx -t 直接报错——务必先装 saas（或任意一个）并把 default 占位收掉。
@@ -42,9 +43,9 @@ server {
     add_header Strict-Transport-Security "max-age=31536000" always;
 
     location / {
-        # VPS 暴露端口（容器内 next start 监听 :3000）
-        # 改端口必须同步 deploy/saas-identity-platform-nextjs.sh 的 -p
-        proxy_pass http://127.0.0.1:8022;
+        # VPS 暴露端口（容器内 next start 监听 :5101，host=container=5101）
+        # 改端口必须同步 deploy/saas-identity-platform-nextjs.sh 的 -p 与 PORT env
+        proxy_pass http://127.0.0.1:5101;
 
         proxy_http_version 1.1;
         proxy_set_header Host              $host;
