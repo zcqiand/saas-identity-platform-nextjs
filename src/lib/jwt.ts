@@ -42,18 +42,39 @@ function readSigningKey(): Uint8Array {
   return new TextEncoder().encode(key);
 }
 
+// ADR-0019：issuer/audience/ttl 缺失 throw，不允许 fallback 到 "saas-identity-platform" / 3600 字面。
 function readIssuer(): string {
-  return process.env.JWT_ISSUER ?? "saas-identity-platform";
+  const v = process.env.JWT_ISSUER;
+  if (!v) {
+    throw new Error(
+      "JWT_ISSUER env is required (ADR-0019 禁字面默认值). Set in .env.local (dev) or env (prod).",
+    );
+  }
+  return v;
 }
 
 function readAudience(): string {
-  return process.env.JWT_AUDIENCE ?? "saas-identity-platform-clients";
+  const v = process.env.JWT_AUDIENCE;
+  if (!v) {
+    throw new Error(
+      "JWT_AUDIENCE env is required (ADR-0019 禁字面默认值). Set in .env.local (dev) or env (prod).",
+    );
+  }
+  return v;
 }
 
 function readTtlSeconds(): number {
   const raw = process.env.JWT_TTL_SECONDS;
-  const n = raw ? Number(raw) : 3600;
-  return Number.isFinite(n) && n > 0 ? n : 3600;
+  if (!raw) {
+    throw new Error(
+      "JWT_TTL_SECONDS env is required (ADR-0019 禁字面默认值). Set in .env.local (dev) or env (prod).",
+    );
+  }
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) {
+    throw new Error(`JWT_TTL_SECONDS 非法值 ${raw}（必须正整数）`);
+  }
+  return n;
 }
 
 // ============================================================
@@ -153,7 +174,11 @@ export function decodeJwtPayload(token: string): JwtClaims {
 /** 测试辅助：用给定的 claims 签 HS256 token（单元测试用）。
  * 注意：tenant_id 可省略（用于「缺少 tenant_id claim」错误测试）；省略时 payload 中无 tenant_id 字段。 */
 export async function signTestToken(claims: Record<string, unknown>): Promise<string> {
-  const sub = String(claims.sub ?? "test-user");
+  // ADR-0019：删 "test-user" 字面 fallback。sub 是 OAuth 核心身份字段,缺即 throw。
+  if (!claims.sub || typeof claims.sub !== "string") {
+    throw new Error("signTestToken: sub is required (ADR-0019 禁字面默认值)");
+  }
+  const sub = String(claims.sub);
   const key = readSigningKey();
   const now = Math.floor(Date.now() / 1000);
   const payload: Record<string, unknown> = { sub };

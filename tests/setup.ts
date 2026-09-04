@@ -52,10 +52,14 @@ function mutationStub() {
 }
 
 // === JWT signing key for tests（Phase 5 HS256 + jose 要求 ≥32 bytes）===
+// ADR-0019：test 期显式 seed,与 dev 同样走 env 注入路径,不依赖生产字面兜底。
+// 与 .env.test 保持对齐（saas-springboot SsoBeansConfig @PostConstruct 同样校验）。
 process.env.JWT_SIGNING_KEY ??= "dev-key-32-bytes-minimum-length!";
 process.env.JWT_ISSUER ??= "saas-identity-platform";
 process.env.JWT_AUDIENCE ??= "saas-identity-platform-clients";
 process.env.JWT_TTL_SECONDS ??= "3600";
+// NEXT_PUBLIC_API_BASE_URL 测试期同源相对 URL 模式（msw/node setupServer 相对路径 handler 匹配）。
+process.env.NEXT_PUBLIC_API_BASE_URL ??= "";
 
 // === Mock local orval api-client (@/api/endpoints/endpoints) ===
 // orval 生成的 endpoints.ts 模块同时含裸函数 + useXxx hooks。tests 需要 hooks 形态桩。
