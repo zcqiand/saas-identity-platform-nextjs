@@ -24,7 +24,7 @@ const client = postgres(DATABASE_URL, {
   connect_timeout: 10,
 });
 
-// drizzle ORM 入口；schema 镜像 shared/sql/migrations/*
+// drizzle ORM 入口；schema 来自 drizzle-kit pull（ADR-0025 DB-First）
 export const db = drizzle(client, { schema });
 
 export type Database = typeof db;
