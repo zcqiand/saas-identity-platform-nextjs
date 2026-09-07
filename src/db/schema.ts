@@ -266,6 +266,33 @@ export const users = pgTable("users", {
 	}
 });
 
+export const oauthCodes = pgTable("oauth_codes", {
+	id: uuid().default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	code: varchar({ length: 255 }).notNull(),
+	grantType: varchar("grant_type", { length: 32 }).default('authorization_code').notNull(),
+	appId: uuid("app_id").notNull(),
+	userId: uuid("user_id"),
+	tenantId: uuid("tenant_id").notNull(),
+	redirectUri: varchar("redirect_uri", { length: 2048 }),
+	scope: varchar({ length: 512 }),
+	expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'string' }).notNull(),
+	consumedAt: timestamp("consumed_at", { withTimezone: true, mode: 'string' }),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => {
+	return {
+		idxOauthCodesAppId: index("idx_oauth_codes_app_id").using("btree", table.appId.asc().nullsLast().op("uuid_ops")),
+		idxOauthCodesExpiresAt: index("idx_oauth_codes_expires_at").using("btree", table.expiresAt.asc().nullsLast().op("timestamptz_ops")),
+		idxOauthCodesUserId: index("idx_oauth_codes_user_id").using("btree", table.userId.asc().nullsLast().op("uuid_ops")),
+		codeUnique: uniqueIndex("oauth_codes_code_unique").using("btree", table.code.asc().nullsLast().op("text_ops")),
+		oauthCodesAppIdAppsIdFk: foreignKey({
+			columns: [table.appId],
+			foreignColumns: [apps.id],
+			name: "oauth_codes_app_id_apps_id_fk"
+		}).onDelete("cascade"),
+		oauthCodesGrantTypeCheck: check("oauth_codes_grant_type_check", sql`(grant_type)::text = ANY ((ARRAY['authorization_code'::character varying, 'refresh_token'::character varying])::text[])`),
+	}
+});
+
 export const rolePermissions = pgTable("role_permissions", {
 	roleId: uuid("role_id").notNull(),
 	permissionId: uuid("permission_id").notNull(),
