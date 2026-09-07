@@ -26,19 +26,22 @@ v0.3.0 shadcn-ui → v0.4.0 full-stack → v0.7.x IdP Route Handlers。见 ADR-0
 
 ## 3. 技术栈与版本（钉死于 version-lock.json）
 
-Next.js 15 App Router + TS 5.7 + shadcn-ui + Tailwind v4 + Drizzle + postgres + jose + orval(axios)。明细见 `version-lock.json`。
+Next.js 15 App Router + TS 5.7 + shadcn-ui + Tailwind v4 + Drizzle ORM（**DB-First，drizzle-kit pull**） + postgres-js + jose + orval(axios)。明细见 `version-lock.json`。
+
+DB schema 不在 nextjs 手写 — 由 `scripts/pull-schema.sh` 从真库反推生成 `src/db/schema.ts`（commit 入 git）；CI L4.db.drift 子门守 schema 与 DB 一致。
 
 门禁命令见 `.harness/stack.json`。**不要改它来让门变松。**
 
 ## 4. 验收
 
 - suite 根目录跑 `python scripts/gate.py -p saas-identity-platform-nextjs`
-- 改了 shared → `npm run gen:shared`
+- 改了 shared API → `npm run gen:shared`
+- DB schema 漂移：先确认 shared 已 `db:migrate`，再 `bash scripts/pull-schema.sh && git add src/db/schema.ts && git commit`
 
 ## 5. 指向别处
 
 - shared 仓 → `../saas-identity-platform-shared`（只读 OpenAPI）；msw 仓 → `../saas-identity-platform-msw`
-- 迁移指南 → `docs/saas-identity-platform-v0.{2.0,3.0}-*.md`
+- 迁移指南 → `docs/migrations/saas-identity-platform-v0.{2.0,3.0}-*.md`
 - 决策 → `docs/adr/`；细则 → `docs/conventions/`；待办 → `PLAN.md`；版本 → `CHANGELOG.md`
 
 ## 6. 工作循环

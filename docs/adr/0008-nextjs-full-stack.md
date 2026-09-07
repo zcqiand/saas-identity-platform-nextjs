@@ -21,7 +21,7 @@
 
 - **Frontend**（已有）：`app/<route>/page.tsx` + shadcn-ui + MSW mock（dev/test）
 - **Backend**（新增）：`app/api/v1/<route>/route.ts` Route Handler，对应 shared/openapi.yaml 全部 endpoints（首版 3 个 anchor：`auth/login`、`me`、`tenants/:id/users`）
-- **DB**（已有 scaffold 但空）：`src/db/schema.ts` 改为 Postgres（`drizzle-orm/postgres-js` 驱动），`drizzle.config.ts` 仅作 schema 镜像工具，**不调** `drizzle-kit generate` 产 SQL
+- **DB**（已有 scaffold 但空）：`src/db/schema.ts` 改为 Postgres（`drizzle-orm/postgres-js` 驱动）。**修订（ADR-0025）**：schema 不再手写镜像 shared SQL；改为 DB-First — `scripts/pull-schema.sh` 跑 `drizzle-kit pull` 从真库反推 `src/db/schema.ts`（commit 入 git）；`drizzle.config.ts` 仅配置 `dbCredentials`；CI L4.db.drift 子门守 schema 与 DB 一致
 
 runtime backend switcher（react / vue / nextjs 前端用，当前列 msw / aspnetcore / springboot 三项）增加第 4 项 `nextjs-self`：调自己仓的 `app/api/v1/` Route Handler，便于「前端代码 + 自己 backend」端到端调试，无需启外部服务。
 
