@@ -1,4 +1,4 @@
-// /api/v1/admin/apps/{appId}/menus/{menuId}/reorder - M08.F02.I06 同级排序
+// /api/v1/admin/apps/{appId}/menus/{menuId}/reorder - M04.F04.I06 同级排序
 //
 // TypeSpec: tsp/routes/admin-app-menus.tsp
 //   reorderMenus(@path appId, @path menuId, @body ReorderMenuRequest): Menu[]

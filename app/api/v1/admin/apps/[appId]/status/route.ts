@@ -1,4 +1,4 @@
-// /api/v1/admin/apps/glm_5.2_ark_toC/status - M04.F02.I06 启用/停用
+// /api/v1/admin/apps/glm_5.2_ark_toC/status - M04.F02.I01 启用/停用
 //
 // TypeSpec: tsp/routes/admin-apps.tsp
 //   setAppStatus(@path appId, @body { status: AppStatus }): App

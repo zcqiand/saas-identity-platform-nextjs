@@ -1,4 +1,4 @@
-// /api/v1/oauth/token — M04.F03.I08 + M04.F03.I09
+// /api/v1/oauth/token — M04.F03.I02 + M04.F03.I03
 //
 // TypeSpec: TokenRequest { grantType: "authorization_code" | "refresh_token", code?, refreshToken?, clientId, clientSecret?, tenantId, redirectUri? }
 // 响应：TokenResponse { accessToken, refreshToken?, tokenType, expiresIn, scope }

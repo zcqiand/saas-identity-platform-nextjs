@@ -1,4 +1,4 @@
-// /api/v1/auth/refresh — M03.F02.I04
+// /api/v1/auth/refresh — M01.F04.I05
 //
 // TypeSpec: TokenRequest { grantType: "refresh_token", refreshToken, clientId, clientSecret?, tenantId, redirectUri? }
 // 响应：TokenResponse

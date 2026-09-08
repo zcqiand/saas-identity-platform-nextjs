@@ -1,5 +1,5 @@
 // @vitest-environment node
-// M04.F03.I08 + M04.F03.I09 — /api/v1/oauth/token
+// M04.F03.I02 + M04.F03.I03 — /api/v1/oauth/token
 //
 // 覆盖：authorization_code / refresh_token 两条 grantType 路径 + 各种 400 错误码。
 // fnId 写进 test name 让 tests/fnReporter.ts 提取。
@@ -30,7 +30,7 @@ const baseBody = {
   tenantId: "00000000-0000-0000-0000-000000000111",
 };
 
-describe("M04.F03.I08 /api/v1/oauth/token (authorization_code + refresh_token)", () => {
+describe("M04.F03.I02 /api/v1/oauth/token (authorization_code + refresh_token)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // 重置 oauth-store maps（每个测试间清理）
@@ -38,7 +38,7 @@ describe("M04.F03.I08 /api/v1/oauth/token (authorization_code + refresh_token)",
     // 通过 unique code/refreshToken 避免串扰即可
   });
 
-  it("M04.F03.I08 returns 200 TokenResponse for valid authorization_code", async () => {
+  it("M04.F03.I02 returns 200 TokenResponse for valid authorization_code", async () => {
     dbMock.select.mockReturnValueOnce({
       from: () => ({
         where: () => ({
@@ -73,7 +73,7 @@ describe("M04.F03.I08 /api/v1/oauth/token (authorization_code + refresh_token)",
     expect(json.scope).toBe("openid");
   });
 
-  it("M04.F03.I08 returns 400 INVALID_GRANT when code unknown", async () => {
+  it("M04.F03.I02 returns 400 INVALID_GRANT when code unknown", async () => {
     dbMock.select.mockReturnValueOnce({
       from: () => ({
         where: () => ({
@@ -94,7 +94,7 @@ describe("M04.F03.I08 /api/v1/oauth/token (authorization_code + refresh_token)",
     expect(json.code).toBe("INVALID_GRANT");
   });
 
-  it("M04.F03.I09 returns 200 rotated TokenResponse for valid refresh_token", async () => {
+  it("M04.F03.I03 returns 200 rotated TokenResponse for valid refresh_token", async () => {
     dbMock.select.mockReturnValueOnce({
       from: () => ({
         where: () => ({
@@ -123,7 +123,7 @@ describe("M04.F03.I08 /api/v1/oauth/token (authorization_code + refresh_token)",
     expect(json.refreshToken).not.toBe(oldRefresh); // rotated
   });
 
-  it("M04.F03.I09 returns 400 INVALID_GRANT when refreshToken unknown", async () => {
+  it("M04.F03.I03 returns 400 INVALID_GRANT when refreshToken unknown", async () => {
     dbMock.select.mockReturnValueOnce({
       from: () => ({
         where: () => ({
@@ -143,7 +143,7 @@ describe("M04.F03.I08 /api/v1/oauth/token (authorization_code + refresh_token)",
     expect(json.code).toBe("INVALID_GRANT");
   });
 
-  it("M04.F03.I08 returns 400 INVALID_CLIENT when clientId unknown", async () => {
+  it("M04.F03.I02 returns 400 INVALID_CLIENT when clientId unknown", async () => {
     dbMock.select.mockReturnValueOnce({
       from: () => ({
         where: () => ({
@@ -164,7 +164,7 @@ describe("M04.F03.I08 /api/v1/oauth/token (authorization_code + refresh_token)",
     expect(json.code).toBe("INVALID_CLIENT");
   });
 
-  it("M04.F03.I08 returns 400 UNSUPPORTED_GRANT_TYPE for unknown grant", async () => {
+  it("M04.F03.I02 returns 400 UNSUPPORTED_GRANT_TYPE for unknown grant", async () => {
     dbMock.select.mockReturnValueOnce({
       from: () => ({
         where: () => ({

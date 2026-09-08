@@ -119,7 +119,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         label: "角色管理",
         group: "身份管理",
         icon: <Shield className="h-4 w-4" />,
-        fnId: "M02.F01.I01",
+        fnId: "M00.F03.I01",
       },
       {
         to: `/tenants/${tenantForNav}/api-keys`,
@@ -147,7 +147,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         label: "菜单管理",
         group: "应用与菜单",
         icon: <FolderTree className="h-4 w-4" />,
-        fnId: "M08.F01.I01",
+        fnId: "M04.F04.I01",
       },
     ],
     [tenantForNav],
@@ -165,7 +165,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       onClick={onLogout}
       className="w-full justify-start gap-2 text-white/70 hover:text-white hover:bg-white/10"
       data-testid="logout-btn"
-      data-fn="M03.F03.I05"
+      data-fn="M01.F04.I06"
     >
       <LogOut className="h-4 w-4" />
       登出

@@ -1,4 +1,4 @@
-// /api/v1/me/menus - M09.F03.I04 (2026-08-30 字节对齐 contract-test I05)
+// /api/v1/me/menus - M04.F04.I08 (2026-08-30 字节对齐 contract-test I05)
 //
 // TypeSpec: getMyMenus(): Record<appCode, EffectiveMenuNode[]>
 // 返回**所有 active app** 当前用户可见菜单(按 appCode 分组), 无 query 参数。

@@ -1,5 +1,5 @@
 // @vitest-environment node
-// M03.F01.I01 + M03.F01.I02 — /api/v1/auth/login
+// M01.F04.I03 + M01.F04.I02 — /api/v1/auth/login
 //
 // v0.5.0 增加 lockout (loginLockout) + audit_events INSERT。
 
@@ -24,14 +24,14 @@ function makeReq(body: unknown): Request {
   });
 }
 
-describe("M03.F01.I01 + M03.F01.I02 /api/v1/auth/login", () => {
+describe("M01.F04.I03 + M01.F04.I02 /api/v1/auth/login", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // 清空 lockout map（每个测试间隔离）
     for (const key of ["alice", "bob"]) loginLockout.clearFailures(key);
   });
 
-  it("M03.F01.I01 returns 200 LoginResponse for valid credentials", async () => {
+  it("M01.F04.I03 returns 200 LoginResponse for valid credentials", async () => {
     dbMock.select.mockReturnValueOnce({
       from: () => ({
         where: () => ({
@@ -62,7 +62,7 @@ describe("M03.F01.I01 + M03.F01.I02 /api/v1/auth/login", () => {
     expect(json.currentTenantId).toBe("00000000-0000-0000-0000-000000000111");
   });
 
-  it("M03.F01.I01 returns 401 UNAUTHORIZED for wrong password", async () => {
+  it("M01.F04.I03 returns 401 UNAUTHORIZED for wrong password", async () => {
     dbMock.select.mockReturnValueOnce({
       from: () => ({
         where: () => ({
@@ -90,7 +90,7 @@ describe("M03.F01.I01 + M03.F01.I02 /api/v1/auth/login", () => {
     expect(dbMock.insert, "login 失败不得写 audit_events（对齐 3 真后端）").not.toHaveBeenCalled();
   });
 
-  it("M03.F01.I02 returns 429 ACCOUNT_LOCKED after 5 consecutive failures", async () => {
+  it("M01.F04.I02 returns 429 ACCOUNT_LOCKED after 5 consecutive failures", async () => {
     // 用户不存在 → 401，但 lockout 仍记录失败（按 username 计数）
     dbMock.select.mockReturnValue({
       from: () => ({
@@ -111,7 +111,7 @@ describe("M03.F01.I01 + M03.F01.I02 /api/v1/auth/login", () => {
     expect(dbMock.insert, "lockout 路径不得写 audit_events").not.toHaveBeenCalled();
   });
 
-  it("M03.F01.I01 returns 400 BAD_REQUEST for invalid body", async () => {
+  it("M01.F04.I03 returns 400 BAD_REQUEST for invalid body", async () => {
     const res = await POST(makeReq({}) as never);
     expect(res.status).toBe(400);
     const json = await res.json();

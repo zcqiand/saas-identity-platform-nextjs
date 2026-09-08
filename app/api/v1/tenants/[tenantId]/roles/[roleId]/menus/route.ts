@@ -1,4 +1,4 @@
-// /api/v1/tenants/:tenantId/roles/:roleId/menus — M09.F01.I01 / M09.F02.I02 / M09.F02.I03
+// /api/v1/tenants/:tenantId/roles/:roleId/menus — M00.F04.I02 / M00.F04.I03 / M00.F04.I04
 //
 // TypeSpec: tsp/routes/tenant-role-menus.tsp
 // - listRoleMenus(): RoleMenuGrant

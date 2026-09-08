@@ -1,4 +1,4 @@
-// Login lockout — M03.F01.I02
+// Login lockout — M01.F04.I02
 //
 // 进程内失败计数器：在 LOCKOUT_WINDOW_MIN 窗口内连续 LOCKOUT_MAX_FAILS 次失败，
 // 进入 LOCKOUT_COOLDOWN_MIN 冷却期，期内返回 429 ACCOUNT_LOCKED。

@@ -1,5 +1,5 @@
 // @vitest-environment node
-// M03.F02.I03 — /api/v1/auth/oidc/callback
+// M01.F04.I04 — /api/v1/auth/oidc/callback
 //
 // 直接调 Route Handler；mock @/db 避免真 Postgres；fnId 写进 test name。
 
@@ -29,12 +29,12 @@ const validBody = {
   clientId: "00000000-0000-0000-0000-000000000aaa",
 };
 
-describe("M03.F02.I03 /api/v1/auth/oidc/callback", () => {
+describe("M01.F04.I04 /api/v1/auth/oidc/callback", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("M03.F02.I03 returns 200 TokenResponse for valid OIDC callback", async () => {
+  it("M01.F04.I04 returns 200 TokenResponse for valid OIDC callback", async () => {
     dbMock.select
       .mockReturnValueOnce({
         from: () => ({
@@ -61,14 +61,14 @@ describe("M03.F02.I03 /api/v1/auth/oidc/callback", () => {
     expect(json.scope).toBe("openid");
   });
 
-  it("M03.F02.I03 returns 400 INVALID_REQUEST when fields missing", async () => {
+  it("M01.F04.I04 returns 400 INVALID_REQUEST when fields missing", async () => {
     const res = await POST(makeReq({ code: "x" }) as never);
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.code).toBe("INVALID_REQUEST");
   });
 
-  it("M03.F02.I03 returns 400 INVALID_CLIENT when clientId unknown", async () => {
+  it("M01.F04.I04 returns 400 INVALID_CLIENT when clientId unknown", async () => {
     dbMock.select.mockReturnValueOnce({
       from: () => ({
         where: () => ({
@@ -83,7 +83,7 @@ describe("M03.F02.I03 /api/v1/auth/oidc/callback", () => {
     expect(json.code).toBe("INVALID_CLIENT");
   });
 
-  it("M03.F02.I03 returns 400 NO_USER when no active user", async () => {
+  it("M01.F04.I04 returns 400 NO_USER when no active user", async () => {
     dbMock.select
       .mockReturnValueOnce({
         from: () => ({

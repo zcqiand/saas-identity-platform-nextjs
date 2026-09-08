@@ -1,4 +1,4 @@
-// /api/v1/auth/oidc/callback — M03.F02.I03
+// /api/v1/auth/oidc/callback — M01.F04.I04
 //
 // TypeSpec: OidcCallbackRequest { code, state, clientId }
 // 响应：TokenResponse { accessToken, refreshToken?, tokenType, expiresIn, scope }

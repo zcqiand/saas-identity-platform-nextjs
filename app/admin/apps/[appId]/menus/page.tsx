@@ -243,7 +243,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ appId: stri
                 ))}
               </SelectContent>
             </Select>
-            <Button data-fn="M08.F01.I02" onClick={() => setCreateOpen(true)}>
+            <Button data-fn="M04.F04.I02" onClick={() => setCreateOpen(true)}>
               新建菜单
             </Button>
           </div>
@@ -296,7 +296,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ appId: stri
                       <Button
                         variant="ghost"
                         size="sm"
-                        data-fn="M08.F02.I07"
+                        data-fn="M04.F04.I07"
                         onClick={() => setMoveTarget(r)}
                       >
                         移动
@@ -304,7 +304,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ appId: stri
                       <Button
                         variant="ghost"
                         size="sm"
-                        data-fn="M08.F01.I04"
+                        data-fn="M04.F04.I04"
                         onClick={() => setEditTarget(r)}
                       >
                         编辑
@@ -312,7 +312,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ appId: stri
                       <Button
                         variant="ghost"
                         size="sm"
-                        data-fn="M08.F01.I05"
+                        data-fn="M04.F04.I05"
                         className="text-red-600 hover:text-red-700"
                         onClick={() => setDeleteTarget(r)}
                       >

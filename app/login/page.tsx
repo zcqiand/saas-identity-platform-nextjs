@@ -1,6 +1,6 @@
 "use client";
 
-// M03.F01.I01 — 账号密码登录（独立布局：登录页绕过 AppShell）
+// M01.F04.I03 — 账号密码登录（独立布局：登录页绕过 AppShell）
 //
 // 提交：调 authLogin（orval 1:1 端点函数）；成功后写 tenant-context session；
 // 失败：toast.error（sonner）。
@@ -112,7 +112,7 @@ export default function LoginPage() {
       }, 0);
     } catch (err) {
       const apiErr = toApiError(err);
-      // M03.F01.I02 - 423 (aspnetcore) / 429 (nextjs Route Handler) =
+      // M01.F04.I02 - 423 (aspnetcore) / 429 (nextjs Route Handler) =
       // 失败 5 次锁定（后端 15min 自动解锁）
       const msg =
         apiErr.status === 423 || apiErr.status === 429
@@ -164,7 +164,7 @@ export default function LoginPage() {
                 autoComplete="current-password"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={submitting} data-fn="M03.F01.I01">
+            <Button type="submit" className="w-full" disabled={submitting} data-fn="M01.F04.I03">
               {submitting ? "登录中…" : "登录"}
             </Button>
           </form>

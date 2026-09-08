@@ -1,4 +1,4 @@
-// /api/v1/tenants/:tenantId/users/invitations — M01.F02.I02
+// /api/v1/tenants/:tenantId/users/invitations — M00.F02.I06
 //
 // TypeSpec: tsp/routes/tenant-users.tsp inviteUser(@path tenantId, @body body: { email: string; roleIds?: string[] }): User
 // 邀请用户：创建 invited 状态的用户行；password 由后续「首次登录设置」流程补齐（Phase 6）

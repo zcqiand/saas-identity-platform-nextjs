@@ -20,7 +20,7 @@ import { writeAudit } from "@/lib/audit";
 const PAGE_DEFAULT = 20;
 const PAGE_MAX = 100;
 
-// M01.F01.I02 createUser body（对齐 TypeSpec CreateUserRequest）
+// M01.F04.I03 createUser body（对齐 TypeSpec CreateUserRequest）
 const CreateUserBody = z.object({
   username: z.string().min(2).max(64),
   email: z.string().email(),
@@ -102,7 +102,7 @@ export async function GET(
   }
 }
 
-// M01.F01.I02 / M96.F02.I19 — POST 创建 user。
+// M01.F04.I03 / M96.F02.I19 — POST 创建 user。
 //
 // 契约面（contract-test）：status 固定 "active"，4 后端必须一致。
 // TypeSpec CreateUserRequest 不含 status，server-side 决定；选 active（"已激活账号"语义）

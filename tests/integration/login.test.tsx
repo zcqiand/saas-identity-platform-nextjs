@@ -1,4 +1,4 @@
-// M03.F01.I01 - 账号密码登录
+// M01.F04.I03 - 账号密码登录
 //
 // PLAN-2026-001 T-9 姊妹任务：同步 423/429 锁定提示到 nextjs LoginPage。
 // 策略与 saas-react 同款：mock authLogin 端点函数 + sonner toast。
@@ -40,14 +40,14 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-describe("M03.F01.I01 账号密码登录", () => {
-  it("渲染登录表单，挂 data-fn=M03.F01.I01 的提交按钮", () => {
+describe("M01.F04.I03 账号密码登录", () => {
+  it("渲染登录表单，挂 data-fn=M01.F04.I03 的提交按钮", () => {
     render(
       <TestProviders>
         <LoginPage />
       </TestProviders>,
     );
-    const btn = screen.getAllByRole("button").find((b) => b.getAttribute("data-fn") === "M03.F01.I01");
+    const btn = screen.getAllByRole("button").find((b) => b.getAttribute("data-fn") === "M01.F04.I03");
     expect(btn).toBeTruthy();
   });
 

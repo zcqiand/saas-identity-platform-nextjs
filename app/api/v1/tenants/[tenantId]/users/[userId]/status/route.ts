@@ -1,4 +1,4 @@
-// /api/v1/tenants/:tenantId/users/:userId/status — M01.F02.I03
+// /api/v1/tenants/:tenantId/users/:userId/status — M00.F02.I08
 //
 // TypeSpec: tsp/routes/tenant-users.tsp changeUserStatus(@path tenantId, @path userId, @body body: { status: UserStatus }): User
 

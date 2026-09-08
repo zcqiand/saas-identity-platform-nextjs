@@ -97,11 +97,11 @@ export default function RoleMenuGrantPage({
         }
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" data-fn="M09.F02.I03" onClick={clearAll}>
+            <Button variant="outline" data-fn="M00.F04.I04" onClick={clearAll}>
               清空
             </Button>
             <Button
-              data-fn="M09.F02.I02"
+              data-fn="M00.F04.I03"
               disabled={saveMut.isPending}
               onClick={save}
             >

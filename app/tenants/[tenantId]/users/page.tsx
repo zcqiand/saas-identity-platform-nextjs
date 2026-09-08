@@ -148,7 +148,7 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
         title="用户管理"
         description={`${tenantLabel} 的所有用户`}
         actions={
-          <Button data-fn="M01.F01.I02" onClick={() => setCreateOpen(true)}>
+          <Button data-fn="M01.F04.I03" onClick={() => setCreateOpen(true)}>
             邀请用户
           </Button>
         }
@@ -196,7 +196,7 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
                       <Button
                         variant="ghost"
                         size="sm"
-                        data-fn="M01.F01.I04"
+                        data-fn="M00.F02.I04"
                         onClick={() => setEditTarget(u)}
                       >
                         编辑
@@ -204,7 +204,7 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
                       <Button
                         variant="ghost"
                         size="sm"
-                        data-fn="M01.F01.I05"
+                        data-fn="M00.F02.I05"
                         className="text-red-600 hover:text-red-700"
                         onClick={() => setDeleteTarget(u)}
                       >

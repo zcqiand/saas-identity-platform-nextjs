@@ -1,4 +1,4 @@
-// /api/v1/auth/logout — M03.F03.I05
+// /api/v1/auth/logout — M01.F04.I06
 //
 // TypeSpec: tsp/routes/auth.tsp logout(): void
 // 语义：清理本地 session；JWT 校验已在 JWT bearer 中间件层完成（无 Authorization 时返回 401）。

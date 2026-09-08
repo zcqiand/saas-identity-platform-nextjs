@@ -1,11 +1,11 @@
-// /api/v1/auth/login — M03.F01.I01 (登录) + M03.F01.I02 (锁定)
+// /api/v1/auth/login — M01.F04.I03 (登录) + M01.F04.I02 (锁定)
 //
 // TypeSpec: LoginRequest { username, password, tenantCode? }
 // 响应：LoginResponse { accessToken, refreshToken, tokenType, expiresIn, userId, currentTenantId }
 //
 // 语义（v0.5.0 auth 批次）：
-// - M03.F01.I01：账号密码登录。bcrypt 比较（手写 PBKDF2 占位；Phase 5 接 argon2）
-// - M03.F01.I02：登录失败锁定。LOCKOUT_MAX_FAILS 阈值 + LOCKOUT_WINDOW_MIN 窗口 + LOCKOUT_COOLDOWN_MIN 冷却
+// - M01.F04.I03：账号密码登录。bcrypt 比较（手写 PBKDF2 占位；Phase 5 接 argon2）
+// - M01.F04.I02：登录失败锁定。LOCKOUT_MAX_FAILS 阈值 + LOCKOUT_WINDOW_MIN 窗口 + LOCKOUT_COOLDOWN_MIN 冷却
 // - audit_events 只写 login_success（2026-09-02 M96 对齐：失败事件家族不写）
 // - accessToken 走 HS256 + jose 真签发（Phase 5）；refreshToken 沿用 mock-refresh-${userId} 前缀对齐 msw
 // - JWT_SIGNING_KEY 从 env 读，必须 ≥32 bytes
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
   const { username, password, tenantCode } = parsed.data;
 
-  // M03.F01.I02：登录失败锁定（按 username 单独计）
+  // M01.F04.I02：登录失败锁定（按 username 单独计）
   if (loginLockout.isLockedOut(username)) {
     return NextResponse.json(
       { code: "ACCOUNT_LOCKED", message: "Too many failed login attempts. Try again later." },

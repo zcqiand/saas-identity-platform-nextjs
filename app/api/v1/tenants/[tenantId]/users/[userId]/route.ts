@@ -1,4 +1,4 @@
-// /api/v1/tenants/:tenantId/users/:userId — M01.F01.I03 / M01.F01.I04 / M01.F01.I05
+// /api/v1/tenants/:tenantId/users/:userId — M00.F02.I03 / M00.F02.I04 / M00.F02.I05
 // 同路径支持 GET / PATCH / DELETE
 //
 // TypeSpec:

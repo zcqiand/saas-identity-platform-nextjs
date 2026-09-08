@@ -170,7 +170,7 @@ export default function AppListPage() {
         title="应用管理"
         description="平台级业务应用（同时承载 OAuth client）。每个应用有菜单树，租户通过订阅获得应用，再在租户内部分发菜单给角色。"
         actions={
-          <Button data-fn="M08.F01.I02" onClick={() => setCreateOpen(true)}>
+          <Button data-fn="M04.F04.I02" onClick={() => setCreateOpen(true)}>
             新建应用
           </Button>
         }
@@ -233,7 +233,7 @@ export default function AppListPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        data-fn="M04.F02.I06"
+                        data-fn="M04.F02.I01"
                         onClick={() => toggleStatus(a)}
                       >
                         {a.status === "active" ? "停用" : "启用"}
@@ -241,7 +241,7 @@ export default function AppListPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        data-fn="M08.F01.I04"
+                        data-fn="M04.F04.I04"
                         onClick={() => setEditTarget(a)}
                       >
                         编辑
@@ -249,7 +249,7 @@ export default function AppListPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        data-fn="M08.F01.I05"
+                        data-fn="M04.F04.I05"
                         className="text-red-600 hover:text-red-700"
                         onClick={() => setDeleteTarget(a)}
                       >

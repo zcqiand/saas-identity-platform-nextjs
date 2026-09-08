@@ -1,4 +1,4 @@
-// /api/v1/tenants/:tenantId/roles/:roleId/permissions — M02.F02.I01
+// /api/v1/tenants/:tenantId/roles/:roleId/permissions — M00.F04.I01
 //
 // TypeSpec: setPermissions(@body body: { permissionIds: string[] }): Role
 // 整批替换 role ↔ permission 关系（PUT）

@@ -1,4 +1,4 @@
-// /api/v1/admin/apps/{appId}/menus/{menuId}/parent - M08.F02.I07 切换父级（moveTo）
+// /api/v1/admin/apps/{appId}/menus/{menuId}/parent - M04.F04.I07 切换父级（moveTo）
 //
 // TypeSpec: tsp/routes/admin-app-menus.tsp
 //   moveMenu(@path appId, @path menuId, @body { parentId?: string }): Menu
