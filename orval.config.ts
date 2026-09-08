@@ -9,8 +9,8 @@ export default defineConfig({
   saas: {
     input: "../saas-identity-platform-shared/generated/openapi/openapi.yaml",
     output: {
-      mode: "split",
-      target: "./src/api/endpoints/endpoints.ts",
+      mode: "tags-split",
+      target: "./src/api/endpoints/",
       client: "react-query",
       override: {
         useDates: false,
