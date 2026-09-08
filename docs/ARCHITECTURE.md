@@ -69,8 +69,8 @@ saas-identity-platform-nextjs/
 │   ├── design/                       ← 流程/设计（人评审）
 │   ├── conventions/                  ← 本仓编码细则（nextjs-full-stack.md / nextjs-env-driven.md / ...）
 │   ├── requirements/                 ← 需求文档
-│   ├── ARCHITECTURE.md               ← 本文件
-│   └── saas-identity-platform-v0.3.0-shadcn-ui-migration.md
+│   ├── migrations/                   ← 版本迁移指南（v0.3.0 shadcn-ui / v0.2.0 orval ...）
+│   └── ARCHITECTURE.md               ← 本文件
 ├── app/                              ← App Router（**同仓同时是 frontend + backend**）
 │   ├── page.tsx                      ← 根页面
 │   ├── layout.tsx                    ← 全局 layout
@@ -593,7 +593,7 @@ npm run sync-db
 - 本仓入口：[CLAUDE.md](../CLAUDE.md)（技术栈 + 禁止事项 + 指向别处）
 - 本仓全栈决策：[docs/adr/0008-nextjs-full-stack.md](adr/0008-nextjs-full-stack.md)
 - 本仓编码细则：[docs/conventions/](conventions/)（`nextjs-full-stack.md` / `nextjs-env-driven.md` / ...）
-- 本仓迁移指南：[docs/saas-identity-platform-v0.3.0-shadcn-ui-migration.md](saas-identity-platform-v0.3.0-shadcn-ui-migration.md)
+- 本仓迁移指南：[docs/migrations/saas-identity-platform-v0.3.0-shadcn-ui-migration.md](migrations/saas-identity-platform-v0.3.0-shadcn-ui-migration.md)
 - shared 仓契约：[../saas-identity-platform-shared/](../../saas-identity-platform-shared/)
 - msw 仓 mock：[../saas-identity-platform-msw/](../../saas-identity-platform-msw/)
 - 父仓架构总览：[../../docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md)

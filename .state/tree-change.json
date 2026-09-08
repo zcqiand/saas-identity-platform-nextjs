@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "approved": false,
+  "base_sha": "d0386a62678d9f79",
+  "summary": "ADR-0024：saas-nextjs M00.F01 全段 type/delivery 字段照抄 BASE（接口 / 前端+后端）",
+  "changes": [
+    {
+      "id": "M00.F01.I01",
+      "action": "变更",
+      "name": "租户列表（平台）",
+      "reason": "type 字段错位：nextjs 标 '页面'，BASE 是 '接口'。照抄 BASE"
+    },
+    {
+      "id": "M00.F01.I02",
+      "action": "变更",
+      "name": "创建租户",
+      "reason": "type/delivery 双错位：nextjs 标 '按钮 / 仅前端'，BASE 是 '接口 / 前端+后端'。nextjs 已有 data-fn=M00.F01.I02 平台 admin UI 实现，照抄 BASE"
+    },
+    {
+      "id": "M00.F01.I03",
+      "action": "变更",
+      "name": "租户详情",
+      "reason": "type/delivery 双错位：nextjs 标 '页面 / 仅前端'，BASE 是 '接口 / 前端+后端'。照抄 BASE"
+    },
+    {
+      "id": "M00.F01.I04",
+      "action": "变更",
+      "name": "更新租户",
+      "reason": "type/delivery 双错位：nextjs 标 '按钮 / 仅前端'，BASE 是 '接口 / 前端+后端'。照抄 BASE"
+    },
+    {
+      "id": "M00.F01.I05",
+      "action": "变更",
+      "name": "删除租户",
+      "reason": "type/delivery 双错位：nextjs 标 '按钮 / 仅前端'，BASE 是 '接口 / 前端+后端'。照抄 BASE"
+    }
+  ],
+  "sync_files": [
+    "docs/functions/function-tree.md"
+  ]
+}

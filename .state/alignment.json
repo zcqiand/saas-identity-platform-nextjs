@@ -3,13 +3,12 @@
   "project": "saas-identity-platform-nextjs",
   "functions": {
     "modules": 9,
-    "features": 20,
+    "features": 21,
     "items": 58
   },
-  "warnings_total": 2,
+  "warnings_total": 1,
   "warnings": {
     "已上线但无测试引用": [
-      "M05.F01.I05",
       "M09.F02.I02"
     ]
   },
@@ -22,7 +21,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\admin-tenants.test.ts:1024 (path)"
+      ],
       "entry": []
     },
     "M00.F01.I02": {
@@ -33,6 +34,7 @@
       "flows": [],
       "designs": [],
       "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\admin-tenants.test.ts:1024 (path)",
         "渲染租户列表，新建按钮挂 data-fn=M00.F01.I02"
       ],
       "entry": [
@@ -80,7 +82,12 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\me.test.ts:612 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\me.test.ts:755 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\path.test.ts:1066 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\path.test.ts:1111 (path)"
+      ],
       "entry": []
     },
     "M00.F02.I02": {
@@ -90,7 +97,10 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\me-tenants.test.ts:19 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\me-tenants.test.ts:525 (path)"
+      ],
       "entry": []
     },
     "M00.F02.I03": {
@@ -101,6 +111,8 @@
       "flows": [],
       "designs": [],
       "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\me-switch.test.ts:2204 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\me-switch.test.ts:729 (path)",
         "渲染 TenantSwitcher 触发按钮挂 data-fn=M00.F02.I03"
       ],
       "entry": [
@@ -114,7 +126,12 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-users-read.test.ts:2491 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-users-read.test.ts:957 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-users-write-2.test.ts:1237 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-users-write.test.ts:985 (path)"
+      ],
       "entry": []
     },
     "M01.F01.I02": {
@@ -129,6 +146,11 @@
         "docs\\design\\design-function-map.md"
       ],
       "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-users-read.test.ts:2491 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-users-read.test.ts:957 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-users-write-2.test.ts:1237 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-users-write.test.ts:53 (annot)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-users-write.test.ts:985 (path)",
         "渲染用户列表，邀请按钮挂 data-fn=M01.F01.I02"
       ],
       "entry": [
@@ -142,7 +164,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-users-read.test.ts:3661 (path)"
+      ],
       "entry": []
     },
     "M01.F01.I04": {
@@ -152,7 +176,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-users-read.test.ts:3661 (path)"
+      ],
       "entry": [
         "app\\tenants\\[tenantId]\\users\\page.tsx"
       ]
@@ -164,7 +190,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-users-read.test.ts:3661 (path)"
+      ],
       "entry": [
         "app\\tenants\\[tenantId]\\users\\page.tsx"
       ]
@@ -218,7 +246,10 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-read.test.ts:1078 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-write.test.ts:1167 (path)"
+      ],
       "entry": []
     },
     "M02.F01.I02": {
@@ -229,6 +260,8 @@
       "flows": [],
       "designs": [],
       "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-read.test.ts:1078 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-write.test.ts:1167 (path)",
         "渲染角色列表，新建角色按钮挂 data-fn=M02.F01.I02"
       ],
       "entry": [
@@ -242,7 +275,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-read.test.ts:2381 (path)"
+      ],
       "entry": []
     },
     "M02.F01.I04": {
@@ -252,7 +287,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-read.test.ts:2381 (path)"
+      ],
       "entry": [
         "app\\tenants\\[tenantId]\\roles\\page.tsx"
       ]
@@ -264,7 +301,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-read.test.ts:2381 (path)"
+      ],
       "entry": [
         "app\\tenants\\[tenantId]\\roles\\page.tsx"
       ]
@@ -296,6 +335,9 @@
         "M03.F01.I01 returns 200 LoginResponse for valid credentials",
         "M03.F01.I01 returns 400 BAD_REQUEST for invalid body",
         "M03.F01.I01 returns 401 UNAUTHORIZED for wrong password",
+        "output\\saas-identity-platform-contract-test\\tests\\auth.test.ts:1221 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\auth.test.ts:1537 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\auth.test.ts:2331 (path)",
         "渲染登录表单，挂 data-fn=M03.F01.I01 的提交按钮"
       ],
       "entry": [
@@ -337,7 +379,8 @@
         "M03.F02.I03 returns 200 TokenResponse for valid OIDC callback",
         "M03.F02.I03 returns 400 INVALID_CLIENT when clientId unknown",
         "M03.F02.I03 returns 400 INVALID_REQUEST when fields missing",
-        "M03.F02.I03 returns 400 NO_USER when no active user"
+        "M03.F02.I03 returns 400 NO_USER when no active user",
+        "output\\saas-identity-platform-contract-test\\tests\\auth.test.ts:6226 (path)"
       ],
       "entry": []
     },
@@ -358,7 +401,9 @@
         "M03.F02.I04 returns 200 rotated TokenResponse for valid refresh_token",
         "M03.F02.I04 returns 400 INVALID_GRANT when refreshToken unknown",
         "M03.F02.I04 returns 400 when grantType not refresh_token",
-        "M03.F02.I04 returns 400 when tenantId mismatches"
+        "M03.F02.I04 returns 400 when tenantId mismatches",
+        "output\\saas-identity-platform-contract-test\\tests\\auth.test.ts:4255 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\auth.test.ts:5439 (path)"
       ],
       "entry": []
     },
@@ -376,7 +421,8 @@
       "tests": [
         "M03.F03.I05 returns 204 even with invalid Authorization header",
         "M03.F03.I05 returns 204 with no Authorization header",
-        "M03.F03.I05 returns 204 with valid Authorization header"
+        "M03.F03.I05 returns 204 with valid Authorization header",
+        "output\\saas-identity-platform-contract-test\\tests\\auth.test.ts:3307 (path)"
       ],
       "entry": [
         "src\\components\\app\\app-shell.tsx"
@@ -401,7 +447,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\admin-apps-write.test.ts:888 (path)"
+      ],
       "entry": []
     },
     "M04.F01.I02": {
@@ -411,7 +459,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\admin-apps-write.test.ts:888 (path)"
+      ],
       "entry": []
     },
     "M04.F01.I03": {
@@ -473,7 +523,9 @@
         "M04.F03.I07 returns 400 INVALID_REDIRECT_URI when redirectUri not in whitelist",
         "M04.F03.I07 returns 400 INVALID_REQUEST when fields missing",
         "M04.F03.I07 returns 400 NO_USER when tenant has no user",
-        "M04.F03.I07 returns 400 UNSUPPORTED_RESPONSE_TYPE when not 'code'"
+        "M04.F03.I07 returns 400 UNSUPPORTED_RESPONSE_TYPE when not 'code'",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:1738 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:2639 (path)"
       ],
       "entry": []
     },
@@ -492,7 +544,11 @@
         "M04.F03.I08 returns 200 TokenResponse for valid authorization_code",
         "M04.F03.I08 returns 400 INVALID_CLIENT when clientId unknown",
         "M04.F03.I08 returns 400 INVALID_GRANT when code unknown",
-        "M04.F03.I08 returns 400 UNSUPPORTED_GRANT_TYPE for unknown grant"
+        "M04.F03.I08 returns 400 UNSUPPORTED_GRANT_TYPE for unknown grant",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:3423 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:4655 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:5703 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:6653 (path)"
       ],
       "entry": []
     },
@@ -509,7 +565,12 @@
       ],
       "tests": [
         "M04.F03.I09 returns 200 rotated TokenResponse for valid refresh_token",
-        "M04.F03.I09 returns 400 INVALID_GRANT when refreshToken unknown"
+        "M04.F03.I09 returns 400 INVALID_GRANT when refreshToken unknown",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:3423 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:4655 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:5146 (annot)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:5703 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:6653 (path)"
       ],
       "entry": []
     },
@@ -520,7 +581,12 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-api-keys-delete.test.ts:966 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-api-keys-read.test.ts:536 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-api-keys-write.test.ts:1160 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-misc-write.test.ts:1091 (path)"
+      ],
       "entry": []
     },
     "M05.F01.I02": {
@@ -530,7 +596,12 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-api-keys-delete.test.ts:966 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-api-keys-read.test.ts:536 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-api-keys-write.test.ts:1160 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-misc-write.test.ts:1091 (path)"
+      ],
       "entry": [
         "app\\tenants\\[tenantId]\\api-keys\\page.tsx"
       ]
@@ -572,7 +643,9 @@
       "designs": [
         "docs\\design\\design-function-map.md"
       ],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-api-keys-delete.test.ts:62 (annot)"
+      ],
       "entry": [
         "app\\api\\v1\\tenants\\[tenantId]\\api-keys\\[keyId]\\route.ts"
       ]
@@ -584,7 +657,12 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-audit-read.test.ts:2683 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-audit-read.test.ts:4010 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-audit-read.test.ts:910 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-misc-write.test.ts:1190 (path)"
+      ],
       "entry": []
     },
     "M06.F01.I02": {
@@ -594,7 +672,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-audit-read.test.ts:5139 (path)"
+      ],
       "entry": []
     },
     "M06.F01.I03": {
@@ -628,7 +708,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\admin-app-menus-write.test.ts:1054 (path)"
+      ],
       "entry": []
     },
     "M08.F01.I02": {
@@ -638,7 +720,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\admin-app-menus-write.test.ts:1054 (path)"
+      ],
       "entry": [
         "app\\admin\\apps\\[appId]\\menus\\page.tsx",
         "app\\admin\\apps\\page.tsx"
@@ -709,7 +793,11 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-role-menus-write.test.ts:1223 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-read.test.ts:3698 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-write.test.ts:1271 (path)"
+      ],
       "entry": [
         "app\\tenants\\[tenantId]\\roles\\page.tsx"
       ]
@@ -737,7 +825,12 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-role-menus-write.test.ts:1223 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-read.test.ts:3698 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-write.test.ts:1271 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-write.test.ts:513 (annot)"
+      ],
       "entry": [
         "app\\tenants\\[tenantId]\\roles\\[roleId]\\menus\\page.tsx"
       ]
@@ -749,7 +842,10 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\me.test.ts:1845 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\me.test.ts:2074 (path)"
+      ],
       "entry": []
     }
   }
