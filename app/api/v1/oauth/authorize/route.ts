@@ -92,7 +92,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const code = generateAuthCode();
   oauthStore.putCode(code, {
-    appId: app.id,
+    clientId: app.id,
     userId: devUser.id,
     tenantId: body.tenantId,
     scope: body.scope,

@@ -62,7 +62,7 @@ export function TenantSwitcher() {
   function onSwitch(tenantId: string) {
     // M00.F02.I03 — switch tenant via POST /api/me/tenants/{tenantId}/switch
     setTenant(tenantId, null, "mock-token-" + tenantId);
-    router.push(`/tenants/${tenantId}/users`);
+    router.push(`/tenants/${tenantId}/members`);
   }
 
   return (

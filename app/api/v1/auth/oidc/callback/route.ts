@@ -85,7 +85,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
   const refreshToken = generateRefreshToken(devUser.id);
   oauthStore.putRefresh(refreshToken, {
-    appId: app.id,
+    clientId: app.id,
     userId: devUser.id,
     tenantId: devTenantId,
     scope: "openid",

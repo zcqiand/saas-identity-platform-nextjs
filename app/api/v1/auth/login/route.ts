@@ -108,7 +108,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const accessToken = await signToken({ sub: user.id, tenant_id: tRow.id });
   const refreshToken = generateRefreshToken(user.id);
   oauthStore.putRefresh(refreshToken, {
-    appId: "login",
+    clientId: "login",
     userId: user.id,
     tenantId: tRow.id,
     scope: "openid",

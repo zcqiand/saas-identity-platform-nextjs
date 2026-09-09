@@ -43,7 +43,7 @@ function queryStub<T>(data: T) {
 function mutationStub() {
   return {
     mutate: () => {},
-    mutateAsync: async (vars: { data: any; id?: string; tenantId?: string; appId?: string; roleId?: string; menuId?: string; keyId?: string; userId?: string }) => ({
+    mutateAsync: async (vars: { data: any; id?: string; tenantId?: string; clientId?: string; roleId?: string; menuId?: string; keyId?: string; userId?: string }) => ({
       data: { id: vars?.id ?? "new-id", ...(vars?.data ?? {}) },
     }),
     isPending: false,
@@ -100,20 +100,20 @@ vi.mock("@/api/endpoints/endpoints", () => ({
   tenantApiKeysRevokeApiKey: async (_t: string, keyId: string) => ({ data: { id: keyId, status: "revoked" } }),
   tenantApiKeysRotateApiKey: async () => ({ data: { id: "rotated-key", prefix: "sk_live", status: "active" } }),
 
-  adminAppsListApps: async () => ({ data: page(apps) }),
-  adminAppsCreateApp: async (body: any) => ({ data: { id: "new-app", ...body } }),
-  adminAppsGetApp: async (id: string) => ({ data: apps.find((a) => a.id === id) ?? apps[0] }),
-  adminAppsUpdateApp: async (appId: string, body: any) => ({ data: { id: appId, ...body } }),
-  adminAppsDeleteApp: async () => ({ data: undefined }),
-  adminAppsSetAppStatus: async () => ({ data: undefined }),
+  adminClientsListApps: async () => ({ data: page(apps) }),
+  adminClientsCreateApp: async (body: any) => ({ data: { id: "new-app", ...body } }),
+  adminClientsGetApp: async (id: string) => ({ data: apps.find((a) => a.id === id) ?? apps[0] }),
+  adminClientsUpdateApp: async (clientId: string, body: any) => ({ data: { id: clientId, ...body } }),
+  adminClientsDeleteApp: async () => ({ data: undefined }),
+  adminClientsSetAppStatus: async () => ({ data: undefined }),
 
-  adminAppMenusListMenus: async (appId: string) => ({ data: menus.filter((m) => m.appId === appId) }),
-  adminAppMenusCreateMenu: async (_a: string, body: any) => ({ data: { id: "new-menu", ...body } }),
-  adminAppMenusGetMenu: async (_a: string, menuId: string) => ({ data: menus.find((m) => m.id === menuId) ?? menus[0] }),
-  adminAppMenusUpdateMenu: async () => ({ data: undefined }),
-  adminAppMenusDeleteMenu: async () => ({ data: undefined }),
-  adminAppMenusMoveMenu: async () => ({ data: undefined }),
-  adminAppMenusReorderMenus: async () => ({ data: menus }),
+  clientMenusListMenus: async (clientId: string) => ({ data: menus.filter((m) => m.appId === clientId) }),
+  clientMenusCreateMenu: async (_a: string, body: any) => ({ data: { id: "new-menu", ...body } }),
+  clientMenusGetMenu: async (_a: string, menuId: string) => ({ data: menus.find((m) => m.id === menuId) ?? menus[0] }),
+  clientMenusUpdateMenu: async () => ({ data: undefined }),
+  clientMenusDeleteMenu: async () => ({ data: undefined }),
+  clientMenusMoveMenu: async () => ({ data: undefined }),
+  clientMenusReorderMenus: async () => ({ data: menus }),
 
   tenantRoleMenusListRoleMenus: async (_t: string, roleId: string) => {
     const g = roleMenuGrants.find((x) => x.roleId === roleId);

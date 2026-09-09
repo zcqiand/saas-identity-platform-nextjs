@@ -100,7 +100,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
     const refreshToken = generateRefreshToken(entry.userId);
     oauthStore.putRefresh(refreshToken, {
-      appId: entry.appId,
+      clientId: entry.clientId,
       userId: entry.userId,
       tenantId: entry.tenantId,
       scope: entry.scope,

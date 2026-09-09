@@ -49,7 +49,7 @@ describe("M04.F03.I02 /api/v1/oauth/token (authorization_code + refresh_token)",
     // 预置一个 code
     const code = `saas-code-test-${Date.now()}-1`;
     oauthStore.putCode(code, {
-      appId: "app-id-1",
+      clientId: "app-id-1",
       userId: "user-id-1",
       tenantId: baseBody.tenantId,
       scope: "openid",
@@ -104,7 +104,7 @@ describe("M04.F03.I02 /api/v1/oauth/token (authorization_code + refresh_token)",
     });
     const oldRefresh = `saas-rt-test-${Date.now()}-2`;
     oauthStore.putRefresh(oldRefresh, {
-      appId: "app-id-1",
+      clientId: "app-id-1",
       userId: "user-id-1",
       tenantId: baseBody.tenantId,
       scope: "openid",

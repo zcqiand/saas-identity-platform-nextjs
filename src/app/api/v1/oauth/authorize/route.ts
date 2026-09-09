@@ -108,7 +108,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   // 7. 生成一次性 code + 存 oauthStore
   const code = generateAuthCode();
   oauthStore.putCode(code, {
-    appId: app.id,
+    clientId: app.id,
     userId: tenantUser.id,
     tenantId: body.tenantId!,
     scope: body.scope!,

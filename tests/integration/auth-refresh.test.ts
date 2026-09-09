@@ -30,7 +30,7 @@ describe("M01.F04.I05 /api/v1/auth/refresh", () => {
   it("M01.F04.I05 returns 200 rotated TokenResponse for valid refresh_token", async () => {
     const oldRefresh = `saas-rt-test-${Date.now()}-refresh`;
     oauthStore.putRefresh(oldRefresh, {
-      appId: "app-id-1",
+      clientId: "app-id-1",
       userId: "user-id-1",
       tenantId: baseBody.tenantId,
       scope: "openid",
@@ -56,7 +56,7 @@ describe("M01.F04.I05 /api/v1/auth/refresh", () => {
   it("M01.F04.I05 returns 400 when tenantId mismatches", async () => {
     const rt = `saas-rt-test-${Date.now()}-mismatch`;
     oauthStore.putRefresh(rt, {
-      appId: "app-id-1",
+      clientId: "app-id-1",
       userId: "user-id-1",
       tenantId: "00000000-0000-0000-0000-000000000111",
       scope: "openid",

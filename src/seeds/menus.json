@@ -379,7 +379,7 @@
   },
   {
     "id": "m-erp-01",
-    "appId": "app-erp",
+    "clientId": "app-erp",
     "parentId": null,
     "code": "m-erp-01",
     "name": "仪表盘",
@@ -393,7 +393,7 @@
   },
   {
     "id": "m-erp-02",
-    "appId": "app-erp",
+    "clientId": "app-erp",
     "parentId": null,
     "code": "m-erp-02",
     "name": "采购管理",
@@ -407,7 +407,7 @@
   },
   {
     "id": "m-erp-03",
-    "appId": "app-erp",
+    "clientId": "app-erp",
     "parentId": null,
     "code": "m-erp-03",
     "name": "销售管理",
@@ -421,7 +421,7 @@
   },
   {
     "id": "m-erp-04",
-    "appId": "app-erp",
+    "clientId": "app-erp",
     "parentId": null,
     "code": "m-erp-04",
     "name": "库存管理",
@@ -435,7 +435,7 @@
   },
   {
     "id": "m-erp-05",
-    "appId": "app-erp",
+    "clientId": "app-erp",
     "parentId": null,
     "code": "m-erp-05",
     "name": "生产计划",
@@ -449,7 +449,7 @@
   },
   {
     "id": "m-erp-06",
-    "appId": "app-erp",
+    "clientId": "app-erp",
     "parentId": null,
     "code": "m-erp-06",
     "name": "财务管理",
@@ -463,7 +463,7 @@
   },
   {
     "id": "m-erp-settings",
-    "appId": "app-erp",
+    "clientId": "app-erp",
     "parentId": null,
     "code": "m-erp-settings",
     "name": "系统设置",
@@ -477,7 +477,7 @@
   },
   {
     "id": "m-crm-dash",
-    "appId": "app-crm",
+    "clientId": "app-crm",
     "parentId": null,
     "code": "m-crm-dash",
     "name": "仪表盘",
@@ -491,7 +491,7 @@
   },
   {
     "id": "m-crm-customers",
-    "appId": "app-crm",
+    "clientId": "app-crm",
     "parentId": null,
     "code": "m-crm-customers",
     "name": "客户管理",
@@ -505,7 +505,7 @@
   },
   {
     "id": "m-crm-leads",
-    "appId": "app-crm",
+    "clientId": "app-crm",
     "parentId": null,
     "code": "m-crm-leads",
     "name": "销售线索",
@@ -519,7 +519,7 @@
   },
   {
     "id": "m-crm-opps",
-    "appId": "app-crm",
+    "clientId": "app-crm",
     "parentId": null,
     "code": "m-crm-opps",
     "name": "商机管理",
@@ -533,7 +533,7 @@
   },
   {
     "id": "m-crm-contacts",
-    "appId": "app-crm",
+    "clientId": "app-crm",
     "parentId": null,
     "code": "m-crm-contacts",
     "name": "联系人",
@@ -547,7 +547,7 @@
   },
   {
     "id": "m-crm-followups",
-    "appId": "app-crm",
+    "clientId": "app-crm",
     "parentId": null,
     "code": "m-crm-followups",
     "name": "跟进记录",
@@ -561,7 +561,7 @@
   },
   {
     "id": "m-crm-reports",
-    "appId": "app-crm",
+    "clientId": "app-crm",
     "parentId": null,
     "code": "m-crm-reports",
     "name": "销售报表",

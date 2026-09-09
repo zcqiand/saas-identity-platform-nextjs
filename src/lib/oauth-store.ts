@@ -5,15 +5,15 @@
 //
 // 用法（Route Handler 内）：
 //   import { oauthStore } from "@/lib/oauth-store";
-//   oauthStore.putCode(code, { appId, userId, tenantId, scope, redirectUri });
+//   oauthStore.putCode(code, { clientId, userId, tenantId, scope, redirectUri });
 //   const entry = oauthStore.consumeCode(code);   // 一次性
-//   oauthStore.putRefresh(refresh, { appId, userId, tenantId, scope });
+//   oauthStore.putRefresh(refresh, { clientId, userId, tenantId, scope });
 //   const entry = oauthStore.rotateRefresh(rt);   // 旋转（旧删新发由 caller）
 
 import "server-only";
 
 interface CodeEntry {
-  appId: string;
+  clientId: string;
   userId: string;
   tenantId: string;
   scope: string;
@@ -22,7 +22,7 @@ interface CodeEntry {
 }
 
 interface RefreshEntry {
-  appId: string;
+  clientId: string;
   userId: string;
   tenantId: string;
   scope: string;
