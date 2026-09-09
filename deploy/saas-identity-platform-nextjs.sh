@@ -200,6 +200,26 @@ if [ -f "$BASE/saas.env" ]; then
   append_if_missing PG_DATABASE 'saas_prod'
   append_if_missing NEXT_PUBLIC_SAAS_BASE_URL "https://${NGINX_DOMAIN}"
 
+  # 一次性 stale 值 reconcile —— append_if_missing 只补 key, 不覆盖值。
+  # 同 springboot 仓 reconcile 范本 (migrate_if_stale KEY OLD NEW)。
+  # 1) port-scheme 5100/5200 迁移前老 saas.env 写 SERVER_PORT=8080, 与 next start :5101 +
+  #    docker run -p ...:5101 不一致 → Node 监听错端口, healthcheck 永远 connection-refused。
+  if grep -q '^SERVER_PORT=8080$' "$BASE/saas.env"; then
+    sed -i 's/^SERVER_PORT=8080$/SERVER_PORT=5101/' "$BASE/saas.env"
+    echo "→ reconcile SERVER_PORT: 8080 → 5101 (port-scheme 5100/5200 迁移残留)"
+  fi
+  # 2) env-key-unification (2026-08-28) 前老 saas.env 的 DATABASE_URL 是 jdbc:/Host= 老格式
+  #    (springboot jdbc: / aspnetcore Host= 连接串), Drizzle (postgres-js) 只认 postgresql://。
+  #    新值含密码无法整行预知 → 用当前部署环境的 $DATABASE_URL 覆盖 (bootstrap 段同源);
+  #    环境里没有则不静默兜底 (禁 env 默认值兜底), 老格式留给下方 fail-fast 提示。
+  if grep -Eq '^DATABASE_URL=(jdbc:|Host=)' "$BASE/saas.env" && [ -n "${DATABASE_URL:-}" ]; then
+    sed -i "s#^DATABASE_URL=.*#DATABASE_URL=$DATABASE_URL#" "$BASE/saas.env"
+    echo "→ reconcile DATABASE_URL: 老格式（jdbc:/Host=）→ postgresql:// (env-key-unification)"
+  elif grep -Eq '^DATABASE_URL=(jdbc:|Host=)' "$BASE/saas.env"; then
+    echo "✗ DATABASE_URL 是老格式（jdbc:/Host=），Drizzle 无法解析。请设置 DATABASE_URL 环境变量后重跑，或手工改为 postgresql:// 格式" >&2
+    exit 1
+  fi
+
   # 死键清理:SAAS_CORS_ALLOWED_ORIGINS 不在 .env.production 契约中 (nextjs 容器无 CORS reader)
   if grep -q '^SAAS_CORS_ALLOWED_ORIGINS=' "$BASE/saas.env"; then
     echo "→ drop dead key SAAS_CORS_ALLOWED_ORIGINS from $BASE/saas.env"
