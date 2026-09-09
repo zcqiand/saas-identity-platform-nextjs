@@ -42,24 +42,34 @@ fi
 # 给"先有 DATABASE_URL 临时上线"的场景。
 if [ ! -f "$BASE/saas.env" ]; then
   if [ -n "${DATABASE_URL:-}" ]; then
-    echo "→ bootstrapping $BASE/saas.env from env DATABASE_URL"
+    echo "→ bootstrapping $BASE/saas.env from env DATABASE_URL (key 集合 = .env.production)"
     umask 077
     SECRET="$(openssl rand -hex 32)"
     {
       printf 'DATABASE_URL=%s\n' "$DATABASE_URL"
+      printf 'DATABASE_NAME=saas_prod\n'
+      printf 'DATABASE_USER=postgres\n'
+      printf 'DATABASE_PASSWORD=changeme\n'
       printf 'JWT_SIGNING_KEY=%s\n' "$SECRET"
+      printf 'JWT_AUTHORITY=https://auth.example.com\n'
       printf 'JWT_ISSUER=saas-identity-platform\n'
       printf 'JWT_AUDIENCE=saas-identity-platform-clients\n'
       printf 'JWT_TTL_SECONDS=3600\n'
+      printf 'SERVER_PORT=5101\n'
+      printf 'PG_HOST=100.79.128.25\n'
+      printf 'PG_PORT=5432\n'
+      printf 'PG_USER=postgres\n'
+      printf 'PG_PASSWORD=changeme\n'
+      printf 'PG_DATABASE=saas_prod\n'
+      printf 'NEXT_PUBLIC_SAAS_BASE_URL=https://%s\n' "$NGINX_DOMAIN"
+      printf 'NEXT_PUBLIC_API_BASE_URL=\n'
+      # 2026-08-28 key 对齐:key 集合与 .env.production 由 suite L0.5 check_deploy_parity 锁死
+      printf 'NEXT_PUBLIC_API_MODE=nextjs\n'
       printf 'LOCKOUT_MAX_FAILS=5\n'
       printf 'LOCKOUT_WINDOW_MIN=15\n'
       printf 'LOCKOUT_COOLDOWN_MIN=30\n'
       printf 'OAUTH_CODE_TTL=600\n'
       printf 'OAUTH_REFRESH_TTL=604800\n'
-      printf 'SAAS_CORS_ALLOWED_ORIGINS=https://%s,https://lab-nextjs.xiangru.uk\n' "$NGINX_DOMAIN"
-      printf 'NEXT_PUBLIC_API_BASE_URL=\n'
-      # 2026-08-28 key 对齐:key 集合与 .env.production 由 suite L0.5 check_deploy_parity 锁死
-      printf 'NEXT_PUBLIC_API_MODE=nextjs\n'
     } > "$BASE/saas.env"
     chown deploy:deploy "$BASE/saas.env" 2>/dev/null || true
     chmod 600 "$BASE/saas.env"
@@ -166,13 +176,36 @@ if ! grep -q '^NEXT_PUBLIC_API_MODE=' "$BASE/saas.env"; then
   printf 'NEXT_PUBLIC_API_MODE=nextjs\n' >> "$BASE/saas.env"
 fi
 
-# 补 SAAS_CORS_ALLOWED_ORIGINS（v0.7.40 middleware 必需；与 lab.sh:60-83
-# 模式同款，已有则不覆盖，运维手工补的 prod origin 不会丢）。
-# bootstrap 那段（line 39-67）首启会写；后续 deploy 重跑只会缺失时 append。
-if ! grep -q '^SAAS_CORS_ALLOWED_ORIGINS=' "$BASE/saas.env"; then
-  echo "→ append SAAS_CORS_ALLOWED_ORIGINS to existing $BASE/saas.env"
-  umask 077
-  printf 'SAAS_CORS_ALLOWED_ORIGINS=https://%s,https://lab-nextjs.xiangru.uk\n' "$NGINX_DOMAIN" >> "$BASE/saas.env"
+# 2026-09-09 key 对齐 (L0.5 env 一致性): 老 env-file 逐 key append-if-missing 到 .env.production 全集
+# (key 集合契约由 suite L0.5 check_deploy_parity 锁死;SAAS_CORS_ALLOWED_ORIGINS 已死
+# 删 — nextjs 容器不需要 CORS env,只有 springboot/aspnetcore 后端要)
+if [ -f "$BASE/saas.env" ]; then
+  append_if_missing() {
+    key="$1"; val="$2"
+    if ! grep -q "^${key}=" "$BASE/saas.env"; then
+      echo "→ append ${key} to existing $BASE/saas.env"
+      umask 077
+      printf '%s=%s\n' "$key" "$val" >> "$BASE/saas.env"
+    fi
+  }
+  append_if_missing DATABASE_NAME 'saas_prod'
+  append_if_missing DATABASE_USER 'postgres'
+  append_if_missing DATABASE_PASSWORD 'changeme'
+  append_if_missing JWT_AUTHORITY 'https://auth.example.com'
+  append_if_missing SERVER_PORT '5101'
+  append_if_missing PG_HOST '100.79.128.25'
+  append_if_missing PG_PORT '5432'
+  append_if_missing PG_USER 'postgres'
+  append_if_missing PG_PASSWORD 'changeme'
+  append_if_missing PG_DATABASE 'saas_prod'
+  append_if_missing NEXT_PUBLIC_SAAS_BASE_URL "https://${NGINX_DOMAIN}"
+
+  # 死键清理:SAAS_CORS_ALLOWED_ORIGINS 不在 .env.production 契约中 (nextjs 容器无 CORS reader)
+  if grep -q '^SAAS_CORS_ALLOWED_ORIGINS=' "$BASE/saas.env"; then
+    echo "→ drop dead key SAAS_CORS_ALLOWED_ORIGINS from $BASE/saas.env"
+    umask 077
+    sed -i '/^SAAS_CORS_ALLOWED_ORIGINS=/d' "$BASE/saas.env"
+  fi
 fi
 
 echo "→ image: $IMAGE"

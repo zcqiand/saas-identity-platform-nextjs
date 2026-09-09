@@ -71,10 +71,11 @@ chmod 700 /etc/nginx/ssl
 #   DATABASE_URL        — PostgreSQL 连接串（生产 saas_prod 库）
 #   JWT_SIGNING_KEY     — Phase 5 HS256 签名密钥(jose)，与 springboot/aspnetcore
 #                         JWT_KEY 同步。env 镜像 CLAUDE.md §JWT。
-#   SAAS_CORS_ALLOWED_ORIGINS — 与 springboot SAAS_CORS_ALLOWED_ORIGINS 镜像
 #   OAUTH_CODE_TTL / OAUTH_REFRESH_TTL — M04.F03 OAuth 2.0 TTL
+# 注:SAAS_CORS_ALLOWED_ORIGINS 不写 — nextjs 容器无 CORS reader
+#   (只有 springboot/aspnetcore 后端读 CORS,见它们各自的 deploy 脚本)
 if [ ! -f "$BASE/saas.env" ]; then
-  log "generate $BASE/saas.env (DATABASE_URL + JWT_SIGNING_KEY)"
+  log "generate $BASE/saas.env (DATABASE_URL + JWT_SIGNING_KEY + .env.production 全集 key)"
   if [ -z "${DATABASE_URL:-}" ]; then
     echo "ERROR: DATABASE_URL env var is required (e.g. DATABASE_URL=postgresql://user:pwd@host:5432/saas_prod sudo -E $0 $DOMAIN)" >&2
     exit 1
@@ -82,16 +83,26 @@ if [ ! -f "$BASE/saas.env" ]; then
   SECRET="$(openssl rand -hex 32)"
   {
     printf 'DATABASE_URL=%s\n' "$DATABASE_URL"
+    printf 'DATABASE_NAME=saas_prod\n'
+    printf 'DATABASE_USER=postgres\n'
+    printf 'DATABASE_PASSWORD=changeme\n'
     printf 'JWT_SIGNING_KEY=%s\n' "$SECRET"
+    printf 'JWT_AUTHORITY=https://auth.example.com\n'
     printf 'JWT_ISSUER=saas-identity-platform\n'
     printf 'JWT_AUDIENCE=saas-identity-platform-clients\n'
     printf 'JWT_TTL_SECONDS=3600\n'
+    printf 'SERVER_PORT=5101\n'
+    printf 'PG_HOST=100.79.128.25\n'
+    printf 'PG_PORT=5432\n'
+    printf 'PG_USER=postgres\n'
+    printf 'PG_PASSWORD=changeme\n'
+    printf 'PG_DATABASE=saas_prod\n'
+    printf 'NEXT_PUBLIC_SAAS_BASE_URL=https://saas.YOUR_DOMAIN\n'
     printf 'LOCKOUT_MAX_FAILS=5\n'
     printf 'LOCKOUT_WINDOW_MIN=15\n'
     printf 'LOCKOUT_COOLDOWN_MIN=30\n'
     printf 'OAUTH_CODE_TTL=600\n'
     printf 'OAUTH_REFRESH_TTL=604800\n'
-    printf 'SAAS_CORS_ALLOWED_ORIGINS=https://saas.YOUR_DOMAIN,https://lab-domain.example\n'
   } > "$BASE/saas.env"
   chown deploy:deploy "$BASE/saas.env"
   chmod 600 "$BASE/saas.env"
