@@ -212,6 +212,11 @@ if [ -f "$BASE/saas.env" ]; then
   #    (springboot jdbc: / aspnetcore Host= 连接串), Drizzle (postgres-js) 只认 postgresql://。
   #    新值含密码无法整行预知 → 用当前部署环境的 $DATABASE_URL 覆盖 (bootstrap 段同源);
   #    环境里没有则不静默兜底 (禁 env 默认值兜底), 老格式留给下方 fail-fast 提示。
+  #    护栏: sed replacement 里 # 是分隔符、& 反指整个匹配, URL 含这些字符时自动迁移不安全 → fail-fast。
+  case "${DATABASE_URL:-}" in *'#'*|*'&'*|*'\'*)
+    echo "✗ DATABASE_URL 含 sed 特殊字符（# & \\），自动迁移不安全；请手工改为 postgresql:// 格式" >&2
+    exit 1;;
+  esac
   if grep -Eq '^DATABASE_URL=(jdbc:|Host=)' "$BASE/saas.env" && [ -n "${DATABASE_URL:-}" ]; then
     sed -i "s#^DATABASE_URL=.*#DATABASE_URL=$DATABASE_URL#" "$BASE/saas.env"
     echo "→ reconcile DATABASE_URL: 老格式（jdbc:/Host=）→ postgresql:// (env-key-unification)"
