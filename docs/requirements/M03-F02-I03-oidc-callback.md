@@ -1,4 +1,4 @@
-# M03.F02.I03 — OIDC Code 换取（dev pseudo-OIDC）
+# M03.F02.I03 — OIDC Code 换取（dev pseudo-OIDC）（已废段镜像豁免，9/7 迁移前快照）
 
 > v0.5.0 auth 批次落地。开发中状态（路由已加，fnTest 未覆盖）。
 

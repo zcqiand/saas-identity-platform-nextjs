@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="antialiased">
+      <body className="antialiased" data-fn="M04.F04.I08">
         <Providers>
           <RequireAuth>{children}</RequireAuth>
         </Providers>
