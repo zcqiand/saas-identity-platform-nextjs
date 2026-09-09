@@ -6,7 +6,7 @@
     "features": 13,
     "items": 55
   },
-  "warnings_total": 108,
+  "warnings_total": 104,
   "warnings": {
     "已上线但无设计映射": [
       "M00.F01.I01",
@@ -54,15 +54,11 @@
       "M00.F01.I05",
       "M00.F04.I01",
       "M01.F02.I01",
-      "M04.F01.I01",
-      "M04.F01.I02",
       "M04.F01.I03",
       "M04.F01.I04",
       "M04.F01.I05",
       "M04.F01.I06",
       "M04.F02.I01",
-      "M04.F04.I01",
-      "M04.F04.I02",
       "M04.F04.I03",
       "M04.F04.I04",
       "M04.F04.I05",
@@ -197,7 +193,12 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-members-read.test.ts:2501 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-members-read.test.ts:963 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-members-write-2.test.ts:1241 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-members-write.test.ts:987 (path)"
+      ],
       "entry": []
     },
     "M00.F02.I02": {
@@ -207,7 +208,12 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-members-read.test.ts:2501 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-members-read.test.ts:963 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-members-write-2.test.ts:1241 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-members-write.test.ts:987 (path)"
+      ],
       "entry": []
     },
     "M00.F02.I03": {
@@ -218,6 +224,7 @@
       "flows": [],
       "designs": [],
       "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-members-read.test.ts:3675 (path)",
         "渲染 TenantSwitcher 触发按钮挂 data-fn=M00.F02.I03"
       ],
       "entry": [
@@ -231,9 +238,11 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-members-read.test.ts:3675 (path)"
+      ],
       "entry": [
-        "app\\tenants\\[tenantId]\\users\\page.tsx"
+        "app\\tenants\\[tenantId]\\members\\page.tsx"
       ]
     },
     "M00.F02.I05": {
@@ -243,9 +252,11 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-members-read.test.ts:3675 (path)"
+      ],
       "entry": [
-        "app\\tenants\\[tenantId]\\users\\page.tsx"
+        "app\\tenants\\[tenantId]\\members\\page.tsx"
       ]
     },
     "M00.F02.I06": {
@@ -412,7 +423,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-applications.test.ts:970 (path)"
+      ],
       "entry": []
     },
     "M00.F05.I02": {
@@ -422,7 +435,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-applications.test.ts:970 (path)"
+      ],
       "entry": []
     },
     "M00.F05.I03": {
@@ -469,7 +484,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "app\\tenants\\[tenantId]\\users\\page.tsx"
+        "app\\tenants\\[tenantId]\\members\\page.tsx"
       ]
     },
     "M01.F03.I01": {
@@ -543,7 +558,7 @@
       ],
       "entry": [
         "app\\login\\page.tsx",
-        "app\\tenants\\[tenantId]\\users\\page.tsx"
+        "app\\tenants\\[tenantId]\\members\\page.tsx"
       ]
     },
     "M01.F04.I04": {
@@ -613,7 +628,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\admin-clients-write.test.ts:891 (path)"
+      ],
       "entry": []
     },
     "M04.F01.I02": {
@@ -623,7 +640,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\admin-clients-write.test.ts:891 (path)"
+      ],
       "entry": []
     },
     "M04.F01.I03": {
@@ -675,7 +694,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "app\\admin\\apps\\page.tsx"
+        "app\\admin\\clients\\page.tsx"
       ]
     },
     "M04.F03.I01": {
@@ -740,7 +759,9 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\client-menus-write.test.ts:1047 (path)"
+      ],
       "entry": []
     },
     "M04.F04.I02": {
@@ -750,10 +771,12 @@
       "requirements": [],
       "flows": [],
       "designs": [],
-      "tests": [],
+      "tests": [
+        "output\\saas-identity-platform-contract-test\\tests\\client-menus-write.test.ts:1047 (path)"
+      ],
       "entry": [
-        "app\\admin\\apps\\[appId]\\menus\\page.tsx",
-        "app\\admin\\apps\\page.tsx"
+        "app\\admin\\clients\\[clientId]\\menus\\page.tsx",
+        "app\\admin\\clients\\page.tsx"
       ]
     },
     "M04.F04.I03": {
@@ -775,8 +798,8 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "app\\admin\\apps\\[appId]\\menus\\page.tsx",
-        "app\\admin\\apps\\page.tsx"
+        "app\\admin\\clients\\[clientId]\\menus\\page.tsx",
+        "app\\admin\\clients\\page.tsx"
       ]
     },
     "M04.F04.I05": {
@@ -788,8 +811,8 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "app\\admin\\apps\\[appId]\\menus\\page.tsx",
-        "app\\admin\\apps\\page.tsx"
+        "app\\admin\\clients\\[clientId]\\menus\\page.tsx",
+        "app\\admin\\clients\\page.tsx"
       ]
     },
     "M04.F04.I06": {
@@ -811,7 +834,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "app\\admin\\apps\\[appId]\\menus\\page.tsx"
+        "app\\admin\\clients\\[clientId]\\menus\\page.tsx"
       ]
     },
     "M04.F04.I08": {
