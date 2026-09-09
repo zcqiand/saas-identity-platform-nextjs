@@ -1,15 +1,18 @@
-// DB smoke test：跑 PG 连接 + 跑 shared migrations + select 1。
+// DB smoke test：PG 连接 + 验证 shared 迁移已就位 + select 1。
+//
+// ADR-0025（shared 26a7281 删 sql/migrations）后 nextjs 不拥有迁移：
+// schema SSOT 在 shared 的 drizzle/ journal，由 shared `db:migrate` 应用到真库；
+// nextjs 走 DB-First（drizzle-kit pull，scripts/pull-schema.sh）。
+// 本测试只冒烟「连得上 + 库已被 shared 迁移过」，不执行任何 SQL 文件。
 //
 // 跳过条件：DATABASE_URL 未设 / `npm install` 没装 pg 时。CI 实跑。
 // SSR 环境（Next.js server-only）：src/db/index.ts 顶部有 `import "server-only"`，
 // 所以测试必须放到 vitest node 环境，且不走 Next bundler。
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { execSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { readdirSync, readFileSync } from "node:fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
@@ -49,31 +52,6 @@ describe("DB smoke", () => {
       connectionTimeoutMillis: 5000,
     });
     await client.connect();
-
-    // 跑 shared/migrations（按文件名字典序）
-    const migrationsDir = resolve(ROOT, "migrations");
-    const files = readdirSync(migrationsDir)
-      .filter((f) => /^V\d+__.*\.sql$/.test(f))
-      .sort();
-
-    // 如果 migrations/ 还没复制，从 shared 复制一份
-    if (files.length === 0) {
-      console.log("[db.smoke] migrations/ empty; copying from shared");
-      const sharedSql = resolve(ROOT, "../saas-identity-platform-shared/sql/migrations");
-      try {
-        execSync(`mkdir -p "${migrationsDir}" && cp "${sharedSql}"/V*.sql "${migrationsDir}"/`, {
-          stdio: "ignore",
-        });
-      } catch {
-        // 复制失败则 skip
-        return;
-      }
-    }
-
-    for (const f of readdirSync(migrationsDir).filter((f) => /^V\d+__.*\.sql$/.test(f)).sort()) {
-      const sql = readFileSync(resolve(migrationsDir, f), "utf-8");
-      await client.query(sql);
-    }
   });
 
   it("connects and selects 1", async () => {
@@ -82,7 +60,7 @@ describe("DB smoke", () => {
     expect(rows[0]?.ok).toBe(1);
   });
 
-  it("has 12 tables after migrations", async () => {
+  it("has 12 tables after shared migrations", async () => {
     if (!client) return;
     const { rows } = await client.query(
       "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name",
