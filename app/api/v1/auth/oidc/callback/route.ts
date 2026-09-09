@@ -3,16 +3,15 @@
 // TypeSpec: OidcCallbackRequest { code, state, clientId }
 // 响应：TokenResponse { accessToken, refreshToken?, tokenType, expiresIn, scope }
 //
-// dev pseudo-OIDC：信任客户端传回的 code + state，按 clientId 找 App，
-// 取该 App 关联 tenant 下第一个 active 用户作为 dev 用户（生产应走真 IdP 流程）。
-// 镜像 saas-identity-platform-msw/src/handlers-extra.ts:315-491 同款语义。
+// dev pseudo-OIDC：信任客户端传回的 code + state，按 clientId 找 oauthClient，
+// 取首个 active sysUser 作为 dev 用户。镜像 saas-identity-platform-msw handlers-extra.ts:315-491。
 // 共享 oauthStore 与 /api/v1/oauth/token grantType=authorization_code 路径对齐。
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
-import { apps, users } from "@/db/schema";
+import { oauthClient, sysUser, tenantMember } from "@/db/schema";
 import { oauthStore, generateRefreshToken } from "@/lib/oauth-store";
 import { signToken } from "@/lib/jwt";
 
@@ -36,11 +35,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
   const body = parsed.data;
 
-  // 1) 按 clientId 找 App（dev 模式下要求 App 有非空 redirectUris；state 由调用方管理）
+  // 1) 按 clientId 找 oauthClient
   const appRows = await db
-    .select({ id: apps.id, redirectUris: apps.redirectUris })
-    .from(apps)
-    .where(eq(apps.clientId, body.clientId))
+    .select({ id: oauthClient.id, redirectUris: oauthClient.redirectUris })
+    .from(oauthClient)
+    .where(eq(oauthClient.clientId, body.clientId))
     .limit(1);
   const app = appRows[0];
   if (!app) {
@@ -50,12 +49,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // 2) dev mock 用户绑定：从 App 第一个 redirectUri 反向寻租户 / 用户（生产 saas-springboot/aspnetcore 真后端走 IdP 用户认证）
-  // 简化：取任意一个 active 用户（dev 用）
+  // 2) dev mock 用户绑定：取任意一个 active sysUser
   const userRows = await db
-    .select({ id: users.id, tenantId: users.tenantId })
-    .from(users)
-    .where(eq(users.status, "active"))
+    .select({ id: sysUser.id })
+    .from(sysUser)
+    .where(eq(sysUser.status, 1))
     .limit(1);
 
   const devUser = userRows[0];
@@ -66,19 +64,30 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // 3) 把 OIDC callback 视为一次性 code exchange — 把外部 code 写进 oauth-store 当成「authorize 阶段的 code」，
-  //    内部立刻 consumeCode 拿到 entry 再签 saas-jwt / saas-rt
-  // 简化路径：直接签 HS256 JWT（不再二次 code exchange，避免与 /oauth/token 双语义重叠）
+  // 3) 取 devUser 的首个 active tenantMember.tenantId
+  const memberRows = await db
+    .select({ tenantId: tenantMember.tenantId })
+    .from(tenantMember)
+    .where(and(eq(tenantMember.userId, devUser.id), eq(tenantMember.status, 1)))
+    .limit(1);
+  const devTenantId = memberRows[0]?.tenantId;
+  if (!devTenantId) {
+    return NextResponse.json(
+      { code: "NO_TENANT", message: "OIDC callback: dev mock — 用户无 active tenant" },
+      { status: 400 },
+    );
+  }
+
   const accessToken = await signToken({
     sub: devUser.id,
-    tenant_id: devUser.tenantId,
+    tenant_id: devTenantId,
     scope: "openid",
   });
   const refreshToken = generateRefreshToken(devUser.id);
   oauthStore.putRefresh(refreshToken, {
     appId: app.id,
     userId: devUser.id,
-    tenantId: devUser.tenantId,
+    tenantId: devTenantId,
     scope: "openid",
   });
 
@@ -90,6 +99,3 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     scope: "openid",
   });
 }
-
-// Suppress unused-import warning for `and` (kept for future tenant+user composite filters)
-void and;

@@ -99,7 +99,7 @@ export default function AppListPage() {
   const [editTarget, setEditTarget] = useState<App | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<App | null>(null);
 
-  const apps = list.data?.data?.items ?? [];
+  const apps = (list.data?.data?.items ?? []) as App[];
 
   async function onCreate(values: Record<string, unknown>) {
     try {

@@ -2,11 +2,13 @@
 //
 // TypeSpec: tsp/routes/me.tsp listMyTenants(): TenantMembership[]
 // 列出当前用户所有租户成员关系
+//
+// 2026-09-09 schema pivot：tenantMemberships → tenantMember（无 roleIds/joinedAt）。
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq, ne } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { tenantMemberships } from "@/db/schema";
+import { tenantMember } from "@/db/schema";
 import { claimsFromAuthHeader } from "@/lib/jwt";
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
@@ -16,18 +18,18 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
   const memberships = await db
     .select()
-    .from(tenantMemberships)
-    .where(eq(tenantMemberships.userId, claims.sub));
+    .from(tenantMember)
+    .where(eq(tenantMember.userId, claims.sub));
   return NextResponse.json(
     memberships
-      .filter((m) => m.status !== "removed")
+      .filter((m) => m.status === 1)
       .map((m) => ({
         id: m.id,
         userId: m.userId,
         tenantId: m.tenantId,
-        roleIds: (m.roleIds ?? []).map((r) => r),
-        status: m.status,
-        joinedAt: m.joinedAt.toISOString(),
+        roleIds: [] as string[],
+        status: "active",
+        joinedAt: m.createdAt,
       })),
   );
 }

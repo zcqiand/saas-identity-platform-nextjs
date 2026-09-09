@@ -1,12 +1,14 @@
 // /api/v1/tenants/:tenantId/users/:userId/status — M00.F02.I08
 //
 // TypeSpec: tsp/routes/tenant-users.tsp changeUserStatus(@path tenantId, @path userId, @body body: { status: UserStatus }): User
+//
+// 2026-09-09 schema pivot：user.status 由 tenantMember.status 表达（smallint）。
 
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { tenantMember, sysUser } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const Body = z.object({
@@ -27,25 +29,42 @@ export async function PATCH(
         { status: 400 },
       );
     }
+    const statusNum = parsed.data.status === "active" || parsed.data.status === "invited" ? 1 : 0;
     const updated = await db
-      .update(users)
-      .set({ status: parsed.data.status, updatedAt: new Date() })
-      .where(and(eq(users.tenantId, tenantId), eq(users.id, userId)))
+      .update(tenantMember)
+      .set({ status: statusNum, updatedAt: new Date().toISOString() })
+      .where(and(eq(tenantMember.tenantId, tenantId), eq(tenantMember.userId, userId)))
       .returning();
-    const u = updated[0];
+    const m = updated[0];
+    if (!m) {
+      return NextResponse.json({ code: "NOT_FOUND", message: "User not found" }, { status: 404 });
+    }
+    const uRows = await db
+      .select({
+        id: sysUser.id,
+        username: sysUser.username,
+        email: sysUser.email,
+        mobile: sysUser.mobile,
+        createdAt: sysUser.createdAt,
+        updatedAt: sysUser.updatedAt,
+      })
+      .from(sysUser)
+      .where(eq(sysUser.id, userId))
+      .limit(1);
+    const u = uRows[0];
     if (!u) {
       return NextResponse.json({ code: "NOT_FOUND", message: "User not found" }, { status: 404 });
     }
     return NextResponse.json({
       id: u.id,
-      tenantId: u.tenantId,
+      tenantId,
       username: u.username,
       email: u.email,
-      displayName: u.displayName ?? undefined,
-      status: u.status,
-      roleIds: (u.roleIds ?? []).map((r) => r),
-      createdAt: u.createdAt.toISOString(),
-      updatedAt: u.updatedAt.toISOString(),
+      displayName: u.mobile ?? undefined,
+      status: parsed.data.status,
+      roleIds: [] as string[],
+      createdAt: u.createdAt,
+      updatedAt: u.updatedAt,
     });
   } catch (e) {
     const g = tenantGuardErrorToNextResponse(e);

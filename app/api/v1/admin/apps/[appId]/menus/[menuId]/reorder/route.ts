@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { eq, asc } from "drizzle-orm";
 import { db } from "@/db";
-import { menus } from "@/db/schema";
+import { sysMenu } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 import { resolveAppId } from "@/lib/app-resolver";
 
@@ -18,19 +18,29 @@ const ReorderBody = z.object({
 });
 
 const menuFields = {
-  id: menus.id,
-  appId: menus.appId,
-  parentId: menus.parentId,
-  code: menus.code,
-  name: menus.name,
-  path: menus.path,
-  icon: menus.icon,
-  type: menus.type,
-  sortOrder: menus.sortOrder,
-  status: menus.status,
-  createdAt: menus.createdAt,
-  updatedAt: menus.updatedAt,
+  id: sysMenu.id,
+  clientId: sysMenu.clientId,
+  parentId: sysMenu.parentId,
+  title: sysMenu.title,
+  type: sysMenu.type,
+  path: sysMenu.path,
+  component: sysMenu.component,
+  perms: sysMenu.perms,
+  icon: sysMenu.icon,
+  sortOrder: sysMenu.sortOrder,
+  status: sysMenu.status,
+  createdAt: sysMenu.createdAt,
 };
+
+function statusFromSmallint(n: number): "active" | "disabled" {
+  return n === 1 ? "active" : "disabled";
+}
+
+function typeFromSmallint(n: number): "group" | "page" | "action" {
+  if (n === 1) return "group";
+  if (n === 2) return "page";
+  return "action";
+}
 
 export async function PUT(
   req: NextRequest,
@@ -56,16 +66,22 @@ export async function PUT(
     const { orderedMenuIds } = parsed.data;
     for (let i = 0; i < orderedMenuIds.length; i++) {
       await db
-        .update(menus)
+        .update(sysMenu)
         .set({ sortOrder: i })
-        .where(eq(menus.id, orderedMenuIds[i]));
+        .where(eq(sysMenu.id, orderedMenuIds[i]));
     }
     const items = await db
       .select(menuFields)
-      .from(menus)
-      .where(eq(menus.appId, appId))
-      .orderBy(asc(menus.sortOrder), asc(menus.code));
-    return NextResponse.json(items);
+      .from(sysMenu)
+      .where(eq(sysMenu.clientId, appId))
+      .orderBy(asc(sysMenu.sortOrder), asc(sysMenu.title));
+    return NextResponse.json(
+      items.map((m) => ({
+        ...m,
+        type: typeFromSmallint(m.type),
+        status: statusFromSmallint(m.status),
+      })),
+    );
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;

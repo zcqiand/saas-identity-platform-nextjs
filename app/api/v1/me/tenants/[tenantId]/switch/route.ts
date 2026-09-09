@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { tenantMemberships } from "@/db/schema";
+import { tenantMember } from "@/db/schema";
 import { claimsFromAuthHeader, signToken } from "@/lib/jwt";
 
 export async function POST(
@@ -22,12 +22,12 @@ export async function POST(
   }
   const m = await db
     .select()
-    .from(tenantMemberships)
-    .where(and(eq(tenantMemberships.userId, claims.sub), eq(tenantMemberships.tenantId, tenantId)))
+    .from(tenantMember)
+    .where(
+      and(eq(tenantMember.userId, claims.sub), eq(tenantMember.tenantId, tenantId)),
+    )
     .limit(1);
-  if (!m[0] || m[0].status === "removed") {
-    // 2026-08-31 contract-test M96.F02.I28：家族统一非成员/不存在 → 404
-    // （msw oracle / aspnetcore / springboot 同款；原 403 FORBIDDEN 与四方分叉）
+  if (!m[0] || m[0].status !== 1) {
     return NextResponse.json(
       { code: "NOT_FOUND", message: "tenant 不存在或不是该租户成员" },
       { status: 404 },

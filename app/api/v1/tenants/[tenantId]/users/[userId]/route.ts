@@ -5,20 +5,56 @@
 // - getUser(@path tenantId, @path userId): User
 // - updateUser(@path tenantId, @path userId, @body body): User
 // - deleteUser(@path tenantId, @path userId): void
+//
+// 2026-09-09 schema pivot：users → sysUser（无 tenantId/displayName），
+// tenantMemberships → tenantMember（无 roleIds）。
 
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { users, tenantMemberships } from "@/db/schema";
+import { sysUser, tenantMember } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const UpdateUserBody = z.object({
   email: z.string().email().optional(),
-  displayName: z.string().optional(),
-  status: z.enum(["active", "invited", "suspended", "disabled"]).optional(),
-  roleIds: z.array(z.string().uuid()).optional(),
+  mobile: z.string().optional(),
+  status: z.enum(["active", "disabled"]).optional(),
 });
+
+async function findMember(tenantId: string, userId: string) {
+  const rows = await db
+    .select({
+      id: tenantMember.id,
+      userId: tenantMember.userId,
+      tenantId: tenantMember.tenantId,
+      memberStatus: tenantMember.status,
+      username: sysUser.username,
+      email: sysUser.email,
+      mobile: sysUser.mobile,
+      createdAt: sysUser.createdAt,
+      updatedAt: sysUser.updatedAt,
+    })
+    .from(tenantMember)
+    .innerJoin(sysUser, eq(sysUser.id, tenantMember.userId))
+    .where(and(eq(tenantMember.tenantId, tenantId), eq(tenantMember.userId, userId)))
+    .limit(1);
+  return rows[0];
+}
+
+function toDto(u: NonNullable<Awaited<ReturnType<typeof findMember>>>) {
+  return {
+    id: u.userId,
+    tenantId: u.tenantId,
+    username: u.username,
+    email: u.email,
+    displayName: u.mobile ?? undefined,
+    status: u.memberStatus === 1 ? "active" : "disabled",
+    roleIds: [] as string[],
+    createdAt: u.createdAt,
+    updatedAt: u.updatedAt,
+  };
+}
 
 export async function GET(
   req: NextRequest,
@@ -27,45 +63,11 @@ export async function GET(
   try {
     const { tenantId, userId } = await params;
     await verifyPathTenant(tenantId, req.headers.get("authorization"));
-    // 2026-08-30 contract-test：users.role_ids 冗余列，authoritative 在 tenant_memberships
-    // LEFT JOIN 同 list 端点（[tenantId]/users/route.ts）的处理。
-    const rows = await db
-      .select({
-        id: users.id,
-        tenantId: users.tenantId,
-        username: users.username,
-        email: users.email,
-        displayName: users.displayName,
-        status: users.status,
-        roleIds: tenantMemberships.roleIds,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt,
-      })
-      .from(users)
-      .leftJoin(
-        tenantMemberships,
-        and(
-          eq(tenantMemberships.userId, users.id),
-          eq(tenantMemberships.tenantId, users.tenantId),
-        ),
-      )
-      .where(and(eq(users.tenantId, tenantId), eq(users.id, userId)))
-      .limit(1);
-    const u = rows[0];
+    const u = await findMember(tenantId, userId);
     if (!u) {
       return NextResponse.json({ code: "NOT_FOUND", message: "User not found" }, { status: 404 });
     }
-    return NextResponse.json({
-      id: u.id,
-      tenantId: u.tenantId,
-      username: u.username,
-      email: u.email,
-      displayName: u.displayName ?? undefined,
-      status: u.status,
-      roleIds: u.roleIds ?? [],
-      createdAt: u.createdAt.toISOString(),
-      updatedAt: u.updatedAt.toISOString(),
-    });
+    return NextResponse.json(toDto(u));
   } catch (e) {
     const g = tenantGuardErrorToNextResponse(e);
     if (g) return g;
@@ -87,31 +89,27 @@ export async function PATCH(
         { status: 400 },
       );
     }
-    const patch: Record<string, unknown> = { updatedAt: new Date() };
-    if (parsed.data.email !== undefined) patch.email = parsed.data.email;
-    if (parsed.data.displayName !== undefined) patch.displayName = parsed.data.displayName;
-    if (parsed.data.status !== undefined) patch.status = parsed.data.status;
-    if (parsed.data.roleIds !== undefined) patch.roleIds = parsed.data.roleIds;
-    const updated = await db
-      .update(users)
-      .set(patch)
-      .where(and(eq(users.tenantId, tenantId), eq(users.id, userId)))
-      .returning();
-    const u = updated[0];
-    if (!u) {
+    const existing = await findMember(tenantId, userId);
+    if (!existing) {
       return NextResponse.json({ code: "NOT_FOUND", message: "User not found" }, { status: 404 });
     }
-    return NextResponse.json({
-      id: u.id,
-      tenantId: u.tenantId,
-      username: u.username,
-      email: u.email,
-      displayName: u.displayName ?? undefined,
-      status: u.status,
-      roleIds: (u.roleIds ?? []).map((r) => r),
-      createdAt: u.createdAt.toISOString(),
-      updatedAt: u.updatedAt.toISOString(),
-    });
+    const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+    if (parsed.data.email !== undefined) patch.email = parsed.data.email;
+    if (parsed.data.mobile !== undefined) patch.mobile = parsed.data.mobile;
+    await db.update(sysUser).set(patch).where(eq(sysUser.id, userId));
+    if (parsed.data.status !== undefined) {
+      await db
+        .update(tenantMember)
+        .set({ status: parsed.data.status === "active" ? 1 : 0, updatedAt: new Date().toISOString() })
+        .where(
+          and(eq(tenantMember.tenantId, tenantId), eq(tenantMember.userId, userId)),
+        );
+    }
+    const after = await findMember(tenantId, userId);
+    if (!after) {
+      return NextResponse.json({ code: "NOT_FOUND", message: "User not found after update" }, { status: 404 });
+    }
+    return NextResponse.json(toDto(after));
   } catch (e) {
     const g = tenantGuardErrorToNextResponse(e);
     if (g) return g;
@@ -126,9 +124,10 @@ export async function DELETE(
   try {
     const { tenantId, userId } = await params;
     await verifyPathTenant(tenantId, req.headers.get("authorization"));
+    // 仅删 membership；sys_user 跨租户共享
     await db
-      .delete(users)
-      .where(and(eq(users.tenantId, tenantId), eq(users.id, userId)));
+      .delete(tenantMember)
+      .where(and(eq(tenantMember.tenantId, tenantId), eq(tenantMember.userId, userId)));
     return new NextResponse(null, { status: 204 });
   } catch (e) {
     const g = tenantGuardErrorToNextResponse(e);

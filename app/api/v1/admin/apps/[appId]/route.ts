@@ -1,4 +1,4 @@
-// /api/v1/admin/apps/glm_5.2_ark_toC - M04/M08 单个应用（get + update + delete）
+// /api/v1/admin/apps/:appId - M04/M08 单个应用（get + update + delete）
 //
 // TypeSpec: tsp/routes/admin-apps.tsp
 //   getApp(@path appId): App
@@ -6,14 +6,14 @@
 //   deleteApp(@path appId): void (204)
 // 语义：
 //   - 平台级：await verifyPathTenant(null) 只要 JWT
-//   - DELETE 级联清 menus（FK ON DELETE CASCADE）
-//   - UpdateAppRequest 不含 code/clientId（不可改）
+//   - DELETE 级联清 sysMenu（FK ON DELETE CASCADE）
+//   - UpdateAppRequest 不含 clientId（不可改）
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { apps } from "@/db/schema";
+import { oauthClient } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const GRANT_TYPES = [
@@ -24,39 +24,38 @@ const GRANT_TYPES = [
 ] as const;
 
 const UpdateAppBody = z.object({
-  name: z.string().min(2).max(255).optional(),
-  description: z.string().optional(),
-  icon: z.string().optional(),
-  sortOrder: z.number().int().optional(),
-  status: z.enum(["active", "disabled"]).optional(),
+  clientName: z.string().min(2).max(128).optional(),
   redirectUris: z.array(z.string()).optional(),
   scopes: z.array(z.string()).optional(),
   grantTypes: z.array(z.enum(GRANT_TYPES)).optional(),
-  isFirstParty: z.boolean().optional(),
+  autoApprove: z.boolean().optional(),
+  status: z.enum(["active", "disabled"]).optional(),
 });
 
 const appFields = {
-  id: apps.id,
-  code: apps.code,
-  name: apps.name,
-  description: apps.description,
-  icon: apps.icon,
-  sortOrder: apps.sortOrder,
-  status: apps.status,
-  clientId: apps.clientId,
-  redirectUris: apps.redirectUris,
-  scopes: apps.scopes,
-  grantTypes: apps.grantTypes,
-  isFirstParty: apps.isFirstParty,
-  createdAt: apps.createdAt,
-  updatedAt: apps.updatedAt,
+  id: oauthClient.id,
+  clientId: oauthClient.clientId,
+  clientName: oauthClient.clientName,
+  grantTypes: oauthClient.grantTypes,
+  redirectUris: oauthClient.redirectUris,
+  scopes: oauthClient.scopes,
+  accessTokenValidity: oauthClient.accessTokenValidity,
+  refreshTokenValidity: oauthClient.refreshTokenValidity,
+  autoApprove: oauthClient.autoApprove,
+  status: oauthClient.status,
+  createdAt: oauthClient.createdAt,
+  updatedAt: oauthClient.updatedAt,
 };
+
+function statusFromSmallint(n: number): "active" | "disabled" {
+  return n === 1 ? "active" : "disabled";
+}
 
 async function getAppById(id: string) {
   const rows = await db
     .select(appFields)
-    .from(apps)
-    .where(eq(apps.id, id))
+    .from(oauthClient)
+    .where(eq(oauthClient.id, id))
     .limit(1);
   return rows[0];
 }
@@ -75,7 +74,7 @@ export async function GET(
         { status: 404 },
       );
     }
-    return NextResponse.json(app);
+    return NextResponse.json({ ...app, status: statusFromSmallint(app.status) });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;
@@ -105,28 +104,31 @@ export async function PATCH(
       );
     }
 
-    const { name, description, icon, sortOrder, status, redirectUris, scopes, grantTypes, isFirstParty } = parsed.data;
-    const patch: Record<string, unknown> = {};
-    if (name !== undefined) patch.name = name;
-    if (description !== undefined) patch.description = description;
-    if (icon !== undefined) patch.icon = icon;
-    if (sortOrder !== undefined) patch.sortOrder = sortOrder;
-    if (status !== undefined) patch.status = status;
-    if (redirectUris !== undefined) patch.redirectUris = redirectUris;
-    if (scopes !== undefined) patch.scopes = scopes;
-    if (grantTypes !== undefined) patch.grantTypes = grantTypes;
-    if (isFirstParty !== undefined) patch.isFirstParty = isFirstParty;
+    const { clientName, redirectUris, scopes, grantTypes, autoApprove, status } = parsed.data;
+    const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+    if (clientName !== undefined) patch.clientName = clientName;
+    if (redirectUris !== undefined) patch.redirectUris = redirectUris.join("\n");
+    if (scopes !== undefined) patch.scopes = scopes.join(",");
+    if (grantTypes !== undefined) patch.grantTypes = grantTypes.join(",");
+    if (autoApprove !== undefined) patch.autoApprove = autoApprove;
+    if (status !== undefined) patch.status = status === "active" ? 1 : 0;
 
-    if (Object.keys(patch).length === 0) {
-      return NextResponse.json(existing);
+    if (Object.keys(patch).length === 1) {
+      return NextResponse.json({ ...existing, status: statusFromSmallint(existing.status) });
     }
 
     const [updated] = await db
-      .update(apps)
+      .update(oauthClient)
       .set(patch)
-      .where(eq(apps.id, appId))
+      .where(eq(oauthClient.id, appId))
       .returning(appFields);
-    return NextResponse.json(updated);
+    if (!updated) {
+      return NextResponse.json(
+        { code: "NOT_FOUND", message: "App not found after update" },
+        { status: 404 },
+      );
+    }
+    return NextResponse.json({ ...updated, status: statusFromSmallint(updated.status) });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;
@@ -148,7 +150,7 @@ export async function DELETE(
         { status: 404 },
       );
     }
-    await db.delete(apps).where(eq(apps.id, appId));
+    await db.delete(oauthClient).where(eq(oauthClient.id, appId));
     return new NextResponse(null, { status: 204 });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);

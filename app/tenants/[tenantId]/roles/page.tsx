@@ -10,7 +10,6 @@ import {
   useTenantRolesCreateRole,
   useTenantRolesDeleteRole,
   useTenantRolesListRoles,
-  useTenantRolesSetPermissions,
   useTenantRolesUpdateRole,
 } from "@/api/endpoints/endpoints";
 import type {
@@ -36,15 +35,7 @@ import { CrudDialog, type FieldDef, type FieldValue } from "@/components/app/cru
 import { toApiError } from "@/api/http-client";
 import { toast } from "sonner";
 
-const PERMISSION_OPTIONS = [
-  { value: "users.read", label: "users.read" },
-  { value: "users.write", label: "users.write" },
-  { value: "roles.read", label: "roles.read" },
-  { value: "roles.write", label: "roles.write" },
-  { value: "api_keys.read", label: "api_keys.read" },
-  { value: "api_keys.write", label: "api_keys.write" },
-  { value: "audit.read", label: "audit.read" },
-];
+// PERMISSION_OPTIONS 已废止（role_permissions 表 DROP，M00.F04.I01 仅 springboot 仓实现）
 
 const FIELDS: FieldDef[] = [
   { name: "code", label: "Code", required: true, placeholder: "admin" },
@@ -62,20 +53,18 @@ export default function RoleListPage({ params }: { params: Promise<{ tenantId: s
     query: { enabled: !!tenantId },
   });
   const tenant = tenantQ.data?.data ?? null;
-  const tenantLabel = tenant ? `租户 ${tenant.name}（${tenant.code}）` : "租户未知";
+  const tenantLabel = tenant ? `租户 ${tenant.name}（${tenant.tenantKey}）` : "租户未知";
 
   const list = useTenantRolesListRoles(tenantId);
   const createMut = useTenantRolesCreateRole();
   const updateMut = useTenantRolesUpdateRole();
   const deleteMut = useTenantRolesDeleteRole();
-  const permMut = useTenantRolesSetPermissions();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Role | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Role | null>(null);
-  const [permTarget, setPermTarget] = useState<Role | null>(null);
 
-  const roles = list.data?.data?.items ?? [];
+  const roles = (list.data?.data?.items ?? []) as Role[];
 
   async function onCreate(values: Record<string, unknown>) {
     try {
@@ -104,25 +93,6 @@ export default function RoleListPage({ params }: { params: Promise<{ tenantId: s
       toast.success("角色已更新");
     } catch (err) {
       toast.error(`更新失败：${toApiError(err).message}`);
-    }
-  }
-
-  async function onSetPermissions(values: Record<string, unknown>) {
-    if (!permTarget) return;
-    const permissionIds = Array.isArray(values.permissionIds)
-      ? (values.permissionIds as string[])
-      : [];
-    try {
-      await permMut.mutateAsync({
-        tenantId,
-        roleId: permTarget.id,
-        data: { permissionIds },
-      });
-      setPermTarget(null);
-      list.refetch();
-      toast.success("权限已更新");
-    } catch (err) {
-      toast.error(`权限更新失败：${toApiError(err).message}`);
     }
   }
 
@@ -179,14 +149,7 @@ export default function RoleListPage({ params }: { params: Promise<{ tenantId: s
                     </span>
                   </TableCell>
                   <TableCell className="text-right space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      data-fn="M00.F04.I01"
-                      onClick={() => setPermTarget(r)}
-                    >
-                      权限矩阵
-                    </Button>
+                    {/* 权限矩阵按钮已废止（role_permissions 表 DROP，setPermissions endpoint 整体删） */}
                     <Button variant="ghost" size="sm" data-fn="M00.F04.I02" asChild>
                       <Link href={`/tenants/${tenantId}/roles/${r.id}/menus`}>菜单授权</Link>
                     </Button>
@@ -236,49 +199,7 @@ export default function RoleListPage({ params }: { params: Promise<{ tenantId: s
         onSubmit={onUpdate}
       />
 
-      <CrudDialog
-        open={Boolean(permTarget)}
-        onOpenChange={(o) => !o && setPermTarget(null)}
-        title={`权限矩阵：${permTarget?.name ?? ""}`}
-        fields={[
-          {
-            name: "permissionIds",
-            label: "权限（多选）",
-            type: "select",
-            options: PERMISSION_OPTIONS,
-          },
-        ]}
-        submitText="保存权限"
-        loading={permMut.isPending}
-        initialValues={
-          permTarget
-            ? { permissionIds: permTarget.permissionIds ?? [] }
-            : undefined
-        }
-        renderField={(_field, value, onChange) => (
-          <div className="space-y-1 max-h-48 overflow-y-auto border rounded p-2">
-            {PERMISSION_OPTIONS.map((p) => {
-              const checked = Array.isArray(value) && value.includes(p.value);
-              return (
-                <label key={p.value} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={(e) => {
-                      const next = new Set(Array.isArray(value) ? (value as string[]) : []);
-                      if (e.target.checked) next.add(p.value);
-                      else next.delete(p.value);
-                      onChange(Array.from(next));
-                    }}
-                  />
-                  <span className="font-mono text-xs">{p.value}</span>
-                </label>
-              );
-            })}
-          </div>
-        )}
-        onSubmit={onSetPermissions}
-      />
+      {/* M00.F04.I01 权限矩阵：role_permissions 表已废止，对话框整体删。springboot 仓实现仍提供 setPermissions endpoint。 */}
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

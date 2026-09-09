@@ -5,15 +5,19 @@
 //   createApp(@body CreateAppRequest): App
 // 语义：
 //   - 平台级（不 tenant-scoped）：await verifyPathTenant(null) 只要 JWT
-//   - GET -> Page<App>（sort_order ASC, created_at DESC）
-//   - POST -> App；code / clientId 平台唯一，冲突 409
-//   - clientSecret 入库为 client_secret_hash（dev 占位）；响应不返回明文
+//   - GET -> Page<App>（clientId ASC, created_at DESC）
+//   - POST -> App；clientId 平台唯一，冲突 409
+//   - clientSecret 入库为 clientSecret（明文占位）；响应不返回明文
+//
+// 2026-09-09 schema pivot：apps → oauthClient。
+// oauth_client 列：clientId, clientSecret, clientName, grantTypes (varchar), redirectUris (text),
+//                   scopes, accessTokenValidity, refreshTokenValidity, autoApprove, status (smallint)
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
-import { apps } from "@/db/schema";
+import { oauthClient } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const PAGE_DEFAULT = 20;
@@ -27,36 +31,34 @@ const GRANT_TYPES = [
 ] as const;
 
 const CreateAppBody = z.object({
-  code: z.string().min(2).max(64),
-  name: z.string().min(2).max(255),
-  description: z.string().optional(),
-  icon: z.string().optional(),
-  sortOrder: z.number().int().optional(),
-  status: z.enum(["active", "disabled"]).optional(),
   clientId: z.string().min(2).max(128),
+  clientName: z.string().min(2).max(128),
   clientSecret: z.string().optional(),
   redirectUris: z.array(z.string()).default([]),
   scopes: z.array(z.string()).optional(),
   grantTypes: z.array(z.enum(GRANT_TYPES)).optional(),
-  isFirstParty: z.boolean().optional(),
+  autoApprove: z.boolean().optional(),
+  status: z.enum(["active", "disabled"]).optional(),
 });
 
 const appFields = {
-  id: apps.id,
-  code: apps.code,
-  name: apps.name,
-  description: apps.description,
-  icon: apps.icon,
-  sortOrder: apps.sortOrder,
-  status: apps.status,
-  clientId: apps.clientId,
-  redirectUris: apps.redirectUris,
-  scopes: apps.scopes,
-  grantTypes: apps.grantTypes,
-  isFirstParty: apps.isFirstParty,
-  createdAt: apps.createdAt,
-  updatedAt: apps.updatedAt,
+  id: oauthClient.id,
+  clientId: oauthClient.clientId,
+  clientName: oauthClient.clientName,
+  grantTypes: oauthClient.grantTypes,
+  redirectUris: oauthClient.redirectUris,
+  scopes: oauthClient.scopes,
+  accessTokenValidity: oauthClient.accessTokenValidity,
+  refreshTokenValidity: oauthClient.refreshTokenValidity,
+  autoApprove: oauthClient.autoApprove,
+  status: oauthClient.status,
+  createdAt: oauthClient.createdAt,
+  updatedAt: oauthClient.updatedAt,
 };
+
+function statusFromSmallint(n: number): "active" | "disabled" {
+  return n === 1 ? "active" : "disabled";
+}
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
@@ -69,15 +71,20 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     );
     const totalResult = await db
       .select({ count: sql<number>`count(*)::int` })
-      .from(apps);
+      .from(oauthClient);
     const total = totalResult[0]?.count ?? 0;
     const items = await db
       .select(appFields)
-      .from(apps)
+      .from(oauthClient)
       .limit(pageSize)
       .offset(page * pageSize)
-      .orderBy(sql`sort_order ASC, created_at DESC`);
-    return NextResponse.json({ items, page, pageSize, total });
+      .orderBy(sql`created_at DESC`);
+    return NextResponse.json({
+      items: items.map((c) => ({ ...c, status: statusFromSmallint(c.status) })),
+      page,
+      pageSize,
+      total,
+    });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;
@@ -97,29 +104,31 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
     const b = parsed.data;
     const [created] = await db
-      .insert(apps)
+      .insert(oauthClient)
       .values({
-        code: b.code,
-        name: b.name,
-        description: b.description ?? null,
-        icon: b.icon ?? null,
-        sortOrder: b.sortOrder ?? 0,
-        status: b.status ?? "active",
         clientId: b.clientId,
-        clientSecretHash: b.clientSecret ? `plain:${b.clientSecret}` : "dev-placeholder-hash",
-        redirectUris: b.redirectUris,
-        scopes: b.scopes ?? [],
-        grantTypes: b.grantTypes ?? [],
-        isFirstParty: b.isFirstParty ?? false,
+        clientName: b.clientName,
+        clientSecret: b.clientSecret ? `plain:${b.clientSecret}` : "dev-placeholder-hash",
+        grantTypes: (b.grantTypes ?? []).join(","),
+        redirectUris: (b.redirectUris ?? []).join("\n"),
+        scopes: (b.scopes ?? []).join(","),
+        autoApprove: b.autoApprove ?? false,
+        status: b.status === "disabled" ? 0 : 1,
       })
       .returning(appFields);
-    return NextResponse.json(created);
+    if (!created) {
+      return NextResponse.json(
+        { code: "INTERNAL", message: "Client creation returned no row" },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ ...created, status: statusFromSmallint(created.status) });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;
     if ((e as { code?: string })?.code === "23505") {
       return NextResponse.json(
-        { code: "CONFLICT", message: "App code or clientId already exists" },
+        { code: "CONFLICT", message: "ClientId already exists" },
         { status: 409 },
       );
     }

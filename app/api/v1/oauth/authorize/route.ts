@@ -6,8 +6,8 @@
 // 语义（镜像 saas-identity-platform-msw/src/handlers-extra.ts:315-379）：
 // - 缺字段 → 400 INVALID_REQUEST
 // - responseType != "code" → 400 UNSUPPORTED_RESPONSE_TYPE
-// - apps.clientId 不存在 → 400 INVALID_CLIENT
-// - apps.redirectUris 不包含 → 400 INVALID_REDIRECT_URI
+// - oauthClient.clientId 不存在 → 400 INVALID_CLIENT
+// - oauthClient.redirectUris 不包含 → 400 INVALID_REDIRECT_URI
 // - tenant 下无用户 → 400 NO_USER（dev mock 限定）
 // - 生成 saas-code-${ts}-${rand} 写入 oauth-store.codes
 // - 返回 { code, state }
@@ -18,7 +18,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { apps, users } from "@/db/schema";
+import { oauthClient, tenantMember } from "@/db/schema";
 import { oauthStore, generateAuthCode } from "@/lib/oauth-store";
 
 const AuthorizeCodeRequest = z.object({
@@ -44,7 +44,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
   const body = parsed.data;
 
-  // 显式校验 responseType === "code"（镜像 handlers-extra.ts:340-345）
   if (body.responseType !== "code") {
     return NextResponse.json(
       { code: "UNSUPPORTED_RESPONSE_TYPE", message: "仅支持 responseType=code" },
@@ -54,11 +53,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const appRows = await db
     .select({
-      id: apps.id,
-      redirectUris: apps.redirectUris,
+      id: oauthClient.id,
+      redirectUris: oauthClient.redirectUris,
     })
-    .from(apps)
-    .where(eq(apps.clientId, body.clientId))
+    .from(oauthClient)
+    .where(eq(oauthClient.clientId, body.clientId))
     .limit(1);
 
   const app = appRows[0];
@@ -76,11 +75,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // dev mock：用「该 tenant 下是否有用户」隐式校验 tenant 有效性（镜像 handlers-extra.ts:362）
+  // dev mock：用「该 tenant 下是否有 active member」隐式校验 tenant 有效性
   const devUserRows = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.tenantId, body.tenantId))
+    .select({ id: tenantMember.userId })
+    .from(tenantMember)
+    .where(eq(tenantMember.tenantId, body.tenantId))
     .limit(1);
 
   const devUser = devUserRows[0];

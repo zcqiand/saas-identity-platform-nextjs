@@ -6,34 +6,43 @@
 // 语义：
 //   - 平台级（不 tenant-scoped）：await verifyPathTenant(null) 只要 JWT 存在即可
 //   - GET -> Page<Tenant>（分页，created_at DESC）
-//   - POST -> Tenant；code 平台唯一，冲突返 409
+//   - POST -> Tenant；tenantKey 平台唯一，冲突返 409
+//
+// 2026-09-09 schema pivot：tenants → tenant（列：tenantKey / status:smallint）。
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { tenants } from "@/db/schema";
+import { tenant } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const PAGE_DEFAULT = 20;
 const PAGE_MAX = 100;
 
 const CreateTenantBody = z.object({
-  code: z.string().min(2).max(64),
-  name: z.string().min(2).max(255),
-  status: z.enum(["active", "suspended", "archived"]).optional(),
-  settings: z.record(z.unknown()).optional(),
+  tenantKey: z.string().min(2).max(64),
+  name: z.string().min(2).max(128),
+  status: z.enum(["active", "suspended"]).optional(),
 });
 
 const tenantFields = {
-  id: tenants.id,
-  code: tenants.code,
-  name: tenants.name,
-  status: tenants.status,
-  settings: tenants.settings,
-  createdAt: tenants.createdAt,
-  updatedAt: tenants.updatedAt,
+  id: tenant.id,
+  tenantKey: tenant.tenantKey,
+  name: tenant.name,
+  status: tenant.status,
+  createdAt: tenant.createdAt,
+  updatedAt: tenant.updatedAt,
 };
+
+function statusToSmallint(s: "active" | "suspended" | undefined): number {
+  if (s === "suspended") return 2;
+  return 1; // active 或缺省
+}
+
+function statusFromSmallint(n: number): "active" | "suspended" {
+  return n === 2 ? "suspended" : "active";
+}
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
@@ -47,17 +56,22 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     const totalResult = await db
       .select({ count: sql<number>`count(*)::int` })
-      .from(tenants);
+      .from(tenant);
     const total = totalResult[0]?.count ?? 0;
 
     const items = await db
       .select(tenantFields)
-      .from(tenants)
+      .from(tenant)
       .limit(pageSize)
       .offset(page * pageSize)
       .orderBy(sql`created_at DESC`);
 
-    return NextResponse.json({ items, page, pageSize, total });
+    return NextResponse.json({
+      items: items.map((t) => ({ ...t, status: statusFromSmallint(t.status) })),
+      page,
+      pageSize,
+      total,
+    });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;
@@ -75,27 +89,38 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         { status: 400 },
       );
     }
-    const { code, name, status, settings } = parsed.data;
+    const { tenantKey, name, status } = parsed.data;
     const [created] = await db
-      .insert(tenants)
+      .insert(tenant)
       .values({
-        code,
+        tenantKey,
         name,
-        status: status ?? "active",
-        ...(settings ? { settings } : {}),
+        status: statusToSmallint(status),
       })
       .returning(tenantFields);
-    return NextResponse.json(created);
+    if (!created) {
+      return NextResponse.json(
+        { code: "INTERNAL", message: "Tenant creation returned no row" },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({
+      ...created,
+      status: statusFromSmallint(created.status),
+    });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;
-    // PG unique_violation（code 重复）
+    // PG unique_violation（tenantKey 重复）
     if ((e as { code?: string })?.code === "23505") {
       return NextResponse.json(
-        { code: "CONFLICT", message: "Tenant code already exists" },
+        { code: "CONFLICT", message: "Tenant key already exists" },
         { status: 409 },
       );
     }
     throw e;
   }
 }
+
+// Suppress unused-import warning for eq (kept for future status filter)
+void eq;

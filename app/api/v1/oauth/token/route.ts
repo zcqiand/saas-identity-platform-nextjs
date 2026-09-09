@@ -5,7 +5,7 @@
 //
 // 语义（镜像 saas-identity-platform-msw/src/handlers-extra.ts:381-491）：
 // - 缺 grantType/clientId/tenantId → 400 INVALID_REQUEST
-// - apps.clientId 不存在 → 400 INVALID_CLIENT
+// - oauthClient.clientId 不存在 → 400 INVALID_CLIENT
 // - grantType=authorization_code:
 //   - 缺 code/redirectUri → 400 INVALID_REQUEST
 //   - oauth-store.codes 中无 code → 400 INVALID_GRANT
@@ -18,12 +18,15 @@
 // - 其他 grantType → 400 UNSUPPORTED_GRANT_TYPE
 //
 // 注意：dev 不严验 clientSecret；生产由 springboot/aspnetcore 真后端验。
+//
+// 2026-09-09 schema pivot：apps → oauthClient。auditEvents 表不在 schema →
+// audit 写入段替换为 no-op（writeAudit 接口由 lib/audit.ts stub）。
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { apps, auditEvents } from "@/db/schema";
+import { oauthClient } from "@/db/schema";
 import { oauthStore, generateRefreshToken } from "@/lib/oauth-store";
 import { signToken } from "@/lib/jwt";
 
@@ -52,9 +55,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const body = parsed.data;
 
   const appRows = await db
-    .select({ id: apps.id })
-    .from(apps)
-    .where(eq(apps.clientId, body.clientId))
+    .select({ id: oauthClient.id })
+    .from(oauthClient)
+    .where(eq(oauthClient.clientId, body.clientId))
     .limit(1);
   const app = appRows[0];
   if (!app) {
@@ -103,17 +106,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       scope: entry.scope,
     });
 
-    // audit_events: oauth_token_issued（dev 写库；生产可异步队列）
-    try {
-      await db.insert(auditEvents).values({
-        tenantId: entry.tenantId,
-        actorUserId: entry.userId,
-        action: "oauth_token_issued",
-        metadata: { clientId: body.clientId, grantType: body.grantType },
-      });
-    } catch {
-      // 写 audit 失败不阻塞 token 签发
-    }
+    // audit_events 在新 schema 不存在 → no-op（先前由 audit.ts lib 兜底）
 
     return NextResponse.json({
       accessToken,

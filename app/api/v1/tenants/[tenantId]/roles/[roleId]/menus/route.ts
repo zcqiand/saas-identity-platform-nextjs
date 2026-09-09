@@ -5,12 +5,15 @@
 // - setRoleMenus(@body body: SetRoleMenusRequest): RoleMenuGrant
 // - clearRoleMenus(): void
 // GET / PUT / DELETE
+//
+// 2026-09-09 schema pivot：roleMenuGrants → sysRoleMenu(roleId, menuId)；
+// 旧 role_menu_grants 有 tenantId 列，新 sys_role_menu 只有 (roleId, menuId) PK。
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { roleMenuGrants, roles } from "@/db/schema";
+import { sysRole, sysRoleMenu } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const SetBody = z.object({
@@ -19,20 +22,19 @@ const SetBody = z.object({
 
 async function ensureRole(tenantId: string, roleId: string) {
   const r = await db
-    .select({ id: roles.id })
-    .from(roles)
-    .where(and(eq(roles.tenantId, tenantId), eq(roles.id, roleId)))
+    .select({ id: sysRole.id })
+    .from(sysRole)
+    .where(and(eq(sysRole.tenantId, tenantId), eq(sysRole.id, roleId)))
     .limit(1);
   return r[0];
 }
 
-function toDto(g: typeof roleMenuGrants.$inferSelect, tenantId: string) {
-  return {
-    roleId: g.roleId,
-    tenantId,
-    menuIds: g.menuIds,
-    updatedAt: g.updatedAt.toISOString(),
-  };
+async function loadMenuIdsForRole(roleId: string): Promise<string[]> {
+  const rows = await db
+    .select({ menuId: sysRoleMenu.menuId })
+    .from(sysRoleMenu)
+    .where(eq(sysRoleMenu.roleId, roleId));
+  return rows.map((r) => r.menuId);
 }
 
 export async function GET(
@@ -46,21 +48,13 @@ export async function GET(
     if (!r) {
       return NextResponse.json({ code: "NOT_FOUND", message: "Role not found" }, { status: 404 });
     }
-    const g = await db
-      .select()
-      .from(roleMenuGrants)
-      .where(eq(roleMenuGrants.roleId, roleId))
-      .limit(1);
-    if (!g[0]) {
-      // 没有 grant 行返回空(仍带 tenantId 兜底, contract-test 必填字段)
-      return NextResponse.json({
-        roleId,
-        tenantId,
-        menuIds: [],
-        updatedAt: new Date().toISOString(),
-      });
-    }
-    return NextResponse.json(toDto(g[0], tenantId));
+    const menuIds = await loadMenuIdsForRole(roleId);
+    return NextResponse.json({
+      roleId,
+      tenantId,
+      menuIds,
+      updatedAt: new Date().toISOString(),
+    });
   } catch (e) {
     const g = tenantGuardErrorToNextResponse(e);
     if (g) return g;
@@ -86,20 +80,19 @@ export async function PUT(
         { status: 400 },
       );
     }
-    // 整批替换：role_menu_grants PK = role_id；upsert
-    const inserted = await db
-      .insert(roleMenuGrants)
-      .values({
-        roleId,
-        tenantId,
-        menuIds: parsed.data.menuIds,
-      })
-      .onConflictDoUpdate({
-        target: roleMenuGrants.roleId,
-        set: { menuIds: parsed.data.menuIds, updatedAt: new Date() },
-      })
-      .returning();
-    return NextResponse.json(toDto(inserted[0]!, tenantId));
+    // 整批替换：先删旧 roleId 关联的所有菜单，再插新
+    await db.delete(sysRoleMenu).where(eq(sysRoleMenu.roleId, roleId));
+    if (parsed.data.menuIds.length > 0) {
+      await db
+        .insert(sysRoleMenu)
+        .values(parsed.data.menuIds.map((menuId) => ({ roleId, menuId })));
+    }
+    return NextResponse.json({
+      roleId,
+      tenantId,
+      menuIds: parsed.data.menuIds,
+      updatedAt: new Date().toISOString(),
+    });
   } catch (e) {
     const g = tenantGuardErrorToNextResponse(e);
     if (g) return g;
@@ -114,9 +107,8 @@ export async function DELETE(
   try {
     const { tenantId, roleId } = await params;
     await verifyPathTenant(tenantId, req.headers.get("authorization"));
-    await db
-      .delete(roleMenuGrants)
-      .where(eq(roleMenuGrants.roleId, roleId));
+    await db.delete(sysRoleMenu).where(eq(sysRoleMenu.roleId, roleId));
+    void inArray; // 保留以备批量
     return new NextResponse(null, { status: 204 });
   } catch (e) {
     const g = tenantGuardErrorToNextResponse(e);

@@ -32,6 +32,10 @@ describe("M01.F04.I03 + M01.F04.I02 /api/v1/auth/login", () => {
   });
 
   it("M01.F04.I03 returns 200 LoginResponse for valid credentials", async () => {
+    // 9/7 后 schema：sysUser 表无 passwordHash，password 直接放列；
+    // 用户 tenantId 不存在 sysUser 上，需走 tenantMember 解析（status=1=active）。
+    const tenantUuid = "00000000-0000-0000-0000-000000000111";
+    // 1) sysUser 查询
     dbMock.select.mockReturnValueOnce({
       from: () => ({
         where: () => ({
@@ -39,11 +43,26 @@ describe("M01.F04.I03 + M01.F04.I02 /api/v1/auth/login", () => {
             Promise.resolve([
               {
                 id: "user-id-1",
-                tenantId: "00000000-0000-0000-0000-000000000111",
-                status: "active",
-                passwordHash: "plain:secret-pw",
+                status: 1,
+                password: "plain:secret-pw",
               },
             ]),
+        }),
+      }),
+    });
+    // 2) tenantMember 查询（按 userId + status=1）
+    dbMock.select.mockReturnValueOnce({
+      from: () => ({
+        where: () => ({
+          limit: () => Promise.resolve([{ tenantId: tenantUuid }]),
+        }),
+      }),
+    });
+    // 3) tenant 校验（status=1=active）
+    dbMock.select.mockReturnValueOnce({
+      from: () => ({
+        where: () => ({
+          limit: () => Promise.resolve([{ id: tenantUuid, status: 1 }]),
         }),
       }),
     });
@@ -59,7 +78,7 @@ describe("M01.F04.I03 + M01.F04.I02 /api/v1/auth/login", () => {
     expect(json.tokenType).toBe("Bearer");
     expect(json.expiresIn).toBe(3600);
     expect(json.userId).toBe("user-id-1");
-    expect(json.currentTenantId).toBe("00000000-0000-0000-0000-000000000111");
+    expect(json.currentTenantId).toBe(tenantUuid);
   });
 
   it("M01.F04.I03 returns 401 UNAUTHORIZED for wrong password", async () => {

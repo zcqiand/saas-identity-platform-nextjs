@@ -25,14 +25,14 @@ export default function RoleMenuGrantPage({
 }) {
   const { tenantId, roleId } = use(params);
   const appsQ = useAdminAppsListApps();
-  const apps = appsQ.data?.data?.items ?? [];
+  const apps = (appsQ.data?.data?.items ?? []) as Array<{ id: string; code: string; name: string }>;
   // getTenant via orval-generated useAdminTenantsGetTenant hook（ADR-0012 运行时 import 清零）。
   // 异步取租户名，加载中/失败显示 fallback。
   const tenantQ = useAdminTenantsGetTenant(tenantId, {
     query: { enabled: !!tenantId },
   });
   const tenant = tenantQ.data?.data ?? null;
-  const tenantLabel = tenant ? `${tenant.name}（${tenant.code}）` : "未知租户";
+  const tenantLabel = tenant ? `${tenant.name}（${tenant.tenantKey}）` : "未知租户";
   // 一次性拉所有 app 的 menus（修 apps[0] bug：之前每张 Card 共享同一份 menus）
   const groupsQ = useQuery({
     queryKey: ["roleMenuGrantAllGroups", tenantId, roleId],
@@ -123,7 +123,7 @@ export default function RoleMenuGrantPage({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {g.menus.map((m) => {
+            {g.menus.map((m: { id: string; name: string; code: string }) => {
               const checked = granted.has(m.id);
               return (
                 <label

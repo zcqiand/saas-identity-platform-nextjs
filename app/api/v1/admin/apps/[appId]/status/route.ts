@@ -1,4 +1,4 @@
-// /api/v1/admin/apps/glm_5.2_ark_toC/status - M04.F02.I01 启用/停用
+// /api/v1/admin/apps/:appId/status - M04.F02.I01 启用/停用
 //
 // TypeSpec: tsp/routes/admin-apps.tsp
 //   setAppStatus(@path appId, @body { status: AppStatus }): App
@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { apps } from "@/db/schema";
+import { oauthClient } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const StatusBody = z.object({
@@ -15,21 +15,23 @@ const StatusBody = z.object({
 });
 
 const appFields = {
-  id: apps.id,
-  code: apps.code,
-  name: apps.name,
-  description: apps.description,
-  icon: apps.icon,
-  sortOrder: apps.sortOrder,
-  status: apps.status,
-  clientId: apps.clientId,
-  redirectUris: apps.redirectUris,
-  scopes: apps.scopes,
-  grantTypes: apps.grantTypes,
-  isFirstParty: apps.isFirstParty,
-  createdAt: apps.createdAt,
-  updatedAt: apps.updatedAt,
+  id: oauthClient.id,
+  clientId: oauthClient.clientId,
+  clientName: oauthClient.clientName,
+  grantTypes: oauthClient.grantTypes,
+  redirectUris: oauthClient.redirectUris,
+  scopes: oauthClient.scopes,
+  accessTokenValidity: oauthClient.accessTokenValidity,
+  refreshTokenValidity: oauthClient.refreshTokenValidity,
+  autoApprove: oauthClient.autoApprove,
+  status: oauthClient.status,
+  createdAt: oauthClient.createdAt,
+  updatedAt: oauthClient.updatedAt,
 };
+
+function statusFromSmallint(n: number): "active" | "disabled" {
+  return n === 1 ? "active" : "disabled";
+}
 
 export async function PATCH(
   req: NextRequest,
@@ -46,9 +48,9 @@ export async function PATCH(
       );
     }
     const [updated] = await db
-      .update(apps)
-      .set({ status: parsed.data.status })
-      .where(eq(apps.id, appId))
+      .update(oauthClient)
+      .set({ status: parsed.data.status === "active" ? 1 : 0, updatedAt: new Date().toISOString() })
+      .where(eq(oauthClient.id, appId))
       .returning(appFields);
     if (!updated) {
       return NextResponse.json(
@@ -56,7 +58,7 @@ export async function PATCH(
         { status: 404 },
       );
     }
-    return NextResponse.json(updated);
+    return NextResponse.json({ ...updated, status: statusFromSmallint(updated.status) });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;

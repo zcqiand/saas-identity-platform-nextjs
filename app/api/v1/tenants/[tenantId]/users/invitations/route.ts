@@ -2,17 +2,19 @@
 //
 // TypeSpec: tsp/routes/tenant-users.tsp inviteUser(@path tenantId, @body body: { email: string; roleIds?: string[] }): User
 // 邀请用户：创建 invited 状态的用户行；password 由后续「首次登录设置」流程补齐（Phase 6）
+//
+// 2026-09-09 schema pivot：users → sysUser（status:smallint，invited=1）。
+// sysUser 没有 tenantId；同 /users POST 一样，建 sys_user + tenant_member 两行。
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { sysUser, tenantMember } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const Body = z.object({
   email: z.string().email(),
-  roleIds: z.array(z.string().uuid()).optional(),
 });
 
 export async function POST(
@@ -29,53 +31,71 @@ export async function POST(
         { status: 400 },
       );
     }
-    // 从 email 派生 username（本地部分）；实际生产需要独立字段或邀请 token
     const username = parsed.data.email.split("@")[0]!;
-    const inserted = await db
-      .insert(users)
-      .values({
-        tenantId,
-        username,
-        email: parsed.data.email,
-        status: "invited",
-        roleIds: parsed.data.roleIds ?? [],
+    // 先看 sys_user.email 是否已存在（全局唯一）
+    const existingUser = await db
+      .select({
+        id: sysUser.id,
+        username: sysUser.username,
+        email: sysUser.email,
+        mobile: sysUser.mobile,
+        status: sysUser.status,
+        createdAt: sysUser.createdAt,
+        updatedAt: sysUser.updatedAt,
       })
-      .onConflictDoNothing({ target: [users.tenantId, users.email] })
-      .returning();
-    if (!inserted[0]) {
-      // 重复 email：返回现有 user
-      const existing = await db
-        .select()
-        .from(users)
-        .where(eq(users.tenantId, tenantId))
-        .limit(50); // 简化：全表扫一次限定 50
-      const match = existing.find((u) => u.email === parsed.data.email);
-      if (!match) {
-        return NextResponse.json({ code: "CONFLICT", message: "Email exists" }, { status: 409 });
-      }
-      return NextResponse.json({
-        id: match.id,
-        tenantId: match.tenantId,
-        username: match.username,
-        email: match.email,
-        displayName: match.displayName ?? undefined,
-        status: match.status,
-        roleIds: (match.roleIds ?? []).map((r) => r),
-        createdAt: match.createdAt.toISOString(),
-        updatedAt: match.updatedAt.toISOString(),
+      .from(sysUser)
+      .where(eq(sysUser.email, parsed.data.email))
+      .limit(1);
+    let userRow = existingUser[0];
+    if (!userRow) {
+      const inserted = await db
+        .insert(sysUser)
+        .values({
+          username,
+          email: parsed.data.email,
+          status: 1, // invited/active 统一为 1（dev）
+          password: "invited-pending",
+        })
+        .returning({
+          id: sysUser.id,
+          username: sysUser.username,
+          email: sysUser.email,
+          mobile: sysUser.mobile,
+          status: sysUser.status,
+          createdAt: sysUser.createdAt,
+          updatedAt: sysUser.updatedAt,
+        });
+      userRow = inserted[0];
+    }
+    if (!userRow) {
+      return NextResponse.json({ code: "INTERNAL", message: "Insert failed" }, { status: 500 });
+    }
+
+    // 找/建 tenantMember
+    const memberRows = await db
+      .select({ id: tenantMember.id, status: tenantMember.status })
+      .from(tenantMember)
+      .where(and(eq(tenantMember.tenantId, tenantId), eq(tenantMember.userId, userRow.id)))
+      .limit(1);
+    if (!memberRows[0]) {
+      await db.insert(tenantMember).values({
+        tenantId,
+        userId: userRow.id,
+        memberName: username,
+        isOwner: false,
+        status: 1,
       });
     }
-    const u = inserted[0]!;
     return NextResponse.json({
-      id: u.id,
-      tenantId: u.tenantId,
-      username: u.username,
-      email: u.email,
-      displayName: u.displayName ?? undefined,
-      status: u.status,
-      roleIds: (u.roleIds ?? []).map((r) => r),
-      createdAt: u.createdAt.toISOString(),
-      updatedAt: u.updatedAt.toISOString(),
+      id: userRow.id,
+      tenantId,
+      username: userRow.username,
+      email: userRow.email,
+      displayName: userRow.mobile ?? undefined,
+      status: "invited",
+      roleIds: [] as string[],
+      createdAt: userRow.createdAt,
+      updatedAt: userRow.updatedAt,
     });
   } catch (e) {
     const g = tenantGuardErrorToNextResponse(e);

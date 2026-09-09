@@ -1,4 +1,4 @@
-// /api/v1/admin/tenants/glm_5.2_ark_toC - M00.F01 单个租户（get + update + delete）
+// /api/v1/admin/tenants/:id - M00.F01 单个租户（get + update + delete）
 //
 // TypeSpec: tsp/routes/admin-tenants.tsp
 //   getTenant(@path id): Tenant
@@ -6,37 +6,44 @@
 //   deleteTenant(@path id): void (204)
 // 语义：
 //   - 平台级（不 tenant-scoped）：await verifyPathTenant(null) 只要 JWT
-//   - DELETE 级联清 users / memberships / roles 等（FK ON DELETE CASCADE）
+//   - DELETE 级联清 sysUser / tenantMember / sysRole 等（FK ON DELETE CASCADE）
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { tenants } from "@/db/schema";
+import { tenant } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const UpdateTenantBody = z.object({
-  name: z.string().min(2).max(255).optional(),
-  code: z.string().min(2).max(64).optional(),
-  status: z.enum(["active", "suspended", "archived"]).optional(),
-  settings: z.record(z.unknown()).optional(),
+  name: z.string().min(2).max(128).optional(),
+  tenantKey: z.string().min(2).max(64).optional(),
+  status: z.enum(["active", "suspended"]).optional(),
 });
 
 const tenantFields = {
-  id: tenants.id,
-  code: tenants.code,
-  name: tenants.name,
-  status: tenants.status,
-  settings: tenants.settings,
-  createdAt: tenants.createdAt,
-  updatedAt: tenants.updatedAt,
+  id: tenant.id,
+  tenantKey: tenant.tenantKey,
+  name: tenant.name,
+  status: tenant.status,
+  createdAt: tenant.createdAt,
+  updatedAt: tenant.updatedAt,
 };
+
+function statusToSmallint(s: "active" | "suspended" | undefined): number | undefined {
+  if (s === undefined) return undefined;
+  return s === "suspended" ? 2 : 1;
+}
+
+function statusFromSmallint(n: number): "active" | "suspended" {
+  return n === 2 ? "suspended" : "active";
+}
 
 async function getTenantById(id: string) {
   const rows = await db
     .select(tenantFields)
-    .from(tenants)
-    .where(eq(tenants.id, id))
+    .from(tenant)
+    .where(eq(tenant.id, id))
     .limit(1);
   return rows[0];
 }
@@ -48,14 +55,14 @@ export async function GET(
   try {
     await verifyPathTenant(null, req.headers.get("authorization"));
     const { id } = await params;
-    const tenant = await getTenantById(id);
-    if (!tenant) {
+    const t = await getTenantById(id);
+    if (!t) {
       return NextResponse.json(
         { code: "NOT_FOUND", message: "Tenant not found" },
         { status: 404 },
       );
     }
-    return NextResponse.json(tenant);
+    return NextResponse.json({ ...t, status: statusFromSmallint(t.status) });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;
@@ -85,30 +92,36 @@ export async function PATCH(
       );
     }
 
-    const { name, code, status, settings } = parsed.data;
-    const patch: Record<string, unknown> = {};
+    const { name, tenantKey, status } = parsed.data;
+    const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
     if (name !== undefined) patch.name = name;
-    if (code !== undefined) patch.code = code;
-    if (status !== undefined) patch.status = status;
-    if (settings !== undefined) patch.settings = settings;
+    if (tenantKey !== undefined) patch.tenantKey = tenantKey;
+    const statusNum = statusToSmallint(status);
+    if (statusNum !== undefined) patch.status = statusNum;
 
-    // 空更新（body 全 undefined）直接回当前行，避免空 SET SQL
-    if (Object.keys(patch).length === 0) {
-      return NextResponse.json(existing);
+    if (Object.keys(patch).length === 1) {
+      // 仅 updatedAt
+      return NextResponse.json({ ...existing, status: statusFromSmallint(existing.status) });
     }
 
     const [updated] = await db
-      .update(tenants)
+      .update(tenant)
       .set(patch)
-      .where(eq(tenants.id, id))
+      .where(eq(tenant.id, id))
       .returning(tenantFields);
-    return NextResponse.json(updated);
+    if (!updated) {
+      return NextResponse.json(
+        { code: "NOT_FOUND", message: "Tenant not found after update" },
+        { status: 404 },
+      );
+    }
+    return NextResponse.json({ ...updated, status: statusFromSmallint(updated.status) });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;
     if ((e as { code?: string })?.code === "23505") {
       return NextResponse.json(
-        { code: "CONFLICT", message: "Tenant code already exists" },
+        { code: "CONFLICT", message: "Tenant key already exists" },
         { status: 409 },
       );
     }
@@ -130,7 +143,7 @@ export async function DELETE(
         { status: 404 },
       );
     }
-    await db.delete(tenants).where(eq(tenants.id, id));
+    await db.delete(tenant).where(eq(tenant.id, id));
     return new NextResponse(null, { status: 204 });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);

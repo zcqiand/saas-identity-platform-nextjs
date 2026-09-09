@@ -79,14 +79,19 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const res = await authLogin({ username, password });
-      const data = res.data;
+      const data = res.data as {
+        accessToken?: string;
+        refreshToken?: string;
+        userId?: string;
+        currentTenantId?: string;
+      } | undefined;
       login({
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
-        userId: data.userId,
+        accessToken: data?.accessToken ?? "",
+        refreshToken: data?.refreshToken ?? "",
+        userId: data?.userId ?? "",
         username,
         email: undefined,
-        currentTenantId: data.currentTenantId,
+        currentTenantId: data?.currentTenantId ?? "",
         tenantCode: null,
       });
       // OAuth 2.0 code 回跳：把 code+state 原样透传给 RP 的 redirect_uri。

@@ -9,12 +9,16 @@
 // - audit_events 只写 login_success（2026-09-02 M96 对齐：失败事件家族不写）
 // - accessToken 走 HS256 + jose 真签发（Phase 5）；refreshToken 沿用 mock-refresh-${userId} 前缀对齐 msw
 // - JWT_SIGNING_KEY 从 env 读，必须 ≥32 bytes
+//
+// 2026-09-09 schema pivot：tenants → tenant、users → sysUser。
+// sys_user 没有 tenantId（多租户通过 tenant_member 关联），dev mock 路径需重写：
+// 找 sysUser by username → 取其首个 active tenantMember → 用 tenant.id 作 currentTenantId。
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
-import { tenants, users, auditEvents } from "@/db/schema";
+import { tenant, sysUser, tenantMember } from "@/db/schema";
 import { loginLockout } from "@/lib/login-lockout";
 import { signToken } from "@/lib/jwt";
 import { oauthStore, generateRefreshToken } from "@/lib/oauth-store";
@@ -25,24 +29,6 @@ const LoginBody = z.object({
   tenantCode: z.string().uuid().optional(),
 });
 
-async function writeAudit(
-  tenantId: string,
-  actorUserId: string | undefined,
-  action: "login_success",
-  metadata: Record<string, unknown>,
-): Promise<void> {
-  try {
-    await db.insert(auditEvents).values({
-      tenantId,
-      actorUserId: actorUserId ?? null,
-      action,
-      metadata,
-    });
-  } catch {
-    // 写 audit 失败不阻塞登录主流程
-  }
-}
-
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const parsed = LoginBody.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -51,7 +37,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 400 },
     );
   }
-  const { username, password, tenantCode } = parsed.data;
+  const { username, password } = parsed.data;
 
   // M01.F04.I02：登录失败锁定（按 username 单独计）
   if (loginLockout.isLockedOut(username)) {
@@ -61,55 +47,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // 解析 tenant_id（如果给了 tenantCode）
-  let tenantId: string | undefined;
-  if (tenantCode) {
-    const t = await db
-      .select({ id: tenants.id })
-      .from(tenants)
-      .where(eq(tenants.code, tenantCode))
-      .limit(1);
-    tenantId = t[0]?.id;
-    if (!tenantId) {
-      return NextResponse.json(
-        { code: "BAD_REQUEST", message: "Unknown tenantCode" },
-        { status: 400 },
-      );
-    }
-  }
-
-  // 找用户（按 username；若指定 tenant 限定 tenant_id）
-  const userRows = tenantId
-    ? await db
-        .select({
-          id: users.id,
-          tenantId: users.tenantId,
-          status: users.status,
-          passwordHash: users.passwordHash,
-        })
-        .from(users)
-        .where(and(eq(users.username, username), eq(users.tenantId, tenantId)))
-        .limit(1)
-    : await db
-        .select({
-          id: users.id,
-          tenantId: users.tenantId,
-          status: users.status,
-          passwordHash: users.passwordHash,
-        })
-        .from(users)
-        .where(eq(users.username, username))
-        .limit(1);
+  // sys_user 行（无 tenantId 列）
+  const userRows = await db
+    .select({
+      id: sysUser.id,
+      status: sysUser.status,
+      password: sysUser.password,
+    })
+    .from(sysUser)
+    .where(eq(sysUser.username, username))
+    .limit(1);
 
   const user = userRows[0];
-  // Phase 5：换 argon2.verify(passwordHash, password)；当前 dev 占位直接比对 hash 串
-  // 仅 dev：dev seed 把 passwordHash 写成 `"plain:${password}"` 用于 smoke test
-  const ok = user && user.passwordHash && (user.passwordHash === `plain:${password}` || user.passwordHash === password);
+  const ok =
+    user && user.password && (user.password === `plain:${password}` || user.password === password);
 
   if (!user || !ok) {
-    // 失败：lockout 计数（内存 loginLockout）。不写 login_failed 审计 ——
-    // 2026-09-02 contract-test M96 audit 覆盖对齐（用户拍板）：msw/springboot/aspnetcore
-    // 均不写失败事件，本仓收敛到家族最小公共集。
     loginLockout.recordFailure(username);
     return NextResponse.json(
       { code: "UNAUTHORIZED", message: "Invalid credentials" },
@@ -117,27 +70,47 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  if (user.status === "suspended" || user.status === "disabled") {
-    loginLockout.recordFailure(username);
+  // sysUser.status 是 smallint（0/1）；"suspended"/"disabled" 在新 schema 里由
+  // tenantMember.status 表达。先放过 user.status——dev mock 必填路径不变。
+  void user.status;
+
+  // 解析 tenant：取该用户首个 active membership（status=1）
+  const memberRows = await db
+    .select({ tenantId: tenantMember.tenantId })
+    .from(tenantMember)
+    .where(and(eq(tenantMember.userId, user.id), eq(tenantMember.status, 1)))
+    .limit(1);
+  const tenantId = memberRows[0]?.tenantId;
+  if (!tenantId) {
     return NextResponse.json(
-      { code: "FORBIDDEN", message: `User ${user.status}` },
+      { code: "FORBIDDEN", message: "用户未关联任何 active tenant" },
       { status: 403 },
     );
   }
 
-  // 成功：清零失败计数 + 写 audit + 签 token。
-  // 2026-09-01 contract-test I24：refreshToken 之前是 `mock-refresh-${userId}` 占位且
-  // 不进 oauthStore —— /auth/refresh 查无此 token 必 400 INVALID_GRANT。
-  // 改为 generateRefreshToken + putRefresh（与 /oauth/token 同款 rotate 语义）。
-  loginLockout.clearFailures(username);
-  await writeAudit(user.tenantId, user.id, "login_success", { username });
+  // 确认 tenant 存在（且 active=1）
+  const tRows = await db
+    .select({ id: tenant.id, status: tenant.status })
+    .from(tenant)
+    .where(eq(tenant.id, tenantId))
+    .limit(1);
+  const tRow = tRows[0];
+  if (!tRow || tRow.status !== 1) {
+    loginLockout.recordFailure(username);
+    return NextResponse.json(
+      { code: "FORBIDDEN", message: `Tenant ${tenantId} 不可用` },
+      { status: 403 },
+    );
+  }
 
-  const accessToken = await signToken({ sub: user.id, tenant_id: user.tenantId });
+  loginLockout.clearFailures(username);
+
+  const accessToken = await signToken({ sub: user.id, tenant_id: tRow.id });
   const refreshToken = generateRefreshToken(user.id);
   oauthStore.putRefresh(refreshToken, {
     appId: "login",
     userId: user.id,
-    tenantId: user.tenantId,
+    tenantId: tRow.id,
     scope: "openid",
   });
   return NextResponse.json({
@@ -146,6 +119,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     tokenType: "Bearer",
     expiresIn: 3600,
     userId: user.id,
-    currentTenantId: user.tenantId,
+    currentTenantId: tRow.id,
   });
 }

@@ -8,14 +8,18 @@
 //   - tenant guard 第一行：路径 :tenantId 与 JWT tenant_id 比对
 //   - 支持分页（page, pageSize）
 //   - 支持 status 过滤
+//
+// 2026-09-09 schema pivot：
+// - users → sysUser（无 tenantId 列；多租户通过 tenantMember 关联）
+// - tenantMemberships → tenantMember（无 roleIds/displayName 列）
+// - 列表改为：找 tenantMember + LEFT JOIN sysUser
 
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { users, tenantMemberships } from "@/db/schema";
+import { sysUser, tenantMember } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
-import { writeAudit } from "@/lib/audit";
 
 const PAGE_DEFAULT = 20;
 const PAGE_MAX = 100;
@@ -24,9 +28,8 @@ const PAGE_MAX = 100;
 const CreateUserBody = z.object({
   username: z.string().min(2).max(64),
   email: z.string().email(),
-  displayName: z.string().max(255).optional(),
+  mobile: z.string().max(32).optional(),
   password: z.string().min(8).max(256),
-  roleIds: z.array(z.string().uuid()).optional(),
 });
 
 export async function GET(
@@ -36,10 +39,8 @@ export async function GET(
   try {
     const { tenantId } = await params;
 
-    // tenant guard 第一行
     await verifyPathTenant(tenantId, req.headers.get("authorization"));
 
-    // query params
     const url = new URL(req.url);
     const page = Math.max(0, Number(url.searchParams.get("page") ?? 0));
     const pageSize = Math.min(
@@ -48,48 +49,49 @@ export async function GET(
     );
     const statusParam = url.searchParams.get("status");
 
-    // 2026-08-30 contract-test：users.role_ids 列是冗余（drizzle/sql[] 占位），
-    // authoritative 在 tenant_memberships.role_ids —— 这里 LEFT JOIN 取。
-    // user 无 membership 时（不应发生，V016 seed 必建）roleIds=[]。
-    const where = statusParam
-      ? and(eq(users.tenantId, tenantId), eq(users.status, statusParam as "active"))
-      : eq(users.tenantId, tenantId);
+    // tenantMember 限定此 tenant，status 过滤
+    const memberWhere = statusParam
+      ? and(
+          eq(tenantMember.tenantId, tenantId),
+          eq(tenantMember.status, statusParam === "active" ? 1 : 0),
+        )
+      : eq(tenantMember.tenantId, tenantId);
 
     const totalResult = await db
       .select({ count: sql<number>`count(*)::int` })
-      .from(users)
-      .where(where);
+      .from(tenantMember)
+      .where(memberWhere);
     const total = totalResult[0]?.count ?? 0;
 
     const items = await db
       .select({
-        id: users.id,
-        tenantId: users.tenantId,
-        username: users.username,
-        email: users.email,
-        displayName: users.displayName,
-        status: users.status,
-        roleIds: tenantMemberships.roleIds,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt,
+        id: sysUser.id,
+        username: sysUser.username,
+        email: sysUser.email,
+        mobile: sysUser.mobile,
+        status: sysUser.status,
+        memberStatus: tenantMember.status,
+        createdAt: sysUser.createdAt,
+        updatedAt: sysUser.updatedAt,
       })
-      .from(users)
-      .leftJoin(
-        tenantMemberships,
-        and(
-          eq(tenantMemberships.userId, users.id),
-          eq(tenantMemberships.tenantId, users.tenantId),
-        ),
-      )
-      .where(where)
+      .from(tenantMember)
+      .innerJoin(sysUser, eq(sysUser.id, tenantMember.userId))
+      .where(memberWhere)
       .limit(pageSize)
       .offset(page * pageSize)
       .orderBy(sql`created_at DESC`);
 
     return NextResponse.json({
       items: items.map((u) => ({
-        ...u,
-        roleIds: u.roleIds ?? [],  // Phase 5：删冗余列后这里不再需要 ??[]
+        id: u.id,
+        tenantId,
+        username: u.username,
+        email: u.email,
+        displayName: u.mobile ?? undefined,
+        status: u.memberStatus === 1 ? "active" : "disabled",
+        roleIds: [] as string[],
+        createdAt: u.createdAt,
+        updatedAt: u.updatedAt,
       })),
       page,
       pageSize,
@@ -107,8 +109,6 @@ export async function GET(
 // 契约面（contract-test）：status 固定 "active"，4 后端必须一致。
 // TypeSpec CreateUserRequest 不含 status，server-side 决定；选 active（"已激活账号"语义）
 // 与 INVITED 路径（POST /users/invitations）区分开。
-//
-// Phase 5：换 argon2.hash(body.password)；当前 plain 占位与 saas-aspnetcore / saas-springboot 同步。
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ tenantId: string }> },
@@ -116,7 +116,6 @@ export async function POST(
   try {
     const { tenantId } = await params;
 
-    // tenant guard 第一行
     await verifyPathTenant(tenantId, req.headers.get("authorization"));
 
     const parsed = CreateUserBody.safeParse(await req.json().catch(() => null));
@@ -128,44 +127,42 @@ export async function POST(
     }
 
     const id = crypto.randomUUID();
-    const now = new Date();
-    const passwordHash = `plain:${parsed.data.password}`; // Phase 5：argon2
-    const inserted = await db
-      .insert(users)
+    const nowIso = new Date().toISOString();
+    const password = `plain:${parsed.data.password}`; // Phase 5：argon2
+    await db
+      .insert(sysUser)
       .values({
+        username: parsed.data.username,
+        email: parsed.data.email,
+        mobile: parsed.data.mobile ?? null,
+        password,
+        status: 1,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      })
+      .returning({ id: sysUser.id });
+    // 同步建 tenantMember（active=1）
+    await db.insert(tenantMember).values({
+      tenantId,
+      userId: id,
+      memberName: parsed.data.username,
+      isOwner: false,
+      status: 1,
+    });
+
+    // M06.F03 审计写入已废止（audit_events 表 DROP），user_created 不再写审计。
+
+    return NextResponse.json(
+      {
         id,
         tenantId,
         username: parsed.data.username,
         email: parsed.data.email,
-        displayName: parsed.data.displayName ?? null,
-        status: "active", // 契约固定
-        passwordHash,
-        roleIds: parsed.data.roleIds ?? [],
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
-    const e = inserted[0]!;
-
-    // M06.F03.I01 写端点副作用 — user_created
-    await writeAudit({
-      tenantId,
-      authHeader: req.headers.get("authorization"),
-      action: "user_created",
-      metadata: { userId: e.id },
-    });
-
-    return NextResponse.json(
-      {
-        id: e.id,
-        tenantId: e.tenantId,
-        username: e.username,
-        email: e.email,
-        displayName: e.displayName ?? undefined,
-        status: e.status,
-        roleIds: e.roleIds,
-        createdAt: e.createdAt.toISOString(),
-        updatedAt: e.updatedAt.toISOString(),
+        displayName: parsed.data.mobile ?? undefined,
+        status: "active",
+        roleIds: [] as string[],
+        createdAt: nowIso,
+        updatedAt: nowIso,
       },
       { status: 201 },
     );

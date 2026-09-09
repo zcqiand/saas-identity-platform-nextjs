@@ -3,14 +3,14 @@
 // TypeSpec: tsp/routes/apps.tsp
 //   getApp(@path code): AppPublicInfo
 // 免鉴权（接入方侧边栏/标题要显示应用名，不能强制管理员 JWT）；
-// 只返回展示字段（id/code/name/description/icon/status），不暴露 OAuth 字段。
+// 只返回展示字段（id/clientId/clientName/status），不暴露 OAuth 字段。
 //
-// v0.7.38 接 DB（此前 demo 模式读烘进镜像的 seed JSON，"Phase 6 接 DB" 欠账）。
+// 2026-09-09 schema pivot：apps → oauthClient。
 
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { apps } from "@/db/schema";
+import { oauthClient } from "@/db/schema";
 
 export async function GET(
   _req: Request,
@@ -19,15 +19,13 @@ export async function GET(
   const { code } = await params;
   const rows = await db
     .select({
-      id: apps.id,
-      code: apps.code,
-      name: apps.name,
-      description: apps.description,
-      icon: apps.icon,
-      status: apps.status,
+      id: oauthClient.id,
+      clientId: oauthClient.clientId,
+      clientName: oauthClient.clientName,
+      status: oauthClient.status,
     })
-    .from(apps)
-    .where(and(eq(apps.code, code), eq(apps.status, "active")))
+    .from(oauthClient)
+    .where(and(eq(oauthClient.clientId, code), eq(oauthClient.status, 1)))
     .limit(1);
   const app = rows[0];
   if (!app) {
@@ -36,5 +34,10 @@ export async function GET(
       { status: 404 },
     );
   }
-  return NextResponse.json(app);
+  return NextResponse.json({
+    id: app.id,
+    clientId: app.clientId,
+    name: app.clientName,
+    status: "active",
+  });
 }

@@ -63,7 +63,7 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
     query: { enabled: !!tenantId },
   });
   const tenant = tenantQ.data?.data ?? null;
-  const tenantLabel = tenant ? `租户 ${tenant.name}（${tenant.code}）` : "租户未知";
+  const tenantLabel = tenant ? `租户 ${tenant.name}（${tenant.tenantKey}）` : "租户未知";
 
   const usersQ = useTenantUsersListUsers(tenantId);
   const rolesQ = useTenantRolesListRoles(tenantId);
@@ -77,8 +77,8 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [roleTarget, setRoleTarget] = useState<User | null>(null);
 
-  const users = usersQ.data?.data?.items ?? [];
-  const roles = rolesQ.data?.data?.items ?? [];
+  const users = (usersQ.data?.data?.items ?? []) as User[];
+  const roles = (rolesQ.data?.data?.items ?? []) as Array<{ id: string; code: string; name: string }>;
 
   async function onCreate(values: Record<string, unknown>) {
     try {

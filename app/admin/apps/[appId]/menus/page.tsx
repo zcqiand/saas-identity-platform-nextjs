@@ -15,6 +15,7 @@ import {
   useAdminAppsListApps,
 } from "@/api/endpoints/endpoints";
 import type {
+  App,
   CreateMenuRequest,
   Menu,
   UpdateMenuRequest,
@@ -111,7 +112,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ appId: stri
   const router = useRouter();
 
   const allAppsQ = useAdminAppsListApps();
-  const allApps = allAppsQ.data?.data?.items ?? [];
+  const allApps = (allAppsQ.data?.data?.items ?? []) as App[];
   // URL 路径用 App.Code（slug 如 "lab-management"）；下拉 value 必须跟 URL 一致，
   // 否则 Select 显示 placeholder 且 onChange 找不到项。fallback 也走 code。
   const selectedAppCode = initialAppId || selectedApp.id || allApps[0]?.code || "";
@@ -142,14 +143,15 @@ export default function MenuTreePage({ params }: { params: Promise<{ appId: stri
       await createMut.mutateAsync({
         appId: selectedAppId,
         data: {
+          appId: selectedAppId,
           code: String(values.code ?? "").trim(),
           name: String(values.name ?? "").trim(),
           path: (values.path as string) || undefined,
           type: values.type as "group" | "page" | "action",
           parentId,
           sortOrder: Number(values.sortOrder ?? 0),
-          status: values.status as "active" | "disabled",
-        } as CreateMenuRequest,
+          status: values.status === "disabled" ? 0 : 1,
+        } as unknown as CreateMenuRequest,
       });
       setCreateOpen(false);
       menusQ.refetch();
@@ -170,8 +172,8 @@ export default function MenuTreePage({ params }: { params: Promise<{ appId: stri
           path: (values.path as string) || undefined,
           type: values.type as "group" | "page" | "action",
           sortOrder: Number(values.sortOrder ?? 0),
-          status: values.status as "active" | "disabled",
-        } as UpdateMenuRequest,
+          status: values.status === "disabled" ? 0 : 1,
+        } as unknown as UpdateMenuRequest,
       });
       setEditTarget(null);
       menusQ.refetch();

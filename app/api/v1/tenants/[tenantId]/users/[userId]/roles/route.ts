@@ -3,15 +3,15 @@
 // TypeSpec: tsp/routes/tenant-users.tsp assignRoles(@path tenantId, @path userId, @body body: { roleIds: string[] }): User
 // 整批替换用户 role 列表（PUT 语义）
 //
-// 2026-09-01 contract-test I40：users.roleIds 是冗余列，authoritative 在
-// tenant_memberships.roleIds（家族约定，GET 侧 LEFT JOIN 取真值）。
-// 只写冗余列 = 写完读回 []。本端点同步写两侧。
+// 2026-09-09 schema pivot：users → sysUser；tenantMemberships → tenantMember；
+// tenant_role_menu_grants → tenantMemberRole。authoritative role 关系是
+// tenantMemberRole(memberId, roleId) — 通过 tenantMember.id 关联。
 
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { users, tenantMemberships } from "@/db/schema";
+import { sysUser, tenantMember, tenantMemberRole } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const Body = z.object({
@@ -32,49 +32,53 @@ export async function PUT(
         { status: 400 },
       );
     }
-    const updated = await db
-      .update(users)
-      .set({ roleIds: parsed.data.roleIds, updatedAt: new Date() })
-      .where(and(eq(users.tenantId, tenantId), eq(users.id, userId)))
-      .returning();
-    const u = updated[0];
+
+    // 找 membership
+    const mRows = await db
+      .select({ id: tenantMember.id })
+      .from(tenantMember)
+      .where(and(eq(tenantMember.tenantId, tenantId), eq(tenantMember.userId, userId)))
+      .limit(1);
+    if (!mRows[0]) {
+      return NextResponse.json({ code: "NOT_FOUND", message: "User not found" }, { status: 404 });
+    }
+    const memberId = mRows[0].id;
+
+    // 整批替换：删旧 + 插新（PG 无 MERGE UPSERT on junction）
+    await db.delete(tenantMemberRole).where(eq(tenantMemberRole.memberId, memberId));
+    if (parsed.data.roleIds.length > 0) {
+      await db
+        .insert(tenantMemberRole)
+        .values(parsed.data.roleIds.map((roleId) => ({ memberId, roleId })));
+    }
+
+    // 拉取 user 行
+    const uRows = await db
+      .select({
+        id: sysUser.id,
+        username: sysUser.username,
+        email: sysUser.email,
+        mobile: sysUser.mobile,
+        createdAt: sysUser.createdAt,
+        updatedAt: sysUser.updatedAt,
+      })
+      .from(sysUser)
+      .where(eq(sysUser.id, userId))
+      .limit(1);
+    const u = uRows[0];
     if (!u) {
       return NextResponse.json({ code: "NOT_FOUND", message: "User not found" }, { status: 404 });
     }
-    // authoritative 侧同步：tenant_memberships.roleIds（GET 从这里读真值）
-    const m = await db
-      .select({ id: tenantMemberships.id })
-      .from(tenantMemberships)
-      .where(
-        and(
-          eq(tenantMemberships.tenantId, tenantId),
-          eq(tenantMemberships.userId, userId),
-        ),
-      )
-      .limit(1);
-    if (m[0]) {
-      await db
-        .update(tenantMemberships)
-        .set({ roleIds: parsed.data.roleIds })
-        .where(eq(tenantMemberships.id, m[0].id));
-    } else {
-      await db.insert(tenantMemberships).values({
-        tenantId,
-        userId,
-        roleIds: parsed.data.roleIds,
-        status: "active",
-      });
-    }
     return NextResponse.json({
       id: u.id,
-      tenantId: u.tenantId,
+      tenantId,
       username: u.username,
       email: u.email,
-      displayName: u.displayName ?? undefined,
-      status: u.status,
-      roleIds: (u.roleIds ?? []).map((r) => r),
-      createdAt: u.createdAt.toISOString(),
-      updatedAt: u.updatedAt.toISOString(),
+      displayName: u.mobile ?? undefined,
+      status: "active",
+      roleIds: parsed.data.roleIds,
+      createdAt: u.createdAt,
+      updatedAt: u.updatedAt,
     });
   } catch (e) {
     const g = tenantGuardErrorToNextResponse(e);

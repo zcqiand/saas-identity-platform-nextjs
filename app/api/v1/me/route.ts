@@ -5,16 +5,18 @@
 //   - GET → 当前用户的 CurrentUser（含 memberships 数组 + currentTenantId）
 //   - 不需要 tenant scope（不像 /tenants/:tenantId/users 要 tenant guard）
 //   - JWT 必填（无 token → 401）
+//
+// 2026-09-09 schema pivot：users → sysUser（无 tenantId/displayName 列），
+// tenantMemberships → tenantMember（无 roleIds/joinedAt 列）。
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and, ne } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
-import { users, tenantMemberships } from "@/db/schema";
+import { sysUser, tenantMember } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
-    // pathTenantId=null：因为 /me 不在 tenant-scoped 路径下
     const claims = await verifyPathTenant(null, req.headers.get("authorization"));
     if (!claims.sub) {
       return NextResponse.json(
@@ -23,18 +25,14 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // 用户的 global identity = tenant_memberships.user_id 引用 users.id；
-    // 「当前用户」是 users 行（在某个 tenant 内），sub 对应 users.id。
-    // 我们按 user_id 找到所有 tenant_memberships 聚合为 CurrentUser。
     const userRows = await db
       .select({
-        id: users.id,
-        email: users.email,
-        displayName: users.displayName,
-        tenantId: users.tenantId,
+        id: sysUser.id,
+        email: sysUser.email,
+        mobile: sysUser.mobile,
       })
-      .from(users)
-      .where(eq(users.id, claims.sub))
+      .from(sysUser)
+      .where(eq(sysUser.id, claims.sub))
       .limit(1);
 
     const user = userRows[0];
@@ -45,32 +43,35 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // 拉所有 memberships
+    // 拉所有 active memberships（status=1）
     const memberships = await db
       .select({
-        id: tenantMemberships.id,
-        userId: tenantMemberships.userId,
-        tenantId: tenantMemberships.tenantId,
-        roleIds: tenantMemberships.roleIds,
-        status: tenantMemberships.status,
-        joinedAt: tenantMemberships.joinedAt,
+        id: tenantMember.id,
+        userId: tenantMember.userId,
+        tenantId: tenantMember.tenantId,
+        memberName: tenantMember.memberName,
+        isOwner: tenantMember.isOwner,
+        status: tenantMember.status,
+        createdAt: tenantMember.createdAt,
+        updatedAt: tenantMember.updatedAt,
       })
-      .from(tenantMemberships)
-      .where(
-        and(
-          eq(tenantMemberships.userId, user.id),
-          ne(tenantMemberships.status, "removed"),
-        ),
-      );
+      .from(tenantMember)
+      .where(and(eq(tenantMember.userId, user.id), eq(tenantMember.status, 1)));
 
-    // currentTenantId = JWT 里的 tenant_id（如果有）
-    const currentTenantId = claims.tenant_id ?? user.tenantId;
+    const currentTenantId = claims.tenant_id ?? memberships[0]?.tenantId ?? undefined;
 
     return NextResponse.json({
       id: user.id,
       email: user.email,
-      displayName: user.displayName ?? undefined,
-      memberships,
+      displayName: user.mobile ?? undefined, // mobile 字段在 sysUser 是显示名
+      memberships: memberships.map((m) => ({
+        id: m.id,
+        userId: m.userId,
+        tenantId: m.tenantId,
+        roleIds: [] as string[],
+        status: m.status === 1 ? "active" : "disabled",
+        joinedAt: m.createdAt,
+      })),
       currentTenantId,
     });
   } catch (e) {

@@ -42,7 +42,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const FIELDS: FieldDef[] = [
-  { name: "code", label: "Code", required: true, placeholder: "acme" },
+  { name: "tenantKey", label: "Code", required: true, placeholder: "acme" },
   { name: "name", label: "名称", required: true, placeholder: "ACME Corp" },
   {
     name: "status",
@@ -53,7 +53,6 @@ const FIELDS: FieldDef[] = [
     options: [
       { value: "active", label: "启用" },
       { value: "suspended", label: "暂停" },
-      { value: "archived", label: "归档" },
     ],
   },
 ];
@@ -162,10 +161,10 @@ export default function TenantListPage() {
                           <Check className="h-4 w-4 text-blue-600" data-testid="tenant-selected-mark" />
                         )}
                       </TableCell>
-                      <TableCell className="font-mono text-xs">{t.code}</TableCell>
+                      <TableCell className="font-mono text-xs">{t.tenantKey}</TableCell>
                       <TableCell className="font-medium">{t.name}</TableCell>
                       <TableCell>
-                        <StatusBadge status={t.status as "active" | "suspended" | "archived"} />
+                        <StatusBadge status={t.status as "active" | "suspended"} />
                       </TableCell>
                       <TableCell className="text-right space-x-1">
                         <Button
@@ -222,7 +221,7 @@ export default function TenantListPage() {
         fields={FIELDS}
         initialValues={
           editTarget
-            ? { code: editTarget.code, name: editTarget.name, status: editTarget.status }
+            ? { tenantKey: editTarget.tenantKey, name: editTarget.name, status: editTarget.status }
             : undefined
         }
         loading={updateMut.isPending}
@@ -232,7 +231,7 @@ export default function TenantListPage() {
             id: editTarget.id,
             data: {
               name: values.name as string,
-              status: values.status as "active" | "suspended" | "archived",
+              status: values.status as "active" | "suspended",
             },
           });
           setEditTarget(null);

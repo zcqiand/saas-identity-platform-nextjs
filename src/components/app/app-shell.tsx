@@ -121,20 +121,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         icon: <Shield className="h-4 w-4" />,
         fnId: "M00.F03.I01",
       },
-      {
-        to: `/tenants/${tenantForNav}/api-keys`,
-        label: "API Key",
-        group: "平台运营",
-        icon: <KeyRound className="h-4 w-4" />,
-        fnId: "M05.F01.I01",
-      },
-      {
-        to: `/tenants/${tenantForNav}/audit`,
-        label: "审计日志",
-        group: "平台运营",
-        icon: <ScrollText className="h-4 w-4" />,
-        fnId: "M06.F01.I01",
-      },
+      // M05（API Key）+ M06（审计日志）已废止，nav 链接删（route + UI page 已删）。
       {
         to: "/admin/apps",
         label: "应用管理",

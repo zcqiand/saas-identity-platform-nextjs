@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { menus } from "@/db/schema";
+import { sysMenu } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const MoveBody = z.object({
@@ -16,22 +16,32 @@ const MoveBody = z.object({
 });
 
 const menuFields = {
-  id: menus.id,
-  appId: menus.appId,
-  parentId: menus.parentId,
-  code: menus.code,
-  name: menus.name,
-  path: menus.path,
-  icon: menus.icon,
-  type: menus.type,
-  sortOrder: menus.sortOrder,
-  status: menus.status,
-  createdAt: menus.createdAt,
-  updatedAt: menus.updatedAt,
+  id: sysMenu.id,
+  clientId: sysMenu.clientId,
+  parentId: sysMenu.parentId,
+  title: sysMenu.title,
+  type: sysMenu.type,
+  path: sysMenu.path,
+  component: sysMenu.component,
+  perms: sysMenu.perms,
+  icon: sysMenu.icon,
+  sortOrder: sysMenu.sortOrder,
+  status: sysMenu.status,
+  createdAt: sysMenu.createdAt,
 };
 
+function statusFromSmallint(n: number): "active" | "disabled" {
+  return n === 1 ? "active" : "disabled";
+}
+
+function typeFromSmallint(n: number): "group" | "page" | "action" {
+  if (n === 1) return "group";
+  if (n === 2) return "page";
+  return "action";
+}
+
 async function getMenuById(id: string) {
-  const rows = await db.select(menuFields).from(menus).where(eq(menus.id, id)).limit(1);
+  const rows = await db.select(menuFields).from(sysMenu).where(eq(sysMenu.id, id)).limit(1);
   return rows[0];
 }
 
@@ -57,11 +67,21 @@ export async function PATCH(
       );
     }
     const [updated] = await db
-      .update(menus)
-      .set({ parentId: parsed.data.parentId ?? null })
-      .where(eq(menus.id, menuId))
+      .update(sysMenu)
+      .set({ parentId: parsed.data.parentId ?? "00000000-0000-0000-0000-000000000000" })
+      .where(eq(sysMenu.id, menuId))
       .returning(menuFields);
-    return NextResponse.json(updated);
+    if (!updated) {
+      return NextResponse.json(
+        { code: "NOT_FOUND", message: "Menu not found after update" },
+        { status: 404 },
+      );
+    }
+    return NextResponse.json({
+      ...updated,
+      type: typeFromSmallint(updated.type),
+      status: statusFromSmallint(updated.status),
+    });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;

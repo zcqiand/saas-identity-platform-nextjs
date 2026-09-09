@@ -2,29 +2,30 @@
 //
 // TypeSpec: getMyMenus(): Record<appCode, EffectiveMenuNode[]>
 // 返回**所有 active app** 当前用户可见菜单(按 appCode 分组), 无 query 参数。
-// 此前 v0.7.38 加了 ?appCode= 强制 —— 与 OpenAPI 不符, 也让 msw/aspnetcore/springboot
-// 走同一 path 时签名不同. 现改返全 map, 与 msw/contract-test 对齐.
 //
-// 1. JWT 必填 (401) -> claims.sub = users.id
-// 2. tenant_memberships 拉用户全部 roleIds (status != removed)
-// 3. role_menu_grants 按 roleId IN (...) 聚合 allowed menuIds
-// 4. 遍历所有 active apps, 每个 app 建树: 一级节点始终可见, 子节点须在授权集内
+// 2026-09-09 schema pivot：
+// - apps → oauthClient (无 code 列；code 是 clientId 的语义键)
+//
+// 流程：
+// 1. JWT 必填 (401) -> claims.sub = sys_user.id
+// 2. tenant_member 拉用户所有 active membership
+// 3. tenant_member_role → sys_role → sys_role_menu → menuIds
+// 4. 遍历所有 active oauthClient，每个 client 建树: 一级节点始终可见, 子节点须在授权集内
 
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq, ne, asc, inArray } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { apps, menus, tenantMemberships, roleMenuGrants } from "@/db/schema";
+import { oauthClient, sysMenu, tenantMember, tenantMemberRole, sysRole, sysRoleMenu } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 type MenuRow = {
   id: string;
-  appId: string;
+  clientId: string;
   parentId: string | null;
-  code: string;
-  name: string;
+  title: string;
+  type: number;
   path: string | null;
   icon: string | null;
-  type: string;
   sortOrder: number;
 };
 
@@ -40,70 +41,79 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // 1. 用户全部角色(跨租户聚合)
+    // 1. 用户所有 active membership
     const memberships = await db
-      .select({ roleIds: tenantMemberships.roleIds })
-      .from(tenantMemberships)
-      .where(
-        and(
-          eq(tenantMemberships.userId, claims.sub),
-          ne(tenantMemberships.status, "removed"),
-        ),
-      );
-    const roleIds = Array.from(new Set(memberships.flatMap((m) => m.roleIds)));
+      .select({ memberId: tenantMember.id })
+      .from(tenantMember)
+      .where(and(eq(tenantMember.userId, claims.sub), eq(tenantMember.status, 1)));
+    const memberIds = memberships.map((m) => m.memberId);
 
-    // 2. 角色的菜单授权集
+    // 2. membership → role → menu
     const allowed = new Set<string>();
-    if (roleIds.length > 0) {
-      const grants = await db
-        .select({ menuIds: roleMenuGrants.menuIds })
-        .from(roleMenuGrants)
-        .where(inArray(roleMenuGrants.roleId, roleIds));
-      for (const g of grants) for (const id of g.menuIds) allowed.add(id);
+    if (memberIds.length > 0) {
+      const memberRoles = await db
+        .select({ roleId: tenantMemberRole.roleId })
+        .from(tenantMemberRole)
+        .where(inArray(tenantMemberRole.memberId, memberIds));
+      const roleIds = Array.from(new Set(memberRoles.map((r) => r.roleId)));
+      if (roleIds.length > 0) {
+        const grants = await db
+          .select({ menuId: sysRoleMenu.menuId })
+          .from(sysRoleMenu)
+          .where(inArray(sysRoleMenu.roleId, roleIds));
+        for (const g of grants) allowed.add(g.menuId);
+      }
     }
 
-    // 3. 所有 active apps 一次拉回
-    const activeApps = await db
-      .select({ id: apps.id, code: apps.code })
-      .from(apps)
-      .where(eq(apps.status, "active"));
+    // 3. 所有 active oauthClient（status=1）
+    const activeClients = await db
+      .select({ id: oauthClient.id, clientId: oauthClient.clientId })
+      .from(oauthClient)
+      .where(eq(oauthClient.status, 1));
 
-    // 4. 全部 active apps 的所有菜单(内存按 appId 分组建树)
+    // 4. 全部 active sysMenu（status=1）
     const allRows = await db
       .select({
-        id: menus.id,
-        appId: menus.appId,
-        parentId: menus.parentId,
-        code: menus.code,
-        name: menus.name,
-        path: menus.path,
-        icon: menus.icon,
-        type: menus.type,
-        sortOrder: menus.sortOrder,
-        // 不带 status/createdAt/updatedAt — 与 msw/contract-test 字段集对齐
+        id: sysMenu.id,
+        clientId: sysMenu.clientId,
+        parentId: sysMenu.parentId,
+        title: sysMenu.title,
+        type: sysMenu.type,
+        path: sysMenu.path,
+        icon: sysMenu.icon,
+        sortOrder: sysMenu.sortOrder,
       })
-      .from(menus)
-      .where(eq(menus.status, "active"))
-      .orderBy(asc(menus.sortOrder), asc(menus.code));
+      .from(sysMenu)
+      .where(eq(sysMenu.status, 1))
+      .orderBy(asc(sysMenu.sortOrder), asc(sysMenu.title));
 
     const result: Record<string, EffectiveMenuNode[]> = {};
-    for (const app of activeApps) {
+    for (const c of activeClients) {
       const byParent = new Map<string | null, MenuRow[]>();
       for (const m of allRows) {
-        if (m.appId !== app.id) continue;
+        if (m.clientId !== c.clientId) continue;
         const key = m.parentId ?? null;
         if (!byParent.has(key)) byParent.set(key, []);
-        byParent.get(key)!.push(m);
+        byParent.get(key)!.push({
+          id: m.id,
+          clientId: m.clientId,
+          parentId: m.parentId ?? null,
+          title: m.title,
+          type: m.type,
+          path: m.path ?? null,
+          icon: m.icon ?? null,
+          sortOrder: m.sortOrder,
+        });
       }
       const build = (parentId: string | null): EffectiveMenuNode[] =>
         (byParent.get(parentId) ?? [])
           .filter((m) => parentId === null || allowed.has(m.id))
           .map((m) => ({ ...m, children: build(m.id) }));
-      // 2026-09-01 contract-test I05：响应只含「该 app 下至少有一条 grant 内菜单的 app」。
-      // 否则 build(null) 对无 grant 的 app 返 [] 也照样塞 key，与真后端不一致。
-      // 对齐 aspnetcore/springboot（实际 PG 状态）和 msw handler。
-      if (allowed.size > 0 && allRows.some((m) => m.appId === app.id && allowed.has(m.id))) {
-        result[app.code] = build(null);
+      if (
+        allowed.size > 0 &&
+        allRows.some((m) => m.clientId === c.clientId && allowed.has(m.id))
+      ) {
+        result[c.clientId] = build(null);
       }
     }
     return NextResponse.json(result);
@@ -113,3 +123,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     throw e;
   }
 }
+
+// Suppress unused-import for sysRole（保留供未来 menu-by-role 优化）
+void sysRole;

@@ -10,12 +10,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { menus } from "@/db/schema";
+import { sysMenu } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const UpdateMenuBody = z.object({
   parentId: z.string().uuid().optional().nullable(),
-  name: z.string().min(2).max(255).optional(),
+  title: z.string().min(2).max(64).optional(),
   path: z.string().optional().nullable(),
   icon: z.string().optional().nullable(),
   type: z.enum(["group", "page", "action"]).optional(),
@@ -24,23 +24,48 @@ const UpdateMenuBody = z.object({
 });
 
 const menuFields = {
-  id: menus.id,
-  appId: menus.appId,
-  parentId: menus.parentId,
-  code: menus.code,
-  name: menus.name,
-  path: menus.path,
-  icon: menus.icon,
-  type: menus.type,
-  sortOrder: menus.sortOrder,
-  status: menus.status,
-  createdAt: menus.createdAt,
-  updatedAt: menus.updatedAt,
+  id: sysMenu.id,
+  clientId: sysMenu.clientId,
+  parentId: sysMenu.parentId,
+  title: sysMenu.title,
+  type: sysMenu.type,
+  path: sysMenu.path,
+  component: sysMenu.component,
+  perms: sysMenu.perms,
+  icon: sysMenu.icon,
+  sortOrder: sysMenu.sortOrder,
+  status: sysMenu.status,
+  createdAt: sysMenu.createdAt,
 };
 
+function typeToSmallint(t: "group" | "page" | "action"): number {
+  if (t === "group") return 1;
+  if (t === "page") return 2;
+  return 3;
+}
+
+function statusFromSmallint(n: number): "active" | "disabled" {
+  return n === 1 ? "active" : "disabled";
+}
+
+function typeFromSmallint(n: number): "group" | "page" | "action" {
+  if (n === 1) return "group";
+  if (n === 2) return "page";
+  return "action";
+}
+
 async function getMenuById(id: string) {
-  const rows = await db.select(menuFields).from(menus).where(eq(menus.id, id)).limit(1);
+  const rows = await db.select(menuFields).from(sysMenu).where(eq(sysMenu.id, id)).limit(1);
   return rows[0];
+}
+
+function toDto(m: Awaited<ReturnType<typeof getMenuById>>) {
+  if (!m) return m;
+  return {
+    ...m,
+    type: typeFromSmallint(m.type),
+    status: statusFromSmallint(m.status),
+  };
 }
 
 export async function GET(
@@ -57,7 +82,7 @@ export async function GET(
         { status: 404 },
       );
     }
-    return NextResponse.json(menu);
+    return NextResponse.json(toDto(menu));
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;
@@ -86,24 +111,30 @@ export async function PATCH(
         { status: 404 },
       );
     }
-    const { parentId, name, path, icon, type, sortOrder, status } = parsed.data;
+    const { parentId, title, path, icon, type, sortOrder, status } = parsed.data;
     const patch: Record<string, unknown> = {};
-    if (parentId !== undefined) patch.parentId = parentId ?? null;
-    if (name !== undefined) patch.name = name;
+    if (parentId !== undefined) patch.parentId = parentId ?? "00000000-0000-0000-0000-000000000000";
+    if (title !== undefined) patch.title = title;
     if (path !== undefined) patch.path = path ?? null;
     if (icon !== undefined) patch.icon = icon ?? null;
-    if (type !== undefined) patch.type = type;
+    if (type !== undefined) patch.type = typeToSmallint(type);
     if (sortOrder !== undefined) patch.sortOrder = sortOrder;
-    if (status !== undefined) patch.status = status;
+    if (status !== undefined) patch.status = status === "active" ? 1 : 0;
     if (Object.keys(patch).length === 0) {
-      return NextResponse.json(existing);
+      return NextResponse.json(toDto(existing));
     }
     const [updated] = await db
-      .update(menus)
+      .update(sysMenu)
       .set(patch)
-      .where(eq(menus.id, menuId))
+      .where(eq(sysMenu.id, menuId))
       .returning(menuFields);
-    return NextResponse.json(updated);
+    if (!updated) {
+      return NextResponse.json(
+        { code: "NOT_FOUND", message: "Menu not found after update" },
+        { status: 404 },
+      );
+    }
+    return NextResponse.json(toDto(updated));
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;
@@ -125,7 +156,7 @@ export async function DELETE(
         { status: 404 },
       );
     }
-    await db.delete(menus).where(eq(menus.id, menuId));
+    await db.delete(sysMenu).where(eq(sysMenu.id, menuId));
     return new NextResponse(null, { status: 204 });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);

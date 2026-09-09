@@ -4,19 +4,20 @@
 //   listMenus(@path appId): Menu[]   // 扁平数组，前端按 parentId 自构树
 //   createMenu(@path appId, @body CreateMenuRequest): Menu
 // appId path 参数接受 UUID 或 app code（前端传 code）。
+//
+// 2026-09-09 schema pivot：menus → sysMenu（列：clientId / title / type:smallint）。
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { eq, asc } from "drizzle-orm";
 import { db } from "@/db";
-import { menus } from "@/db/schema";
+import { sysMenu } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 import { resolveAppId } from "@/lib/app-resolver";
 
 const CreateMenuBody = z.object({
   parentId: z.string().uuid().optional().nullable(),
-  code: z.string().min(2).max(64),
-  name: z.string().min(2).max(255),
+  title: z.string().min(2).max(64),
   path: z.string().optional().nullable(),
   icon: z.string().optional().nullable(),
   type: z.enum(["group", "page", "action"]).optional(),
@@ -25,19 +26,35 @@ const CreateMenuBody = z.object({
 });
 
 const menuFields = {
-  id: menus.id,
-  appId: menus.appId,
-  parentId: menus.parentId,
-  code: menus.code,
-  name: menus.name,
-  path: menus.path,
-  icon: menus.icon,
-  type: menus.type,
-  sortOrder: menus.sortOrder,
-  status: menus.status,
-  createdAt: menus.createdAt,
-  updatedAt: menus.updatedAt,
+  id: sysMenu.id,
+  clientId: sysMenu.clientId,
+  parentId: sysMenu.parentId,
+  title: sysMenu.title,
+  type: sysMenu.type,
+  path: sysMenu.path,
+  component: sysMenu.component,
+  perms: sysMenu.perms,
+  icon: sysMenu.icon,
+  sortOrder: sysMenu.sortOrder,
+  status: sysMenu.status,
+  createdAt: sysMenu.createdAt,
 };
+
+function typeToSmallint(t: "group" | "page" | "action" | undefined): number {
+  if (t === "group") return 1;
+  if (t === "page") return 2;
+  return 3; // action 或缺省
+}
+
+function statusFromSmallint(n: number): "active" | "disabled" {
+  return n === 1 ? "active" : "disabled";
+}
+
+function typeFromSmallint(n: number): "group" | "page" | "action" {
+  if (n === 1) return "group";
+  if (n === 2) return "page";
+  return "action";
+}
 
 export async function GET(
   req: NextRequest,
@@ -55,10 +72,16 @@ export async function GET(
     }
     const items = await db
       .select(menuFields)
-      .from(menus)
-      .where(eq(menus.appId, appId))
-      .orderBy(asc(menus.sortOrder), asc(menus.code));
-    return NextResponse.json(items);
+      .from(sysMenu)
+      .where(eq(sysMenu.clientId, appId))
+      .orderBy(asc(sysMenu.sortOrder), asc(sysMenu.title));
+    return NextResponse.json(
+      items.map((m) => ({
+        ...m,
+        type: typeFromSmallint(m.type),
+        status: statusFromSmallint(m.status),
+      })),
+    );
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;
@@ -89,26 +112,35 @@ export async function POST(
     }
     const b = parsed.data;
     const [created] = await db
-      .insert(menus)
+      .insert(sysMenu)
       .values({
-        appId,
-        parentId: b.parentId ?? null,
-        code: b.code,
-        name: b.name,
+        clientId: appId,
+        parentId: b.parentId ?? "00000000-0000-0000-0000-000000000000",
+        title: b.title,
         path: b.path ?? null,
         icon: b.icon ?? null,
-        type: b.type ?? "page",
+        type: typeToSmallint(b.type),
         sortOrder: b.sortOrder ?? 0,
-        status: b.status ?? "active",
+        status: b.status === "disabled" ? 0 : 1,
       })
       .returning(menuFields);
-    return NextResponse.json(created);
+    if (!created) {
+      return NextResponse.json(
+        { code: "INTERNAL", message: "Menu creation returned no row" },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({
+      ...created,
+      type: typeFromSmallint(created.type),
+      status: statusFromSmallint(created.status),
+    });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;
     if ((e as { code?: string })?.code === "23505") {
       return NextResponse.json(
-        { code: "CONFLICT", message: "Menu code already exists in this app" },
+        { code: "CONFLICT", message: "Menu conflict" },
         { status: 409 },
       );
     }

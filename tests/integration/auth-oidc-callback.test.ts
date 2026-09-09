@@ -35,21 +35,35 @@ describe("M01.F04.I04 /api/v1/auth/oidc/callback", () => {
   });
 
   it("M01.F04.I04 returns 200 TokenResponse for valid OIDC callback", async () => {
-    dbMock.select
-      .mockReturnValueOnce({
-        from: () => ({
-          where: () => ({
-            limit: () => Promise.resolve([{ id: "app-id-1", redirectUris: ["https://app.example.com/cb"] }]),
-          }),
+    // 9/7 后 schema：表名 apps → oauthClient，users → sysUser，
+    // tenant 通过 tenantMember 解析（status=1=active）。
+    const appUuid = "00000000-0000-0000-0000-000000000aaa";
+    const userUuid = "00000000-0000-0000-0000-000000000bbb";
+    const tenantUuid = "00000000-0000-0000-0000-000000000ccc";
+    // 1) oauthClient 查询
+    dbMock.select.mockReturnValueOnce({
+      from: () => ({
+        where: () => ({
+          limit: () => Promise.resolve([{ id: appUuid, redirectUris: ["https://app.example.com/cb"] }]),
         }),
-      })
-      .mockReturnValueOnce({
-        from: () => ({
-          where: () => ({
-            limit: () => Promise.resolve([{ id: "user-id-1", tenantId: "00000000-0000-0000-0000-000000000111" }]),
-          }),
+      }),
+    });
+    // 2) sysUser 查询（status=1=active）
+    dbMock.select.mockReturnValueOnce({
+      from: () => ({
+        where: () => ({
+          limit: () => Promise.resolve([{ id: userUuid }]),
         }),
-      });
+      }),
+    });
+    // 3) tenantMember 查询（userId + status=1）
+    dbMock.select.mockReturnValueOnce({
+      from: () => ({
+        where: () => ({
+          limit: () => Promise.resolve([{ tenantId: tenantUuid }]),
+        }),
+      }),
+    });
 
     const res = await POST(makeReq(validBody) as never);
     expect(res.status).toBe(200);
