@@ -32,8 +32,8 @@ import type {
 
 import type {
   ErrorResponse,
+  RoleMenuGrant,
   SetSysRoleMenusRequest,
-  SysRoleMenu,
   TenantRoleMenusClearSysRoleMenusParams,
   TenantRoleMenusListSysRoleMenusParams,
   TenantRoleMenusSetSysRoleMenusParams
@@ -47,7 +47,7 @@ export const tenantRoleMenusListSysRoleMenus = (
     tenantId: string,
     roleId: string,
     params: TenantRoleMenusListSysRoleMenusParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SysRoleMenu[]>> => {
+ ): Promise<AxiosResponse<RoleMenuGrant>> => {
     
     
     return axios.get(
@@ -148,7 +148,7 @@ export const tenantRoleMenusSetSysRoleMenus = (
     roleId: string,
     setSysRoleMenusRequest: SetSysRoleMenusRequest,
     params: TenantRoleMenusSetSysRoleMenusParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SysRoleMenu[]>> => {
+ ): Promise<AxiosResponse<RoleMenuGrant>> => {
     
     
     return axios.put(

@@ -38,7 +38,6 @@ export type {
   SysMenu,
   SysMenuType,
   SysRole,
-  SysRoleMenu,
   SysUser,
   SysUserStatus,
   Tenant,

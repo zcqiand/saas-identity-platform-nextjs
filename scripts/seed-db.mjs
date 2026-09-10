@@ -105,8 +105,8 @@ async function insertAll(table, columns, rows) {
   }
 }
 
-// msw status 字符串 → 新 schema smallint（1=active）
-const statusToSmallint = (s) => (s === "active" ? 1 : 0);
+// msw status 字符串 → 新 schema smallint（家族约定 2026-09-10：1=active, 2=invited, 0=disabled）
+const statusToSmallint = (s) => (s === "active" ? 1 : s === "invited" ? 2 : 0);
 // msw menu type → sys_menu.type smallint（与 nextjs/aspnetcore 一致：group=1 page=2）
 const menuTypeToSmallint = (t) => (t === "group" ? 1 : t === "page" ? 2 : 3);
 

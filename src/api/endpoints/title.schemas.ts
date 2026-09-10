@@ -178,6 +178,13 @@ export interface ReorderSysMenuRequest {
   orderedMenuIds: string[];
 }
 
+export interface RoleMenuGrant {
+  roleId: string;
+  tenantId: string;
+  menuIds: string[];
+  updatedAt: string;
+}
+
 export interface SetSysRoleMenusRequest {
   menuIds: string[];
 }
@@ -245,11 +252,6 @@ export interface SysRole {
   updatedAt: string;
 }
 
-export interface SysRoleMenu {
-  roleId: string;
-  menuId: string;
-}
-
 export interface SysUser {
   id: string;
   /**
@@ -272,6 +274,7 @@ export type SysUserStatus = typeof SysUserStatus[keyof typeof SysUserStatus];
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const SysUserStatus = {
   active: 'active',
+  invited: 'invited',
   disabled: 'disabled',
 } as const;
 
