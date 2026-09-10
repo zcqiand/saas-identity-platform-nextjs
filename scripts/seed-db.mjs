@@ -1,30 +1,32 @@
 // scripts/seed-db.mjs - 把 @saas/identity-platform-msw 的 seeds/*.json 灌到 PG 库。
 //
-// 背景：nextjs-self 模式下 Route Handler 直读 PG（saas_dev）。表由 sync-db.mjs 建好
-// （12 表 + 9 enum）但空。本脚本读相邻 msw 仓的 seeds JSON，做字段映射后按 FK
-// 顺序灌入 9 张有 seed 的表（permissions / role_permissions / audit_retention_policies
-// seed 无数据，不灌，保持空）。
+// 背景：contract-test live（start-family.sh）与本地 dev 共用 saas_dev；
+// 表由 shared 仓 db:migrate（ADR-0025 drizzle journal）建好但空。本脚本读
+// 相邻 msw 仓的 seeds JSON（家族 fixture 真源），做字段映射后按 FK 顺序灌入。
 //
-// 关键映射（PG 列强类型 uuid，而 MSW seeds 的 id 混用三种格式）：
-//  - 2026-08-29 起全部 id 都是 canonical UUID（shared V016）：resolveId 纯透传
-//  - 超长可读串（users/roles/api_keys/memberships/audit_events 的 id，形如
-//    历史上是 "00000000-...-000001-user-alice" 这类可读串，靠 resolveId 哈希
-//    —— 那套已废弃，塞回可读串会被 resolveId fail-fast 拒绝
-//  所有【id 与指向它的 FK】用同一个 resolveId(原值)，保证 FK 一致
-//  （如 memberships.user_id 与 users.id 同 key -> 同 UUID）。
-//  确定性来自 sha256：同一字符串永远映射到同一 UUID。
+// 2026-09-10 重写 — 9/7 shared schema pivot（ADR-0025/0028）后 12 表换成
+// OAuth 中心模型（oauth_client / sys_user / tenant / tenant_member / ...），
+// 旧脚本灌的 12 张旧表（users/apps/api_keys/audit_events...）已不存在。
+// 映射约定（msw fixture 旧模型 → 新 schema）：
+//   tenants   → tenant            code→tenant_key, status "active"→1
+//   users     → sys_user          全局自然人（无 tenantId/roleIds 列）；
+//                                 password 灌 "plain:dev123456"（家族 dev 约定，
+//                                 与 aspnetcore/nextjs login 的 Phase 5 校验对齐）
+//   roles     → sys_role          code→role_code；client_id 取该租户订阅的
+//                                 首个 client（fixture 未按 client 分域，全挂
+//                                 lab-management）；is_preset=true
+//   memberships → tenant_member + tenant_member_role（roleIds 拆关联表）
+//   apps      → oauth_client      client_id 列 = app code（家族约定：
+//                                 oauth_client.client_id 是字符串 code 非 UUID）
+//   menus     → sys_menu          parentId null→零 UUID；type group/page→1/2
+//                                 （nextjs menus route 的映射，aspnetcore 同）
+//   role-menu-grants → sys_role_menu（roleId × menuIds 拆行）
+//   tenant_application：每租户 × lab-management 一行（固定可读 UUID）
 //
-//  其他映射：
-//  - camelCase -> snake_case 列名（显式列）
-//  - shared SQL V002 的 users 表【没有】role_ids 列（drizzle schema 超前加了但 SQL SSOT
-//    未落地）；role 关系由 tenant_memberships.role_ids 承载
-//  - 缺字段补默认：tenants.settings={} / api_keys.secret_hash=dev 占位 /
-//    apps.client_secret_hash=dev 占位 / audit_events.metadata={}
-//  - role_menu_grants 缺 tenantId：从 roleId 反查 roles.tenantId 补上
-//  - roles.permissionIds（schema 无此列，permissions 是独立表）：忽略
-//  - menus.parent_id 自引用 FK（V005 menus_parent_fk）：分两批插，先 null 后非-null
+// 已废弃的 fixture（api-keys/audit-events/permissions/role-permissions）
+// 随 SSOT b749c18 域下线不再灌。
 //
-// 幂等：默认先 TRUNCATE 12 张表 RESTART IDENTITY CASCADE，再灌。可重跑。
+// 幂等：默认先 TRUNCATE 全部业务表 RESTART IDENTITY CASCADE，再灌。可重跑。
 //
 // 用法：
 //   node scripts/seed-db.mjs                     # 默认连 saas_dev
@@ -34,23 +36,20 @@ import { createRequire } from "node:module";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
-import { createHash } from "node:crypto";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const NEXTJS_ROOT = resolve(__dirname, "..");
 // seed JSON 候选目录（按优先级）：
 //   1. <NEXTJS_ROOT>/src/seeds          —— tracked 源码树（Dockerfile runtime stage
 //                                         COPY --from=builder /app/src/seeds ./src/seeds）。
-//                                         容器与 dev 都首选这个，与 sibling 仓脱钩。
 //   2. ../saas-identity-platform-msw/src/seeds —— sibling 仓（dev 期间 fallback，
 //                                              仍可能有人手动 cp 进去调试）
-// 注：src/lib/demo-seeds.ts 已删（BFF 路由不再 fs 读 JSON）；这里只服务首启灌种子。
 const SEEDS_CANDIDATE_DIRS = [
   resolve(NEXTJS_ROOT, "src/seeds"),
   resolve(NEXTJS_ROOT, "../saas-identity-platform-msw/src/seeds"),
 ];
 
-// 借 nextjs 的 pg driver（与 sync-db.mjs 同套路；shared 仓禁 runtime 依赖）
+// 借 nextjs 的 pg driver（shared 仓禁 runtime 依赖）
 const require = createRequire(resolve(NEXTJS_ROOT, "package.json"));
 const pg = require("pg");
 
@@ -58,40 +57,24 @@ const DATABASE_URL =
   process.env.DATABASE_URL ??
   "postgresql://postgres:qiand68%2B%2B%2B@100.79.128.25:5432/saas_dev";
 
+const ZERO_UUID = "00000000-0000-0000-0000-000000000000";
+// 家族默认 client（fixture 的租户订阅都指向 lab-management）
+const DEFAULT_CLIENT_ID = "lab-management";
+// tenant_application 固定 id：可读 UUID（0000..-d0..-..-..-000N，N=租户序号）
+const TENANT_APP_ID_PREFIX = "00000000-0000-0000-0000-d0000000000";
+
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// ── 任意 id -> 合法 uuid（合法则透传，否则 sha256 派生确定性 UUID）─────────────
-// 确定性：同一字符串永远产出同一 UUID，故 users.id 与 memberships.user_id 用同一
-// 原值时必然落到同一 UUID，FK 完整。
-const uuidCache = new Map();
-function keyToUuid(key) {
-  const cached = uuidCache.get(key);
-  if (cached) return cached;
-  const b = createHash("sha256").update(key).digest().subarray(0, 16);
-  b[6] = (b[6] & 0x0f) | 0x40; // version 4
-  b[8] = (b[8] & 0x3f) | 0x80; // variant
-  const hex = b.toString("hex");
-  const uuid = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-  uuidCache.set(key, uuid);
-  return uuid;
-}
-// 2026-08-29：种子 ID 已在 shared V016 收敛为可读 UUID 字面量，msw JSON 同步改写，
-// 故正常路径下每个 id 都已是合法 UUID，resolveId 就是透传。
-//
-// 保留 keyToUuid 只作为**报错线索**：一旦有人往 seeds 里塞回非 UUID 的可读串，
-// 立刻 fail-fast 指出是哪个值，而不是静默哈希成一个新 UUID —— 静默哈希正是
-// 四套 ID 体系并存的成因（见 shared/sql/migrations/V016 文件头）。
+// ── 任意 id -> 合法 uuid（合法则透传，否则 fail-fast）───────────────────────
+// 种子 ID 已收敛为可读 UUID 字面量（原 shared V016 约定，msw JSON 同步改写），
+// 正常路径下每个 id 都已是合法 UUID，resolveId 就是透传。塞回非 UUID 可读串
+// 立刻报错 —— 静默哈希正是当年四套 ID 体系并存的成因。
 function resolveId(id) {
   if (id && UUID_RE.test(id)) return id;
   throw new Error(
-    `[seed-db] 种子 id 不是合法 UUID: ${JSON.stringify(id)}
-` +
-      `  种子 ID 规范见 shared/sql/migrations/V016__seed_family_fixtures.sql 文件头。
-` +
-      `  不要用可读串当 id —— 它会被静默哈希，导致 msw / PG / 各后端 id 分叉。
-` +
-      `  （若确实需要派生，请显式调用 keyToUuid 并说明理由）`,
+    `[seed-db] 种子 id 不是合法 UUID: ${JSON.stringify(id)}\n` +
+      `  不要用可读串当 id —— 它会导致 msw / PG / 各后端 id 分叉。`,
   );
 }
 
@@ -122,6 +105,11 @@ async function insertAll(table, columns, rows) {
   }
 }
 
+// msw status 字符串 → 新 schema smallint（1=active）
+const statusToSmallint = (s) => (s === "active" ? 1 : 0);
+// msw menu type → sys_menu.type smallint（与 nextjs/aspnetcore 一致：group=1 page=2）
+const menuTypeToSmallint = (t) => (t === "group" ? 1 : t === "page" ? 2 : 3);
+
 try {
   console.log(
     `[seed-db] 连接 ${DATABASE_URL.replace(/:[^:@/]+@/, ":***@")} ...`,
@@ -132,188 +120,166 @@ try {
   const tenants = loadJson("tenants.json");
   const users = loadJson("users.json");
   const roles = loadJson("roles.json");
-  const permissions = loadJson("permissions.json");
-  const rolePermissions = loadJson("role-permissions.json");
   const memberships = loadJson("memberships.json");
-  const apiKeys = loadJson("api-keys.json");
   const apps = loadJson("apps.json");
   const menus = loadJson("menus.json");
   const roleMenuGrants = loadJson("role-menu-grants.json");
-  const auditEvents = loadJson("audit-events.json");
-  const auditRetentionPolicies = loadJson("audit-retention-policies.json");
 
   console.log(
     `[seed-db] 读入 seeds：tenants=${tenants.length} users=${users.length} ` +
-      `roles=${roles.length} permissions=${permissions.length} role_permissions=${rolePermissions.length} ` +
-      `memberships=${memberships.length} api_keys=${apiKeys.length} ` +
-      `apps=${apps.length} menus=${menus.length} role_menu_grants=${roleMenuGrants.length} ` +
-      `audit_events=${auditEvents.length} audit_retention_policies=${auditRetentionPolicies.length}`,
+      `roles=${roles.length} memberships=${memberships.length} ` +
+      `apps=${apps.length} menus=${menus.length} role_menu_grants=${roleMenuGrants.length}`,
   );
 
-  // ── 幂等：清空 12 张表（不动 __schema_migrations tracking 表）──────────────
+  // ── 幂等：清空业务表（不动 __drizzle_migrations tracking 表）────────────
+  // RESTART IDENTITY CASCADE 沿 FK 级联清，顺序无关
   await client.query(
     `TRUNCATE TABLE
-       tenants, users, tenant_memberships, roles, permissions, role_permissions,
-       api_keys, apps, menus, role_menu_grants, audit_events, audit_retention_policies
+       oauth_access_token, oauth_code, oauth_refresh_token,
+       sys_role_menu, sys_menu, sys_role,
+       tenant_member_role, tenant_member, tenant_application,
+       sys_user, oauth_client, tenant
      RESTART IDENTITY CASCADE`,
   );
-  console.log("[seed-db] 已清空 12 张表（RESTART IDENTITY CASCADE）。");
+  console.log("[seed-db] 已清空业务表（RESTART IDENTITY CASCADE）。");
 
-  // 1. tenants（补 settings={}）
+  // 1. tenant（code→tenant_key；settings 列已随 pivot 删除）
   await insertAll(
-    "tenants",
-    ["id", "code", "name", "status", "settings", "created_at", "updated_at"],
-    tenants.map((t) => [resolveId(t.id), t.code, t.name, t.status, {}, t.createdAt, t.updatedAt]),
+    "tenant",
+    ["id", "tenant_key", "name", "status", "created_at", "updated_at"],
+    tenants.map((t) => [
+      resolveId(t.id), t.code, t.name, statusToSmallint(t.status),
+      t.createdAt, t.updatedAt,
+    ]),
   );
-  console.log(`[seed-db] tenants: ${tenants.length}`);
+  console.log(`[seed-db] tenant: ${tenants.length}`);
 
-  // 2. users（display_name/password_hash=null；role_ids V008 才落地——见文件头注释）
+  // 2. oauth_client（client_id 列 = app code 字符串；clientSecret 透传 fixture）
   await insertAll(
-    "users",
+    "oauth_client",
     [
-      "id", "tenant_id", "username", "email", "display_name", "status",
-      "password_hash", "role_ids", "created_at", "updated_at",
-    ],
-    users.map((u) => [
-      resolveId(u.id), resolveId(u.tenantId), u.username, u.email,
-      u.displayName ?? null, u.status, "plain:dev123456",  // dev-only placeholder; prod must be argon2/bcrypt hash via OAuth password grant
-      (u.roleIds ?? []).map(resolveId),
-      u.createdAt, u.updatedAt,
-    ]),
-  );
-  console.log(`[seed-db] users: ${users.length}`);
-
-  // 3. roles（忽略 permissionIds；description=null）
-  await insertAll(
-    "roles",
-    ["id", "tenant_id", "code", "name", "description", "created_at", "updated_at"],
-    roles.map((r) => [resolveId(r.id), resolveId(r.tenantId), r.code, r.name, null, r.createdAt, r.updatedAt]),
-  );
-  console.log(`[seed-db] roles: ${roles.length}`);
-
-  // 3.5 permissions（v0.4.1 补：4 code 与 roles.permissionIds 对齐；无 FK 依赖，先灌）
-  await insertAll(
-    "permissions",
-    ["id", "code", "name", "description", "created_at"],
-    permissions.map((p) => [
-      resolveId(p.id), p.code, p.name, p.description ?? null, new Date().toISOString(),
-    ]),
-  );
-  console.log(`[seed-db] permissions: ${permissions.length}`);
-
-  // 3.6 role_permissions（PK=(role_id, permission_id)；roleId 与 roles.id 对齐,permissionCode 与 permissions.id 对齐）
-  await insertAll(
-    "role_permissions",
-    ["role_id", "permission_id", "granted_at"],
-    rolePermissions.map((rp) => {
-      const perm = permissions.find((p) => p.code === rp.permissionCode);
-      if (!perm) throw new Error(`[seed-db] role_permissions 引用了不存在的 permission code: ${rp.permissionCode}`);
-      return [resolveId(rp.roleId), resolveId(perm.id), new Date().toISOString()];
-    }),
-  );
-  console.log(`[seed-db] role_permissions: ${rolePermissions.length}`);
-
-  // 4. tenant_memberships（id/user_id/role_ids 全 resolveId，与 users/roles 对齐）
-  await insertAll(
-    "tenant_memberships",
-    ["id", "user_id", "tenant_id", "role_ids", "status", "joined_at"],
-    memberships.map((m) => [
-      resolveId(m.id), resolveId(m.userId), resolveId(m.tenantId),
-      (m.roleIds ?? []).map(resolveId), m.status, m.joinedAt,
-    ]),
-  );
-  console.log(`[seed-db] tenant_memberships: ${memberships.length}`);
-
-  // 5. api_keys（secret_hash=dev 占位；last_used_at/revoked_at/expires_at 可空）
-  await insertAll(
-    "api_keys",
-    [
-      "id", "tenant_id", "name", "prefix", "secret_hash", "status", "scopes",
-      "created_at", "last_used_at", "expires_at", "revoked_at",
-    ],
-    apiKeys.map((k) => [
-      resolveId(k.id), resolveId(k.tenantId), k.name, k.prefix,
-      "dev-placeholder-hash",  // dev-only placeholder; prod must be argon2/bcrypt
-      k.status, k.scopes ?? [], k.createdAt,
-      null, k.expiresAt ?? null, null,
-    ]),
-  );
-  console.log(`[seed-db] api_keys: ${apiKeys.length}`);
-
-  // 6. apps（id 语义键 -> UUID；client_secret_hash=dev 占位）
-  await insertAll(
-    "apps",
-    [
-      "id", "code", "name", "description", "icon", "sort_order", "status",
-      "client_id", "client_secret_hash", "redirect_uris", "scopes", "grant_types",
-      "is_first_party", "created_at", "updated_at",
+      "id", "client_id", "client_secret", "client_name",
+      "grant_types", "redirect_uris", "scopes",
+      "access_token_validity", "refresh_token_validity",
+      "auto_approve", "status", "created_at", "updated_at",
     ],
     apps.map((a) => [
-      resolveId(a.id), a.code, a.name, a.description ?? null, a.icon ?? null,
-      a.sortOrder ?? 0, a.status, a.clientId, "dev-placeholder-hash",  // dev-only placeholder; prod must be argon2/bcrypt
-      a.redirectUris ?? [], a.scopes ?? [], a.grantTypes ?? [],
-      a.isFirstParty ?? false, a.createdAt, a.updatedAt,
+      resolveId(a.id), a.code, a.clientSecret, a.name,
+      (a.grantTypes ?? []).join(","), (a.redirectUris ?? []).join(","),
+      (a.scopes ?? []).join(","),
+      7200, 2592000,
+      a.isFirstParty === true, statusToSmallint(a.status),
+      a.createdAt, a.updatedAt,
     ]),
   );
-  console.log(`[seed-db] apps: ${apps.length}`);
+  console.log(`[seed-db] oauth_client: ${apps.length}`);
 
-  // 7. menus（id/appId/parentId 全 resolveId；parent_id 自引用 FK，分两批：
-  //    先 parentId=null 后非-null，保证 child 插入时 parent 已存在）
-  const menuCols = [
-    "id", "app_id", "parent_id", "code", "name", "path", "icon", "type",
-    "sort_order", "status", "created_at", "updated_at",
-  ];
-  const mapMenu = (m) => [
-    resolveId(m.id), resolveId(m.appId),
-    m.parentId ? resolveId(m.parentId) : null,
-    m.code, m.name, m.path ?? null, m.icon ?? null, m.type,
-    m.sortOrder ?? 0, m.status, m.createdAt, m.updatedAt,
-  ];
-  const menusNullParent = menus.filter((m) => !m.parentId);
-  const menusWithParent = menus.filter((m) => m.parentId);
-  await insertAll("menus", menuCols, menusNullParent.map(mapMenu));
-  await insertAll("menus", menuCols, menusWithParent.map(mapMenu));
+  // 3. sys_user（全局自然人；password = 家族 dev 约定 plain:dev123456）
+  await insertAll(
+    "sys_user",
+    ["id", "username", "password", "email", "mobile", "status", "created_at", "updated_at"],
+    users.map((u) => [
+      resolveId(u.id), u.username, "plain:dev123456", u.email, null,
+      statusToSmallint(u.status), u.createdAt, u.updatedAt,
+    ]),
+  );
+  console.log(`[seed-db] sys_user: ${users.length}`);
+
+  // 4. sys_role（fixture 无 client 分域 → 全挂 DEFAULT_CLIENT_ID；is_preset=true）
+  await insertAll(
+    "sys_role",
+    [
+      "id", "tenant_id", "client_id", "role_code", "role_name",
+      "description", "is_preset", "status", "created_at", "updated_at",
+    ],
+    roles.map((r) => [
+      resolveId(r.id), resolveId(r.tenantId), DEFAULT_CLIENT_ID,
+      r.code, r.name, null, true, 1, r.createdAt, r.updatedAt,
+    ]),
+  );
+  console.log(`[seed-db] sys_role: ${roles.length}`);
+
+  // 5. tenant_member + tenant_member_role（membership 拆两表；roleIds 进关联表）
+  await insertAll(
+    "tenant_member",
+    ["id", "tenant_id", "user_id", "member_name", "is_owner", "status", "created_at", "updated_at"],
+    memberships.map((m) => {
+      const user = users.find((u) => u.id === m.userId);
+      return [
+        resolveId(m.id), resolveId(m.tenantId), resolveId(m.userId),
+        user?.username ?? null,
+        m.roleIds?.length === 1 && m.roleIds[0].endsWith("00000000001"), // 首角色是 admin 视为 owner
+        statusToSmallint(m.status), m.joinedAt, m.joinedAt,
+      ];
+    }),
+  );
+  const memberRoleRows = memberships.flatMap((m) =>
+    (m.roleIds ?? []).map((rid) => [resolveId(m.id), resolveId(rid)]),
+  );
+  await insertAll("tenant_member_role", ["member_id", "role_id"], memberRoleRows);
   console.log(
-    `[seed-db] menus: ${menus.length}（null-parent ${menusNullParent.length} + with-parent ${menusWithParent.length}）`,
+    `[seed-db] tenant_member: ${memberships.length}, tenant_member_role: ${memberRoleRows.length}`,
   );
 
-  // 8. role_menu_grants（role_id/tenant_id/menu_ids 全 resolveId；TypeSpec RoleMenuGrant 加了 tenantId 字段后直接读 fixture）
+  // 6. tenant_application（每租户订阅 DEFAULT_CLIENT_ID 至 2027 年底；固定可读 UUID）
   await insertAll(
-    "role_menu_grants",
-    ["role_id", "tenant_id", "menu_ids", "updated_at"],
-    roleMenuGrants.map((g) => [
-      resolveId(g.roleId), resolveId(g.tenantId),
-      (g.menuIds ?? []).map(resolveId), g.updatedAt,
+    "tenant_application",
+    ["id", "tenant_id", "client_id", "status", "expire_time", "created_at"],
+    tenants.map((t, i) => [
+      `${TENANT_APP_ID_PREFIX}${i + 1}`, resolveId(t.id), DEFAULT_CLIENT_ID,
+      1, "2027-12-31T23:59:59Z", t.createdAt,
     ]),
   );
-  console.log(`[seed-db] role_menu_grants: ${roleMenuGrants.length}`);
+  console.log(`[seed-db] tenant_application: ${tenants.length}`);
 
-  // 9. audit_events（id/actor/target 全 resolveId；metadata={}）
+  // 7. sys_menu（parentId null→零 UUID；sys_menu.client_id = app code 字符串）
+  const appCodeById = new Map(apps.map((a) => [a.id, a.code]));
   await insertAll(
-    "audit_events",
-    ["id", "tenant_id", "actor_user_id", "action", "target_user_id", "metadata", "occurred_at"],
-    auditEvents.map((e) => [
-      resolveId(e.id), resolveId(e.tenantId), e.actorUserId ? resolveId(e.actorUserId) : null,
-      e.action, e.targetUserId ? resolveId(e.targetUserId) : null, {}, e.occurredAt,
+    "sys_menu",
+    [
+      "id", "client_id", "parent_id", "title", "type",
+      "path", "component", "perms", "icon", "sort_order", "status", "created_at",
+    ],
+    menus.map((m) => [
+      resolveId(m.id),
+      appCodeById.get(m.appId) ?? DEFAULT_CLIENT_ID,
+      m.parentId ? resolveId(m.parentId) : ZERO_UUID,
+      m.name, menuTypeToSmallint(m.type),
+      m.path ?? null, null, null, m.icon ?? null,
+      m.sortOrder ?? 0, 1, m.createdAt,
     ]),
   );
-  console.log(`[seed-db] audit_events: ${auditEvents.length}`);
+  console.log(`[seed-db] sys_menu: ${menus.length}`);
 
-  // 10. audit_retention_policies（v0.4.1 补：每租户 1 行 90 天 retention）
-  await insertAll(
-    "audit_retention_policies",
-    ["tenant_id", "retention_days", "updated_at"],
-    auditRetentionPolicies.map((p) => [
-      resolveId(p.tenantId), p.retentionDays, p.updatedAt,
-    ]),
+  // 8. sys_role_menu（role-menu-grants 拆行；fixture grants 只覆盖 acme admin，
+  //    其余租户的 admin 角色补挂该 client 全部菜单，保证 me/menus 非空可比）
+  const grantedRoleIds = new Set(roleMenuGrants.map((g) => g.roleId));
+  const extraGrantRows = [];
+  for (const r of roles) {
+    if (grantedRoleIds.has(r.id)) continue;
+    if (r.code !== "admin") continue;
+    for (const m of menus) {
+      if ((appCodeById.get(m.appId) ?? DEFAULT_CLIENT_ID) === DEFAULT_CLIENT_ID) {
+        extraGrantRows.push([resolveId(r.id), resolveId(m.id)]);
+      }
+    }
+  }
+  const grantRows = [
+    ...roleMenuGrants.flatMap((g) =>
+      (g.menuIds ?? []).map((mid) => [resolveId(g.roleId), resolveId(mid)]),
+    ),
+    ...extraGrantRows,
+  ];
+  await insertAll("sys_role_menu", ["role_id", "menu_id"], grantRows);
+  console.log(
+    `[seed-db] sys_role_menu: ${grantRows.length} (fixture ${grantRows.length - extraGrantRows.length} + 补齐 ${extraGrantRows.length})`,
   );
-  console.log(`[seed-db] audit_retention_policies: ${auditRetentionPolicies.length}`);
 
   // ── 验证 count ────────────────────────────────────────────────────────────
   const tables = [
-    "tenants", "users", "tenant_memberships", "roles", "permissions",
-    "role_permissions", "api_keys", "apps", "menus", "role_menu_grants",
-    "audit_events", "audit_retention_policies",
+    "tenant", "oauth_client", "sys_user", "sys_role",
+    "tenant_member", "tenant_member_role", "tenant_application",
+    "sys_menu", "sys_role_menu",
   ];
   console.log("\n[seed-db] 验证（各表行数）：");
   for (const t of tables) {

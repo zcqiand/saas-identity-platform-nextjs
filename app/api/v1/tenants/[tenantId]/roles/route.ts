@@ -6,7 +6,8 @@
 // GET / POST
 //
 // 2026-09-09 schema pivot：roles → sysRole（列：tenantId / clientId / roleCode / roleName / description / isPreset / status:smallint）。
-// 角色没有 permissionIds 列（role_permissions 表不存在）；返回 permissionIds: []。
+// 2026-09-10 响应对齐 SSOT SysRole：roleCode/roleName（去掉旧 code/name 平铺与
+// permissionIds 幻字段 — permissions 域 b749c18 已废弃）。
 
 import { NextRequest, NextResponse } from "next/server";
 import { eq, sql } from "drizzle-orm";
@@ -54,11 +55,10 @@ export async function GET(
         id: r.id,
         tenantId: r.tenantId,
         clientId: r.clientId,
-        code: r.roleCode,
-        name: r.roleName,
+        roleCode: r.roleCode,
+        roleName: r.roleName,
         description: r.description ?? undefined,
         isPreset: r.isPreset,
-        permissionIds: [] as string[],
         status: statusFromSmallint(r.status),
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
@@ -111,11 +111,10 @@ export async function POST(
       id: r.id,
       tenantId: r.tenantId,
       clientId: r.clientId,
-      code: r.roleCode,
-      name: r.roleName,
+      roleCode: r.roleCode,
+      roleName: r.roleName,
       description: r.description ?? undefined,
       isPreset: r.isPreset,
-      permissionIds: [] as string[],
       status: r.status,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,

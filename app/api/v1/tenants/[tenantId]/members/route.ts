@@ -126,10 +126,11 @@ export async function POST(
       );
     }
 
-    const id = crypto.randomUUID();
     const nowIso = new Date().toISOString();
     const password = `plain:${parsed.data.password}`; // Phase 5：argon2
-    await db
+    // id 由 DB 默认生成（不本地 randomUUID 再另插 —— 本地 id 与 DB 生成的行 id
+    // 不一致会让下面 tenantMember 的 FK 撞 23503，2026-09-10 修）。
+    const inserted = await db
       .insert(sysUser)
       .values({
         username: parsed.data.username,
@@ -141,6 +142,10 @@ export async function POST(
         updatedAt: nowIso,
       })
       .returning({ id: sysUser.id });
+    const id = inserted[0]?.id;
+    if (!id) {
+      return NextResponse.json({ code: "INTERNAL", message: "insert returned no id" }, { status: 500 });
+    }
     // 同步建 tenantMember（active=1）
     await db.insert(tenantMember).values({
       tenantId,
