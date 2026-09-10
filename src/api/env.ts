@@ -13,20 +13,21 @@
 //
 // ?? 而非 ||：env 对象在模块加载时构造，烤进 client bundle。
 // 空串 "" 是「显式设空」（测试同源相对 URL 模式），?? 只在 null/undefined 时 throw。
-function requireEnv(name: string): string {
-  const v = process.env[name];
-  if (v === undefined) {
-    throw new Error(
-      `${name} env is required (ADR-0019 禁字面默认值). ` +
-        `Set in .env.local (dev) or Dockerfile ENV (prod).`,
-    );
-  }
-  return v;
+//
+// ⚠ 必须字面访问 process.env.NEXT_PUBLIC_*：DefinePlugin 只内联字面 key，
+// 动态 key（requireEnv(name) 中转）让 client bundle 拿到 undefined → 浏览器必炸
+// （build/SSR 全绿掩盖；2026-09-11 E2E 首跑抓到的复发坑）。
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+if (API_BASE_URL === undefined) {
+  throw new Error(
+    "NEXT_PUBLIC_API_BASE_URL env is required (ADR-0019 禁字面默认值). " +
+      "Set in .env.local (dev) or Dockerfile ENV (prod).",
+  );
 }
 
 export const env = {
   // ADR-0019：缺失 throw，dev 期 .env.local 显式声明 (例 NEXT_PUBLIC_API_BASE_URL=http://localhost:5100)
   // 测试模式 .env.test 设空串 = 同源相对 URL，走 msw 相对路径 handler
-  NEXT_PUBLIC_API_BASE_URL: requireEnv("NEXT_PUBLIC_API_BASE_URL"),
+  NEXT_PUBLIC_API_BASE_URL: API_BASE_URL,
   NEXT_PUBLIC_API_MODE: process.env.NEXT_PUBLIC_API_MODE ?? "msw-http",
 } as const;

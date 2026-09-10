@@ -1,46 +1,15 @@
 {
   "schema": 1,
   "approved": true,
-  "base_sha": "f6ca92c7e1c70548",
-  "summary": "M04.F04.I08 当前用户有效菜单 cascade 状态改已上线（PLAN-2026-003 T1-T6 落地完成）",
+  "base_sha": "b31c57cd0508c77a",
+  "summary": "密码登录 UI 规划→已上线（E2E REQ-2026-001 前置：E2E 只测已上线功能；登录页/表单/data-fn 锚点与测试已落地）",
   "changes": [
     {
-      "id": "M01.F04.I01",
+      "id": "M01.F04.I03",
       "action": "变更",
-      "name": "密码登录 API",
-      "delivery": "仅后端",
-      "reason": "cascade 对齐 BASE；saas-IdP 自服务的密码登录，react/vue 通过 OAuth 跳板（ADR-0013）不直连"
-    },
-    {
-      "id": "M01.F04.I02",
-      "action": "变更",
-      "name": "失败锁定",
-      "delivery": "仅后端",
-      "reason": "cascade 对齐 BASE；服务端策略"
-    },
-    {
-      "id": "M01.F04.I04",
-      "action": "变更",
-      "name": "OIDC Code 换取",
-      "delivery": "仅后端",
-      "reason": "cascade 对齐 BASE；saas-IdP 自身 OIDC callback，不对外"
-    },
-    {
-      "id": "M01.F04.I05",
-      "action": "变更",
-      "name": "refresh token",
-      "delivery": "仅后端",
-      "reason": "cascade 对齐 BASE；saas-IdP 自身 refresh 轮换"
-    },
-    {
-      "id": "M04.F04.I08",
-      "action": "变更",
-      "name": "当前用户有效菜单",
-      "delivery": "前端+后端",
-      "reason": "cascade 对齐 PLAN-2026-003：端点 + UI 入口已实施完成（nextjs/aspnetcore/springboot/msw 端点 + react/vue SidebarNav data-fn）"
+      "name": "密码登录 UI",
+      "reason": "REQ(e2e)-2026-001 Q1 澄清：已收口"
     }
   ],
-  "sync_files": [
-    "docs/functions/function-tree.md"
-  ]
+  "sync_files": []
 }

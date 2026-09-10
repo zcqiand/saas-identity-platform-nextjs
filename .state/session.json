@@ -1,31 +1,24 @@
 {
   "schema": 2,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "2026-09-01 contract-test I24/I27 修好（oauth-store + login-lockout 改 globalThis 兑 HMR module 重求值）+ I05 oracle 一致（me/menus handler 过滤无 grant app）",
-  "last_session_at": "2026-09-01",
+  "current_task": "三端收口盘点（2026-09-10）：38/55 已上线（领先 react/vue 的 34/51），唯一挡门是 L4.db.drift 的 PG 凭据（环境非代码）",
+  "last_session_at": "2026-09-10",
+  "last_session_summary": "本仓无代码改动。L0-L4 测试全绿，L4.db.drift 挂在 pull-schema.sh FATAL: PG_PASSWORD 未设。尝试用 shared/.env.test 的凭据连 100.79.128.25 → password authentication failed（凭据已失效，springboot L4.db.scaffold 同样死法）。代码侧干净，纯环境凭据欠账。",
   "done": [
-    "src/lib/oauth-store.ts: oauthStore 单例改 globalThis 缓存，跨 module 重求值存活（2026-09-01 contract-test I24/I27 INVALID_GRANT 根因）",
-    "src/lib/login-lockout.ts: loginLockout 单例同样改 globalThis 缓存",
-    "app/api/v1/me/menus/route.ts: 响应只含「该 app 下至少有一条 grant 内菜单的 app」（oracle 对齐；同 msw handlers-extra.ts:373 同款 bug）",
-    "npm run typecheck 通过",
-    "M06.F03 lib/audit.ts + api-keys POST/revoke 写端点 audit emit（上批）"
+    "盘点：38/55 已上线 + 14 开发中 + 3 规划；已上线数领先是 M00.F05 pages（cdf7e33）先在本仓落地",
+    "L0/L0.5/L1/L2/L3/L4 测试全 PASS（2026-09-10 gate）"
   ],
   "next": [
-    "audit-events POST export 端点缺失（其他 3 后端有），下一批补齐",
-    "其他 8 个 AuditAction 4 后端 emit 是下一批",
-    "【重要】I15 GET /api-keys 返 nextjs createdAt undefined 需要查 db/schema.ts 的 defaultNow() 是否真生效（怀疑 Drizzle 0.x timestamp 行为差异）",
-    "springboot DateTime.MinValue bug 修完后再跑全量 contract-test，看 nextjs 这边是否还有时间戳相关 fail"
+    "拿到有效 PG 凭据后：bash scripts/pull-schema.sh && git add src/db/schema.ts（L4.db.drift 门禁说明）",
+    "M01.F04.I03 密码登录 UI / I07 全局 SSO 登出（规划态，本仓是 OAuth IdP 主体、4 端点已在）"
   ],
   "open_questions": [
-    "nextjs Drizzle `timestamp('created_at', {withTimezone:true}).notNull().defaultNow()` 是不是真在 INSERT 时填充？I15 测试 nextjs 返 createdAt undefined 需要 PG 日志确认",
-    "globalThis 缓存 singleton 在 production 模式（next start）下会不会出问题？目前只验证了 dev 模式"
+    "shared/.env.test 和 .env.production 里的 PG_PASSWORD 连 100.79.128.25 认证失败——密码已轮换？需要人提供新凭据或更新这两份仓内契约文件"
   ],
   "dont": [
-    "不要再用 fetch+token 在 lib/audit 解析 tenantId —— actorUserId 是从 auth header 解 JWT，tenantId 必须是 path 传进来的",
-    "不要再把 audit 失败 throw —— 整个项目约定是 best-effort swallow + console.warn",
-    "不要再写 module-scope 单例（new Xxx() 直接 export const）—— 长跑 dev 模式 HMR 会重置 singleton，改 globalThis 缓存（与本次 oauth-store/login-lockout 修复同款）"
+    "不要给 pull-schema.sh 加 PG_PASSWORD 默认值兜底（CLAUDE.md §2 硬规则，fail-fast 是设计行为）",
+    "不要 module-scope 单例（HMR 会重置，用 globalThis 缓存——oauth-store/login-lockout 前例）",
+    "audit emit 失败别 throw（best-effort swallow 家族约定）"
   ],
-  "last_gate_passed_at": "2026-09-01T22:15+08:00",
-  "active_branch": "master",
-  "ahead_of_origin": "0"
+  "active_branch": "master"
 }

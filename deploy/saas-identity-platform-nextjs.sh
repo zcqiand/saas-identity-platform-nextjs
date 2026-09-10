@@ -176,6 +176,14 @@ if ! grep -q '^NEXT_PUBLIC_API_MODE=' "$BASE/saas.env"; then
   printf 'NEXT_PUBLIC_API_MODE=nextjs\n' >> "$BASE/saas.env"
 fi
 
+# 2026-09-11 B 方案 (ADR-0030 REQ-2026-001): 补 NEXT_PUBLIC_LOGIN_CLIENT_ID
+# (登录页 clientId 兜底 = saas-console 自身应用 …1114；缺了 prod 直接打开登录页会被 clientId 门拒绝)
+if ! grep -q '^NEXT_PUBLIC_LOGIN_CLIENT_ID=' "$BASE/saas.env"; then
+  echo "→ append NEXT_PUBLIC_LOGIN_CLIENT_ID=11111111-1111-1111-1111-111111111114"
+  umask 077
+  printf 'NEXT_PUBLIC_LOGIN_CLIENT_ID=11111111-1111-1111-1111-111111111114\n' >> "$BASE/saas.env"
+fi
+
 # 2026-09-09 key 对齐 (L0.5 env 一致性): 老 env-file 逐 key append-if-missing 到 .env.production 全集
 # (key 集合契约由 suite L0.5 check_deploy_parity 锁死;SAAS_CORS_ALLOWED_ORIGINS 已死
 # 删 — nextjs 容器不需要 CORS env,只有 springboot/aspnetcore 后端要)

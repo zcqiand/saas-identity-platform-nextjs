@@ -11,15 +11,16 @@
 // 旧 ?token= 捷径（?redirect=&state= 把 JWT 放 URL）已删除：与 lab-* 子仓的
 // OAuth 2.0 code 流不匹配 + JWT 泄漏到 referer/log。
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Toaster } from "@/components/ui/sonner";
 import { useTenant } from "@/state/tenant-context";
 import { getApiMode } from "@/api/backend-config";
-import { authLogin } from "@/api/endpoints/endpoints";
+import { useSessionsLogin } from "@/api/endpoints/auth/auth";
 import { toApiError } from "@/api/http-client";
 import { toast } from "sonner";
 
@@ -37,6 +38,18 @@ export default function LoginPage() {
   const { login } = useTenant();
   const apiMode = getApiMode();
   const [submitting, setSubmitting] = useState(false);
+  const loginMut = useSessionsLogin();
+
+  // B 方案（2026-09-11，对齐 vue 基准）：clientId 取 ?client_id= ?? env
+  // （NEXT_PUBLIC_LOGIN_CLIENT_ID，值 = saas-console 自身应用）；缺即拒，不猜。
+  const loginClientId = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const fromUrl = new URLSearchParams(window.location.search).get("client_id");
+    if (fromUrl) return fromUrl;
+    const fromEnv = (process.env.NEXT_PUBLIC_LOGIN_CLIENT_ID ?? "").trim();
+    if (fromEnv) return fromEnv;
+    return "";
+  }, []);
   // RFC 6749 §4.1.1 授权码范式：lab 后端（confidential client）已替浏览器领到 code，
   // saas 登录页只负责认证资源所有者，成功后 302 redirect_uri?code&state（§4.1.2）。
   const [oauthReturn, setOauthReturn] = useState<{
@@ -76,22 +89,32 @@ export default function LoginPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!loginClientId) {
+      toast.error("缺少 clientId：请通过 OAuth 跳转访问，或配置 NEXT_PUBLIC_LOGIN_CLIENT_ID");
+      return;
+    }
     setSubmitting(true);
     try {
-      const res = await authLogin({ username, password });
+      const res = await loginMut.mutateAsync({
+        data: { username, password, clientId: loginClientId },
+      });
       const data = res.data as {
         accessToken?: string;
         refreshToken?: string;
-        userId?: string;
-        currentTenantId?: string;
+        user?: { id?: string; email?: string };
+        availableTenants?: { tenantId?: string }[];
       } | undefined;
+      if (!data?.accessToken || !data.refreshToken) {
+        toast.error("登录响应缺少 token，请联系管理员");
+        return;
+      }
       login({
-        accessToken: data?.accessToken ?? "",
-        refreshToken: data?.refreshToken ?? "",
-        userId: data?.userId ?? "",
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        userId: data.user?.id ?? "",
         username,
-        email: undefined,
-        currentTenantId: data?.currentTenantId ?? "",
+        email: data.user?.email,
+        currentTenantId: data.availableTenants?.[0]?.tenantId ?? "",
         tenantCode: null,
       });
       // OAuth 2.0 code 回跳：把 code+state 原样透传给 RP 的 redirect_uri。
@@ -135,6 +158,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-100 via-white to-slate-200 p-4">
+      {/* 登录页独立于 AppShell（其内才有全局 <Toaster/>）——错误 toast 靠这里自挂 */}
+      <Toaster />
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-2">
           <CardTitle className="text-lg">SaaS 多租户多应用身份平台</CardTitle>
