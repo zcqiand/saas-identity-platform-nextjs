@@ -25,10 +25,14 @@ const GRANT_TYPES = [
 
 const UpdateAppBody = z.object({
   clientName: z.string().min(2).max(128).optional(),
-  redirectUris: z.array(z.string()).optional(),
-  scopes: z.array(z.string()).optional(),
-  grantTypes: z.array(z.enum(GRANT_TYPES)).optional(),
+  // 9/7 SSOT pivot：UpdateOAuthClientRequest 的 grantTypes / redirectUris / scopes
+  // 全部是逗号分隔字符串，不是数组。
+  redirectUris: z.string().optional(),
+  scopes: z.string().optional(),
+  grantTypes: z.string().optional(),
   autoApprove: z.boolean().optional(),
+  accessTokenValidity: z.number().int().optional(),
+  refreshTokenValidity: z.number().int().optional(),
   status: z.enum(["active", "disabled"]).optional(),
 });
 
@@ -51,11 +55,14 @@ function statusFromSmallint(n: number): "active" | "disabled" {
   return n === 1 ? "active" : "disabled";
 }
 
-async function getAppById(id: string) {
+// /admin/clients/:clientId —— SSOT 寻址契约：path 上的 clientId 是 oauth_client.client_id
+// 字符串列（非 oauth_client.id UUID）。9/7 pivot 后 family 统一走 clientId 列寻址，
+// 与 springboot `findByClientId` / aspnetcore `ClientsGet(string clientId)` 对齐。
+async function getAppByClientId(clientId: string) {
   const rows = await db
     .select(appFields)
     .from(oauthClient)
-    .where(eq(oauthClient.id, id))
+    .where(eq(oauthClient.clientId, clientId))
     .limit(1);
   return rows[0];
 }
@@ -67,7 +74,7 @@ export async function GET(
   try {
     await verifyPathTenant(null, req.headers.get("authorization"));
     const { clientId } = await params;
-    const app = await getAppById(clientId);
+    const app = await getAppByClientId(clientId);
     if (!app) {
       return NextResponse.json(
         { code: "NOT_FOUND", message: "App not found" },
@@ -96,7 +103,7 @@ export async function PATCH(
         { status: 400 },
       );
     }
-    const existing = await getAppById(clientId);
+    const existing = await getAppByClientId(clientId);
     if (!existing) {
       return NextResponse.json(
         { code: "NOT_FOUND", message: "App not found" },
@@ -104,13 +111,16 @@ export async function PATCH(
       );
     }
 
-    const { clientName, redirectUris, scopes, grantTypes, autoApprove, status } = parsed.data;
+    const { clientName, redirectUris, scopes, grantTypes, autoApprove, accessTokenValidity, refreshTokenValidity, status } = parsed.data;
     const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
     if (clientName !== undefined) patch.clientName = clientName;
-    if (redirectUris !== undefined) patch.redirectUris = redirectUris.join("\n");
-    if (scopes !== undefined) patch.scopes = scopes.join(",");
-    if (grantTypes !== undefined) patch.grantTypes = grantTypes.join(",");
+    // string 直传（已是 csv / 单串），不再 join
+    if (redirectUris !== undefined) patch.redirectUris = redirectUris;
+    if (scopes !== undefined) patch.scopes = scopes;
+    if (grantTypes !== undefined) patch.grantTypes = grantTypes;
     if (autoApprove !== undefined) patch.autoApprove = autoApprove;
+    if (accessTokenValidity !== undefined) patch.accessTokenValidity = accessTokenValidity;
+    if (refreshTokenValidity !== undefined) patch.refreshTokenValidity = refreshTokenValidity;
     if (status !== undefined) patch.status = status === "active" ? 1 : 0;
 
     if (Object.keys(patch).length === 1) {
@@ -120,7 +130,7 @@ export async function PATCH(
     const [updated] = await db
       .update(oauthClient)
       .set(patch)
-      .where(eq(oauthClient.id, clientId))
+      .where(eq(oauthClient.clientId, clientId))
       .returning(appFields);
     if (!updated) {
       return NextResponse.json(
@@ -143,14 +153,14 @@ export async function DELETE(
   try {
     await verifyPathTenant(null, req.headers.get("authorization"));
     const { clientId } = await params;
-    const existing = await getAppById(clientId);
+    const existing = await getAppByClientId(clientId);
     if (!existing) {
       return NextResponse.json(
         { code: "NOT_FOUND", message: "App not found" },
         { status: 404 },
       );
     }
-    await db.delete(oauthClient).where(eq(oauthClient.id, clientId));
+    await db.delete(oauthClient).where(eq(oauthClient.clientId, clientId));
     return new NextResponse(null, { status: 204 });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);

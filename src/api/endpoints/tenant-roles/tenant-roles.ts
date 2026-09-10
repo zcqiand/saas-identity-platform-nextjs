@@ -45,7 +45,7 @@ import type {
 
 export const tenantRolesListSysRoles = (
     tenantId: string,
-    params: TenantRolesListSysRolesParams, options?: AxiosRequestConfig
+    params?: TenantRolesListSysRolesParams, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<TenantRolesListSysRoles200>> => {
     
     
@@ -68,7 +68,7 @@ export const getTenantRolesListSysRolesQueryKey = (tenantId?: string,
 
     
 export const getTenantRolesListSysRolesQueryOptions = <TData = Awaited<ReturnType<typeof tenantRolesListSysRoles>>, TError = AxiosError<ErrorResponse>>(tenantId: string,
-    params: TenantRolesListSysRolesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tenantRolesListSysRoles>>, TError, TData>>, axios?: AxiosRequestConfig}
+    params?: TenantRolesListSysRolesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tenantRolesListSysRoles>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
@@ -92,7 +92,7 @@ export type TenantRolesListSysRolesQueryError = AxiosError<ErrorResponse>
 
 export function useTenantRolesListSysRoles<TData = Awaited<ReturnType<typeof tenantRolesListSysRoles>>, TError = AxiosError<ErrorResponse>>(
  tenantId: string,
-    params: TenantRolesListSysRolesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof tenantRolesListSysRoles>>, TError, TData>> & Pick<
+    params: undefined |  TenantRolesListSysRolesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof tenantRolesListSysRoles>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof tenantRolesListSysRoles>>,
           TError,
@@ -103,7 +103,7 @@ export function useTenantRolesListSysRoles<TData = Awaited<ReturnType<typeof ten
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useTenantRolesListSysRoles<TData = Awaited<ReturnType<typeof tenantRolesListSysRoles>>, TError = AxiosError<ErrorResponse>>(
  tenantId: string,
-    params: TenantRolesListSysRolesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tenantRolesListSysRoles>>, TError, TData>> & Pick<
+    params?: TenantRolesListSysRolesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tenantRolesListSysRoles>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof tenantRolesListSysRoles>>,
           TError,
@@ -114,13 +114,13 @@ export function useTenantRolesListSysRoles<TData = Awaited<ReturnType<typeof ten
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useTenantRolesListSysRoles<TData = Awaited<ReturnType<typeof tenantRolesListSysRoles>>, TError = AxiosError<ErrorResponse>>(
  tenantId: string,
-    params: TenantRolesListSysRolesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tenantRolesListSysRoles>>, TError, TData>>, axios?: AxiosRequestConfig}
+    params?: TenantRolesListSysRolesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tenantRolesListSysRoles>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useTenantRolesListSysRoles<TData = Awaited<ReturnType<typeof tenantRolesListSysRoles>>, TError = AxiosError<ErrorResponse>>(
  tenantId: string,
-    params: TenantRolesListSysRolesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tenantRolesListSysRoles>>, TError, TData>>, axios?: AxiosRequestConfig}
+    params?: TenantRolesListSysRolesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tenantRolesListSysRoles>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 

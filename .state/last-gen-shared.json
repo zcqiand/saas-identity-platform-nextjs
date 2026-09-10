@@ -1,6 +1,6 @@
 {
   "api_synced_sha": "b28d58756c02600a32d23a0d740c367551eea476",
-  "api_synced_at": "2026-09-10T05:23:55.028363+00:00",
+  "api_synced_at": "2026-09-10T07:16:03.364078+00:00",
   "api_synced_cmd": "gen-shared.sh",
   "shared_sha": "b28d58756c02600a32d23a0d740c367551eea476",
   "consumer_repo": "saas-identity-platform-nextjs",

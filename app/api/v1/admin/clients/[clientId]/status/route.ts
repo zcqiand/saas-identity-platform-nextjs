@@ -50,7 +50,7 @@ export async function PATCH(
     const [updated] = await db
       .update(oauthClient)
       .set({ status: parsed.data.status === "active" ? 1 : 0, updatedAt: new Date().toISOString() })
-      .where(eq(oauthClient.id, clientId))
+      .where(eq(oauthClient.clientId, clientId))
       .returning(appFields);
     if (!updated) {
       return NextResponse.json(

@@ -34,10 +34,14 @@ const CreateAppBody = z.object({
   clientId: z.string().min(2).max(128),
   clientName: z.string().min(2).max(128),
   clientSecret: z.string().optional(),
-  redirectUris: z.array(z.string()).default([]),
-  scopes: z.array(z.string()).optional(),
-  grantTypes: z.array(z.enum(GRANT_TYPES)).optional(),
+  // 9/7 SSOT pivot：CreateOAuthClientRequest 的 grantTypes / redirectUris / scopes
+  // 全部是逗号分隔字符串（DB 列是 varchar / text），不是数组。
+  redirectUris: z.string().min(1),
+  scopes: z.string().optional(),
+  grantTypes: z.string().min(1),
   autoApprove: z.boolean().optional(),
+  accessTokenValidity: z.number().int().optional(),
+  refreshTokenValidity: z.number().int().optional(),
   status: z.enum(["active", "disabled"]).optional(),
 });
 
@@ -109,10 +113,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         clientId: b.clientId,
         clientName: b.clientName,
         clientSecret: b.clientSecret ? `plain:${b.clientSecret}` : "dev-placeholder-hash",
-        grantTypes: (b.grantTypes ?? []).join(","),
-        redirectUris: (b.redirectUris ?? []).join("\n"),
-        scopes: (b.scopes ?? []).join(","),
+        // 已是 string（comma-separated / csv），不再 join
+        grantTypes: b.grantTypes,
+        redirectUris: b.redirectUris,
+        scopes: b.scopes ?? null,
         autoApprove: b.autoApprove ?? false,
+        accessTokenValidity: b.accessTokenValidity ?? 3600,
+        refreshTokenValidity: b.refreshTokenValidity ?? 86400,
         status: b.status === "disabled" ? 0 : 1,
       })
       .returning(appFields);

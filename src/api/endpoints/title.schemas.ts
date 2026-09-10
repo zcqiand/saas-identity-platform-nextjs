@@ -456,17 +456,17 @@ export type ClientMenusMoveSysMenuBody = {
 };
 
 export type MeGetMyMenusParams = {
-clientId: string;
+clientId?: string;
 };
 
 export type MeGetMyMenus200 = {[key: string]: EffectiveMenuNode[]};
 
 export type MeListMyTenantsParams = {
-clientId: string;
+clientId?: string;
 };
 
 export type MeSwitchTenantParams = {
-clientId: string;
+clientId?: string;
 };
 
 export type OAuthAuthorize200 = {
@@ -509,7 +509,7 @@ export type TenantMembersChangeTenantUserStatusBody = {
 };
 
 export type TenantRolesListSysRolesParams = {
-clientId: string;
+clientId?: string;
 page?: number;
 pageSize?: number;
 };
@@ -522,14 +522,14 @@ export type TenantRolesListSysRoles200 = {
 };
 
 export type TenantRoleMenusListSysRoleMenusParams = {
-clientId: string;
+clientId?: string;
 };
 
 export type TenantRoleMenusSetSysRoleMenusParams = {
-clientId: string;
+clientId?: string;
 };
 
 export type TenantRoleMenusClearSysRoleMenusParams = {
-clientId: string;
+clientId?: string;
 };
 

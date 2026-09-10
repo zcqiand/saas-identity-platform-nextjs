@@ -67,7 +67,7 @@ export async function PATCH(
         { status: 400 },
       );
     }
-    const patch: Record<string, unknown> = { updatedAt: new Date() };
+    const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
     if (parsed.data.roleName !== undefined) patch.roleName = parsed.data.roleName;
     if (parsed.data.description !== undefined) patch.description = parsed.data.description;
     if (parsed.data.status !== undefined) patch.status = parsed.data.status;
