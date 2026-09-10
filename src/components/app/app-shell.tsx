@@ -111,7 +111,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         label: "用户管理",
         group: "身份管理",
         icon: <Users className="h-4 w-4" />,
-        fnId: "M01.F01.I01",
+        fnId: "M00.F02.I01",
       },
       {
         to: `/tenants/${tenantForNav}/roles`,
