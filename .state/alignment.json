@@ -436,9 +436,12 @@
       "flows": [],
       "designs": [],
       "tests": [
-        "output\\saas-identity-platform-contract-test\\tests\\tenant-applications.test.ts:970 (path)"
+        "output\\saas-identity-platform-contract-test\\tests\\tenant-applications.test.ts:970 (path)",
+        "渲染订阅应用按钮挂 data-fn=M00.F05.I02"
       ],
-      "entry": []
+      "entry": [
+        "app\\tenants\\[tenantId]\\applications\\page.tsx"
+      ]
     },
     "M00.F05.I03": {
       "name": "更新应用订阅",
@@ -448,7 +451,9 @@
       "flows": [],
       "designs": [],
       "tests": [],
-      "entry": []
+      "entry": [
+        "app\\tenants\\[tenantId]\\applications\\page.tsx"
+      ]
     },
     "M00.F05.I04": {
       "name": "移除应用订阅",
@@ -458,7 +463,9 @@
       "flows": [],
       "designs": [],
       "tests": [],
-      "entry": []
+      "entry": [
+        "app\\tenants\\[tenantId]\\applications\\page.tsx"
+      ]
     },
     "M01.F01.I01": {
       "name": "当前用户 whoami",

@@ -43,8 +43,7 @@ interface Crumb {
 const SUB_PATH_LABEL: Record<string, string> = {
   users: "用户",
   roles: "角色",
-  "api-keys": "API Key",
-  audit: "审计日志",
+  applications: "应用",
   menus: "菜单",
   apps: "应用",
 };
@@ -120,6 +119,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         group: "身份管理",
         icon: <Shield className="h-4 w-4" />,
         fnId: "M00.F03.I01",
+      },
+      // M00.F05 租户应用（开发中，4 后端 + msw 未全齐）
+      {
+        to: `/tenants/${tenantForNav}/applications`,
+        label: "租户应用",
+        group: "应用与菜单",
+        icon: <Boxes className="h-4 w-4" />,
+        fnId: "M00.F05.I01",
       },
       // M05（API Key）+ M06（审计日志）已废止，nav 链接删（route + UI page 已删）。
       {
