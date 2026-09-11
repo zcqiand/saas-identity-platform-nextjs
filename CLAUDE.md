@@ -22,6 +22,9 @@ v0.3.0 shadcn-ui → v0.4.0 full-stack → v0.7.x IdP Route Handlers。见 ADR-0
 - 禁止给按钮加图标；禁止 demo 密码出现在 UI / 注释 / 断言
 - 禁止 Server Component 内挂 `data-fn` / 用 TenantProvider / 内联样式 / 手写 `<table>` / `window.confirm`
 - 禁止 MSW handler 走 `app/api/[...msw]/route.ts`（不可用）
+- msw 是**独立 HTTP mock server**（传统 Mock Server 模式，真 TCP :5100）：本仓**零 npm 依赖**；
+  单测 fixtures 相对路径直连 `../../saas-identity-platform-msw/src/fixtures/seed`（2026-09-11 起）；
+  禁止回引 `@saas/identity-platform-msw` 包依赖或浏览器 SW 模式
 - 细则（7 个核心基建文件、迁移指南）→ `docs/conventions/` 与 `docs/nextjs-*.md`
 
 ## 3. 技术栈与版本（钉死于 version-lock.json）

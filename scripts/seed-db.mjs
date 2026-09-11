@@ -143,12 +143,12 @@ try {
   );
   console.log("[seed-db] 已清空业务表（RESTART IDENTITY CASCADE）。");
 
-  // 1. tenant（code→tenant_key；settings 列已随 pivot 删除）
+  // 1. tenant（fixture 字段已对齐契约 tenantKey → DB tenant_key；settings 列已随 pivot 删除）
   await insertAll(
     "tenant",
     ["id", "tenant_key", "name", "status", "created_at", "updated_at"],
     tenants.map((t) => [
-      resolveId(t.id), t.code, t.name, statusToSmallint(t.status),
+      resolveId(t.id), t.tenantKey, t.name, statusToSmallint(t.status),
       t.createdAt, t.updatedAt,
     ]),
   );

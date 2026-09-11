@@ -9,12 +9,10 @@ import {
   tenants,
   users,
   roles,
-  apiKeys,
   apps,
   menus,
   roleMenuGrants,
-  auditEvents,
-} from "@saas/identity-platform-msw/fixtures";
+} from "../../saas-identity-platform-msw/src/fixtures/seed";
 
 // === Mock React.use() to unwrap params synchronously ===
 // Next.js 15 把 params 改成 Promise<{...}>，client component 用 `use(params)` 解包。
@@ -95,7 +93,6 @@ vi.mock("@/api/endpoints/endpoints", () => ({
   tenantRolesDeleteRole: async () => ({ data: undefined }),
   tenantRolesSetPermissions: async () => ({ data: undefined }),
 
-  tenantApiKeysListApiKeys: async () => ({ data: page(apiKeys) }),
   tenantApiKeysCreateApiKey: async (_t: string, body: any) => ({ data: { id: "new-key", prefix: "sk_live", status: "active", ...body } }),
   tenantApiKeysRevokeApiKey: async (_t: string, keyId: string) => ({ data: { id: keyId, status: "revoked" } }),
   tenantApiKeysRotateApiKey: async () => ({ data: { id: "rotated-key", prefix: "sk_live", status: "active" } }),
@@ -180,7 +177,6 @@ vi.mock("@/api/endpoints/endpoints", () => ({
   useTenantRolesDeleteRole: () => mutationStub(),
   useTenantRolesSetPermissions: () => mutationStub(),
 
-  useTenantApiKeysListApiKeys: () => queryStub({ data: page(apiKeys) }),
   useTenantApiKeysCreateApiKey: () => mutationStub(),
   useTenantApiKeysRevokeApiKey: () => mutationStub(),
   useTenantApiKeysRotateApiKey: () => mutationStub(),
@@ -215,6 +211,16 @@ vi.mock("@/api/endpoints/endpoints", () => ({
   useMeGetMyMenus: () => queryStub({ menus: [] }),
   useMeListMyTenants: () => queryStub([]),
   useMeSwitchTenant: () => mutationStub(),
+}));
+
+// 2026-09-11 REQ-003：tenants page 改从真 orval tag 模块 import（barrel 的死桩
+// shadow 真函数——export * 后同名重导出，列表恒空）。测试 mock 跟随真源路径。
+vi.mock("@/api/endpoints/admin-tenants/admin-tenants", () => ({
+  adminTenantsListTenants: async () => ({ data: page(tenants) }),
+  adminTenantsCreateTenant: async (body: any) => ({ data: { id: "new-tenant", ...body } }),
+  adminTenantsGetTenant: async (id: string) => ({ data: { id, tenantKey: "acme", name: "ACME", status: "active" } }),
+  adminTenantsUpdateTenant: async (id: string, body: any) => ({ data: { id, ...body } }),
+  adminTenantsDeleteTenant: async () => ({ data: undefined }),
 }));
 
 vi.mock("next/navigation", () => ({

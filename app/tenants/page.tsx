@@ -14,7 +14,7 @@ import {
   adminTenantsDeleteTenant,
   adminTenantsListTenants,
   adminTenantsUpdateTenant,
-} from "@/api/endpoints/endpoints";
+} from "@/api/endpoints/admin-tenants/admin-tenants";
 import type {
   CreateTenantRequest,
   Tenant,
