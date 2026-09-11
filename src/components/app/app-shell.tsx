@@ -46,13 +46,19 @@ const SUB_PATH_LABEL: Record<string, string> = {
 
 // 面包屑租户名：getTenant（msw 包内嵌 fixtures）的 HTTP 替代（ADR-0012 运行时
 // import 清零）。拉一次租户列表建 id->tenant 字典；加载中/未命中显示「未知租户」。
-function useTenantMap(): Map<string, { id: string; name: string; code: string }> {
+function useTenantMap(): Map<string, { id: string; name: string; tenantKey?: string }> {
   const q = useQuery({
     queryKey: ["adminTenantsListTenants", "breadcrumb"],
     queryFn: async () => (await adminTenantsListTenants()).data.items,
     staleTime: Infinity,
   });
-  return new Map((q.data ?? []).map((t) => [t.id, t]));
+  // 双键索引：URL 段既可能是 UUID 也可能是 tenantKey
+  const m = new Map<string, { id: string; name: string; tenantKey?: string }>();
+  for (const t of q.data ?? []) {
+    m.set(t.id, t);
+    if (t.tenantKey) m.set(t.tenantKey, t);
+  }
+  return m;
 }
 
 function useBreadcrumbs(pathname: string, fallbackTenantId: string): Crumb[] {
@@ -71,12 +77,9 @@ function useBreadcrumbs(pathname: string, fallbackTenantId: string): Crumb[] {
     const prev = i > 0 ? segments[i - 1] : null;
     if (seg === "tenants" && i + 1 < segments.length) continue;
     if (prev === "tenants") {
+      // 用户裁定 2026-09-11：面包屑显示租户名称，不再展示括号中的 ID
       const tenant = tenantById.get(seg) ?? tenantById.get(fallbackTenantId);
-      if (tenant) {
-        crumbs.push({ label: tenant.name, to: path, hint: tenant.code });
-      } else {
-        crumbs.push({ label: "未知租户", to: path, hint: seg.slice(0, 8) });
-      }
+      crumbs.push({ label: tenant ? tenant.name : "未知租户", to: path });
       continue;
     }
     crumbs.push({ label: SUB_PATH_LABEL[seg] ?? seg, to: path });

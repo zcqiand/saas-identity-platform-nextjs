@@ -1,39 +1,71 @@
 // 后端切换器（2026-09-11 用户裁定恢复运行时切换，覆盖 ADR-0014 dev 单 URL）。
+// 视觉对齐 TenantSwitcher（DropdownMenu + 图标 + ChevronsUpDown）。
 // 选择持久化 localStorage（saas.api.backend），http-client 每次请求动态读取，
-// 切完下一个请求即生效，无需刷新。env 未选择时显示 env 默认目标。
+// 切完下一个请求即生效，无需刷新。未选择 = env 默认目标。
 "use client";
 
 import { useState } from "react";
-import { BACKENDS, getApiBaseUrl, getSelectedBackend, setSelectedBackend } from "@/api/backend-config";
+import { Check, ChevronsUpDown, Server } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { BACKENDS, getSelectedBackend, setSelectedBackend } from "@/api/backend-config";
 
 export function BackendBadge() {
   const [selected, setSelected] = useState(getSelectedBackend());
-  const baseUrl = getApiBaseUrl() || "(同源)";
+  const current = BACKENDS.find((b) => b.key === selected);
+
+  function pick(key: string) {
+    setSelectedBackend(key);
+    setSelected(key);
+  }
 
   return (
-    <div className="flex flex-col gap-1 px-2 py-1 text-xs">
-      <div className="flex min-w-0 items-center gap-2">
-        <span className="font-mono text-white/40">backend:</span>
-        <select
-          data-testid="backend-badge"
-          value={selected}
-          onChange={(e) => {
-            setSelectedBackend(e.target.value);
-            setSelected(e.target.value);
-          }}
-          className="w-full max-w-[10.5rem] rounded border border-white/20 bg-slate-900 px-1 py-0.5 font-mono text-xs text-white"
-        >
-          <option value="">(env 默认)</option>
+    <div className="w-full px-2 py-1 text-xs" data-testid="backend-badge">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-between gap-2 border border-white/20 bg-transparent text-white/80 hover:bg-white/10 hover:text-white"
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <Server className="h-4 w-4 text-slate-500" />
+              <span className="truncate font-medium">{current ? current.key : "(env 默认)"}</span>
+            </span>
+            <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuLabel>切换后端</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => pick("")} className="cursor-pointer">
+            <Server className="mr-2 h-4 w-4 text-slate-400" />
+            <span className="flex-1">env 默认（部署配置）</span>
+            {!selected && <Check className="h-4 w-4" />}
+          </DropdownMenuItem>
           {BACKENDS.map((b) => (
-            <option key={b.key} value={b.key}>
-              {b.key} {b.baseUrl.replace("http://localhost", "")}
-            </option>
+            <DropdownMenuItem
+              key={b.key}
+              onSelect={() => pick(b.key)}
+              className="cursor-pointer"
+            >
+              <Server className="mr-2 h-4 w-4 text-slate-500" />
+              <div className="flex flex-1 flex-col">
+                <span className="font-medium">{b.key}</span>
+                <span className="font-mono text-xs text-slate-500">{b.baseUrl}</span>
+              </div>
+              {selected === b.key && <Check className="h-4 w-4" />}
+            </DropdownMenuItem>
           ))}
-        </select>
-      </div>
-      <div className="font-mono text-muted-foreground truncate" title={baseUrl}>
-        {baseUrl}
-      </div>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
