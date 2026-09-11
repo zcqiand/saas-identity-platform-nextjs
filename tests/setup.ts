@@ -104,7 +104,7 @@ vi.mock("@/api/endpoints/endpoints", () => ({
   adminClientsDeleteApp: async () => ({ data: undefined }),
   adminClientsSetAppStatus: async () => ({ data: undefined }),
 
-  clientMenusListMenus: async (clientId: string) => ({ data: menus.filter((m) => m.appId === clientId) }),
+  clientMenusListMenus: async (clientId: string) => ({ data: menus.filter((m) => m.clientId === clientId) }),
   clientMenusCreateMenu: async (_a: string, body: any) => ({ data: { id: "new-menu", ...body } }),
   clientMenusGetMenu: async (_a: string, menuId: string) => ({ data: menus.find((m) => m.id === menuId) ?? menus[0] }),
   clientMenusUpdateMenu: async () => ({ data: undefined }),

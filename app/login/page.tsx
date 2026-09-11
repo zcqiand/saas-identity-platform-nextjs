@@ -21,6 +21,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { useTenant } from "@/state/tenant-context";
 import { getApiMode } from "@/api/backend-config";
 import { useSessionsLogin } from "@/api/endpoints/auth/auth";
+// 2026-09-11 ④（E2E REQ-2026-006）：补 OAuth 跳板分支，authorize 走真源
+// （此前 nextjs 缺 onSubmit 跳板分支——带 ?redirect_uri=&client_id= 登录后落
+//  /tenants 而非回跳 RP，react/vue 均有此分支，parity 分歧由 E2E 抓出）
+import { useOAuthAuthorize } from "@/api/endpoints/oauth/oauth";
 import { toApiError } from "@/api/http-client";
 import { toast } from "sonner";
 
@@ -39,6 +43,7 @@ export default function LoginPage() {
   const apiMode = getApiMode();
   const [submitting, setSubmitting] = useState(false);
   const loginMut = useSessionsLogin();
+  const authorizeMut = useOAuthAuthorize();
 
   // B 方案（2026-09-11，对齐 vue 基准）：clientId 取 ?client_id= ?? env
   // （NEXT_PUBLIC_LOGIN_CLIENT_ID，值 = saas-console 自身应用）；缺即拒，不猜。
@@ -134,6 +139,36 @@ export default function LoginPage() {
             console.error("[SSO/login] oauth redirect build failed:", err);
             toast.error("OAuth 回跳 URL 构造失败");
           }
+          return;
+        }
+        // OAuth 2.0 跳板（RFC 6749 §4.1.1）：?redirect_uri=&state=&client_id= 且无 ?code=——
+        // 登录成功后调 /oauth/authorize 领 code 跳回 RP（不落 /tenants）。镜像 react/vue。
+        const sp = new URLSearchParams(window.location.search);
+        const redirectUri = sp.get("redirect_uri");
+        const state = sp.get("state") ?? "";
+        const clientId = sp.get("client_id") ?? "";
+        if (redirectUri && clientId) {
+          void (async () => {
+            try {
+              const authRes = await authorizeMut.mutateAsync({
+                data: {
+                  clientId,
+                  redirectUri,
+                  responseType: "code",
+                  scope: "lab.read lab.write",
+                  state,
+                },
+              });
+              const target = new URL(redirectUri);
+              target.searchParams.set("code", authRes.data.code);
+              if (state) target.searchParams.set("state", state);
+              window.location.href = target.toString();
+            } catch (err) {
+              console.error("[SSO/login] oauth authorize (after submit) failed:", err);
+              toast.error("OAuth 授权失败，请重试");
+              // 留在登录页让用户重试
+            }
+          })();
           return;
         }
         router.push("/tenants");

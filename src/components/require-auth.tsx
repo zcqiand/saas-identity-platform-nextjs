@@ -45,7 +45,13 @@ export function RequireAuth({ children }: { children: ReactNode }) {
           : null;
       const hasSsoReturn =
         !!sp && (!!sp.get("redirect") || (!!sp.get("code") && !!sp.get("redirect_uri")));
-      if (hasSsoReturn) return;
+      // 2026-09-11 ④（E2E REQ-2026-006）：OAuth 跳板范式（?redirect_uri=&client_id= 无 code）
+      // 也豁免——登录成功后由 LoginPage 跳板分支 authorize 领 code 回 RP；
+      // 守卫若抢先 replace(/tenants)，非法 redirect_uri 场景就测不出「停留登录页」
+      // （react/vue 无此强跳，parity 分歧由 E2E AC-2 抓出）。
+      const hasOauthJump =
+        !!sp && !sp.get("code") && !!sp.get("redirect_uri") && !!sp.get("client_id");
+      if (hasSsoReturn || hasOauthJump) return;
       router.replace("/tenants");
     }
   }, [mounted, isAuthenticated, pathname, router]);

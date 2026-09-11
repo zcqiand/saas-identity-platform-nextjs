@@ -108,7 +108,7 @@ async function insertAll(table, columns, rows) {
 // msw status 字符串 → 新 schema smallint（家族约定 2026-09-10：1=active, 2=invited, 0=disabled）
 const statusToSmallint = (s) => (s === "active" ? 1 : s === "invited" ? 2 : 0);
 // msw menu type → sys_menu.type smallint（与 nextjs/aspnetcore 一致：group=1 page=2）
-const menuTypeToSmallint = (t) => (t === "group" ? 1 : t === "page" ? 2 : 3);
+const menuTypeToSmallint = (t) => (t === "directory" ? 1 : t === "menu" ? 2 : 3);
 
 try {
   console.log(
@@ -243,9 +243,9 @@ try {
     ],
     menus.map((m) => [
       resolveId(m.id),
-      appCodeById.get(m.appId) ?? DEFAULT_CLIENT_ID,
+      appCodeById.get(m.clientId) ?? DEFAULT_CLIENT_ID,
       m.parentId ? resolveId(m.parentId) : ZERO_UUID,
-      m.name, menuTypeToSmallint(m.type),
+      m.title, menuTypeToSmallint(m.type),
       m.path ?? null, null, null, m.icon ?? null,
       m.sortOrder ?? 0, 1, m.createdAt,
     ]),
