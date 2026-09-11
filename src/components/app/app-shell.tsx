@@ -100,12 +100,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     router.push("/login");
   }
 
-  const footerAction = (
+  // 登出按钮（用户裁定 2026-09-11：移到右上角，切换租户旁）
+  const logoutButton = (
     <Button
       variant="ghost"
       size="sm"
       onClick={onLogout}
-      className="w-full justify-start gap-2 text-white/70 hover:text-white hover:bg-white/10"
+      className="gap-2 text-slate-600 hover:text-slate-900"
       data-testid="logout-btn"
       data-fn="M01.F04.I06"
     >
@@ -119,7 +120,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-white to-slate-100">
       <Toaster />
-      <SidebarNav items={navItems} footerAction={footerAction} footerExtras={footerExtras} />
+      <SidebarNav items={navItems} footerExtras={footerExtras} />
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 bg-white/80 backdrop-blur border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
           <nav className="flex items-center gap-1 text-sm" aria-label="breadcrumb">
@@ -154,6 +155,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </nav>
           <div className="flex items-center gap-3">
             {currentTenantId && <TenantSwitcher />}
+            {logoutButton}
           </div>
         </header>
         <Separator />

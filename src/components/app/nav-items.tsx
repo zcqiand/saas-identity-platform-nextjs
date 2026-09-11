@@ -51,15 +51,16 @@ export function buildNavItems(tenantForNav: string): NavItem[] {
       fnId: "M00.F03.I01",
     },
     // M04 应用管理（模块）；M05（API Key）+ M06（审计日志）已废止，nav 链接删（route + UI page 已删）。
+    // 9/8 shared 重命名 apps→clients：路由是 /admin/clients（nav 曾留 /admin/apps 死链 → 404）。
     {
-      to: "/admin/apps",
+      to: "/admin/clients",
       label: "应用维护",
       group: "应用管理",
       icon: <Boxes className="h-4 w-4" />,
       fnId: "M04.F01.I01",
     },
     {
-      to: "/admin/apps/lab-management/menus",
+      to: "/admin/clients/lab-management/menus",
       label: "菜单管理",
       group: "应用管理",
       icon: <FolderTree className="h-4 w-4" />,
