@@ -2,8 +2,8 @@
 //
 // Next.js App Router 版本：children prop 替代 React Router <Outlet />。
 // Sidebar links with `:tenantId` placeholder are dynamically substituted with
-// `selectedTenantId` (from SelectionContext). This way clicking "用户管理" while
-// tenant = globex goes to `/tenants/globex/users`, not literal `/tenants/:tenantId/users`.
+// `selectedTenantId` (from SelectionContext). This way clicking "租户成员" while
+// tenant = globex goes to `/tenants/globex/members`, not literal `/tenants/:tenantId/members`.
 
 "use client";
 
@@ -11,18 +11,14 @@ import { useMemo, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Building2,
-  Users,
-  Shield,
   KeyRound,
   ScrollText,
   LogOut,
   ChevronRight,
   Home,
-  Boxes,
-  FolderTree,
 } from "lucide-react";
-import { SidebarNav, type NavItem } from "./sidebar-nav";
+import { SidebarNav } from "./sidebar-nav";
+import { buildNavItems } from "./nav-items";
 import { TenantSwitcher } from "@/components/tenant-switcher";
 import { BackendBadge } from "./backend-badge";
 import { Separator } from "@/components/ui/separator";
@@ -97,55 +93,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     selectedTenant.id ?? currentTenantId ?? "00000000-0000-0000-0000-000000000001";
   const crumbs = useBreadcrumbs(pathname, tenantForNav);
 
-  const navItems: NavItem[] = useMemo(
-    () => [
-      {
-        to: "/tenants",
-        label: "租户管理",
-        group: "首页",
-        icon: <Building2 className="h-4 w-4" />,
-        fnId: "M00.F01.I01",
-      },
-      {
-        to: `/tenants/${tenantForNav}/members`,
-        label: "用户管理",
-        group: "身份管理",
-        icon: <Users className="h-4 w-4" />,
-        fnId: "M00.F02.I01",
-      },
-      {
-        to: `/tenants/${tenantForNav}/roles`,
-        label: "角色管理",
-        group: "身份管理",
-        icon: <Shield className="h-4 w-4" />,
-        fnId: "M00.F03.I01",
-      },
-      // M00.F05 租户应用（开发中，4 后端 + msw 未全齐）
-      {
-        to: `/tenants/${tenantForNav}/applications`,
-        label: "租户应用",
-        group: "应用与菜单",
-        icon: <Boxes className="h-4 w-4" />,
-        fnId: "M00.F05.I01",
-      },
-      // M05（API Key）+ M06（审计日志）已废止，nav 链接删（route + UI page 已删）。
-      {
-        to: "/admin/apps",
-        label: "应用管理",
-        group: "应用与菜单",
-        icon: <Boxes className="h-4 w-4" />,
-        fnId: "M04.F01.I01",
-      },
-      {
-        to: "/admin/apps/lab-management/menus",
-        label: "菜单管理",
-        group: "应用与菜单",
-        icon: <FolderTree className="h-4 w-4" />,
-        fnId: "M04.F04.I01",
-      },
-    ],
-    [tenantForNav],
-  );
+  const navItems = useMemo(() => buildNavItems(tenantForNav), [tenantForNav]);
 
   async function onLogout() {
     await logout();

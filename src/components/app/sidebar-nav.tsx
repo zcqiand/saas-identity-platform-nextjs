@@ -1,6 +1,6 @@
 "use client";
 
-// Sidebar nav with grouped menu items + lucide icons (matches M00-M06).
+// Sidebar nav with grouped menu items + lucide icons（一级=功能模块，二级=功能；见 nav-items.tsx）。
 // Next.js 版：Link 用 next/link，用 usePathname + class 比较判断 active。
 
 import { usePathname } from "next/navigation";
