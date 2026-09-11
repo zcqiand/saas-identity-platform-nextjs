@@ -1,18 +1,19 @@
 "use client";
 
 // M04 — 平台级应用管理（CRUD + 启用/停用；同时承担 OAuth client 职责）
+// 数据源直连真源 tag 模块 admin-clients（此前 import legacy 死桩 → 列表恒空）。
+// 契约 OAuthClient（clientName/scopes:string）与 msw App fixture（name/scopes:[]）
+// 字段有漂移，行渲染做双路兜底。
 
 import { useState } from "react";
 import Link from "next/link";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  useAdminAppsCreateApp,
-  useAdminAppsDeleteApp,
-  useAdminAppsListApps,
-  useAdminAppsSetAppStatus,
-  useAdminAppsUpdateApp,
-} from "@/api/endpoints/endpoints";
-import type { App, CreateAppRequest, UpdateAppRequest } from "@/api/endpoints/endpoints.schemas";
+  useAdminClientsCreateClient,
+  useAdminClientsDeleteClient,
+  useAdminClientsListClients,
+  useAdminClientsSetClientStatus,
+  useAdminClientsUpdateClient,
+} from "@/api/endpoints/admin-clients/admin-clients";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -31,6 +32,20 @@ import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { CrudDialog, type FieldDef } from "@/components/app/crud-dialog";
 import { toApiError } from "@/api/http-client";
 import { toast } from "sonner";
+
+/** 展示行：契约 OAuthClient 与 msw App fixture 的字段并集（全可选兜底）。 */
+interface AppRow {
+  id: string;
+  code?: string;
+  name?: string;
+  clientName?: string;
+  clientId?: string;
+  icon?: string;
+  scopes?: string[] | string;
+  isFirstParty?: boolean;
+  sortOrder?: number;
+  status?: string;
+}
 
 const FIELDS: FieldDef[] = [
   { name: "code", label: "Code", required: true, placeholder: "lab-management" },
@@ -66,44 +81,54 @@ const FIELDS: FieldDef[] = [
 
 const EDIT_FIELDS = FIELDS.filter((f) => f.name !== "code" && f.name !== "clientId");
 
-function toAppInput(values: Record<string, unknown>): CreateAppRequest {
+const rowName = (a: AppRow) => a.name ?? a.clientName ?? "—";
+const rowScopes = (a: AppRow): string[] =>
+  Array.isArray(a.scopes) ? a.scopes : a.scopes ? String(a.scopes).split(",").filter(Boolean) : [];
+
+function toClientInput(values: Record<string, unknown>): Record<string, unknown> {
+  const name = String(values.name ?? "").trim();
   return {
+    // msw App fixture 扩展字段
     code: String(values.code ?? "").trim(),
-    name: String(values.name ?? "").trim(),
-    clientId: String(values.clientId ?? "").trim(),
+    name,
     icon: values.icon ? String(values.icon) : undefined,
     sortOrder: Number(values.sortOrder ?? 0),
     status: (values.status as "active" | "disabled") ?? "active",
     isFirstParty: Boolean(values.isFirstParty),
+    // 契约 CreateOAuthClientRequest 必填：clientId/clientName/clientSecret/grantTypes/redirectUris
+    clientId: String(values.clientId ?? "").trim(),
+    clientName: name,
+    clientSecret: `sec-${Math.random().toString(36).slice(2, 14)}`,
+    grantTypes: "authorization_code,client_credentials",
+    redirectUris: "",
     scopes: values.scopesText
       ? String(values.scopesText)
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean)
-      : [],
-    grantTypes: ["authorization_code", "client_credentials"],
-    redirectUris: [],
+          .join(",")
+      : "",
   };
 }
 
 export default function AppListPage() {
-  const qc = useQueryClient();
-
-  const list = useAdminAppsListApps();
-  const createMut = useAdminAppsCreateApp();
-  const updateMut = useAdminAppsUpdateApp();
-  const deleteMut = useAdminAppsDeleteApp();
-  const statusMut = useAdminAppsSetAppStatus();
+  const list = useAdminClientsListClients();
+  const createMut = useAdminClientsCreateClient();
+  const updateMut = useAdminClientsUpdateClient();
+  const deleteMut = useAdminClientsDeleteClient();
+  const statusMut = useAdminClientsSetClientStatus();
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<App | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<App | null>(null);
+  const [editTarget, setEditTarget] = useState<AppRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AppRow | null>(null);
 
-  const apps = (list.data?.data?.items ?? []) as App[];
+  const apps = (list.data?.data?.items ?? []) as unknown as AppRow[];
 
   async function onCreate(values: Record<string, unknown>) {
     try {
-      await createMut.mutateAsync({ data: toAppInput(values) });
+      await createMut.mutateAsync({
+        data: toClientInput(values) as never,
+      });
       setCreateOpen(false);
       list.refetch();
       toast.success("应用已创建");
@@ -118,6 +143,7 @@ export default function AppListPage() {
       await updateMut.mutateAsync({
         clientId: editTarget.id,
         data: {
+          clientName: values.name as string,
           name: values.name as string,
           icon: (values.icon as string) || undefined,
           sortOrder: Number(values.sortOrder ?? 0),
@@ -128,8 +154,9 @@ export default function AppListPage() {
                 .split(",")
                 .map((s) => s.trim())
                 .filter(Boolean)
-            : [],
-        },
+                .join(",")
+            : "",
+        } as never,
       });
       setEditTarget(null);
       list.refetch();
@@ -139,12 +166,12 @@ export default function AppListPage() {
     }
   }
 
-  async function toggleStatus(a: App) {
+  async function toggleStatus(a: AppRow) {
     try {
       await statusMut.mutateAsync({
         clientId: a.id,
         data: { status: a.status === "active" ? "disabled" : "active" },
-      });
+      } as never);
       list.refetch();
       toast.success("状态已切换");
     } catch (err) {
@@ -201,14 +228,14 @@ export default function AppListPage() {
                 {apps.map((a) => (
                   <TableRow key={a.id} data-testid="app-row">
                     <TableCell>
-                      <div className="font-mono text-xs">{a.code}</div>
+                      <div className="font-mono text-xs">{a.code ?? "—"}</div>
                       <div className="font-mono text-[10px] text-slate-500">
-                        clientId: {a.clientId}
+                        clientId: {a.clientId ?? a.id}
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">{a.name}</TableCell>
+                    <TableCell className="font-medium">{rowName(a)}</TableCell>
                     <TableCell className="text-xs text-slate-600">
-                      {a.scopes.length > 0 ? a.scopes.join(", ") : "—"}
+                      {rowScopes(a).length > 0 ? rowScopes(a).join(", ") : "—"}
                     </TableCell>
                     <TableCell>
                       <span
@@ -223,7 +250,7 @@ export default function AppListPage() {
                     </TableCell>
                     <TableCell>
                       <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
-                        {a.sortOrder}
+                        {a.sortOrder ?? 0}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -256,7 +283,7 @@ export default function AppListPage() {
                         删除
                       </Button>
                       <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/admin/clients/${a.id}/menus`}>菜单</Link>
+                        <Link href={`/admin/clients/${a.code ?? a.id}/menus`}>菜单</Link>
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -286,12 +313,12 @@ export default function AppListPage() {
         initialValues={
           editTarget
             ? {
-                name: editTarget.name,
+                name: rowName(editTarget),
                 icon: editTarget.icon,
                 sortOrder: editTarget.sortOrder,
                 isFirstParty: editTarget.isFirstParty,
                 status: editTarget.status,
-                scopesText: editTarget.scopes.join(", "),
+                scopesText: rowScopes(editTarget).join(", "),
               }
             : undefined
         }
@@ -302,7 +329,7 @@ export default function AppListPage() {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         onOpenChange={(o) => !o && setDeleteTarget(null)}
-        title={`删除应用「${deleteTarget?.name ?? ""}？`}
+        title={`删除应用「${deleteTarget ? rowName(deleteTarget) : ""}」？`}
         description="应用删除将一并删除其下所有菜单。不可撤销。"
         confirmText="删除"
         destructive
