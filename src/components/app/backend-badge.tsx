@@ -12,8 +12,8 @@ export function BackendBadge() {
 
   return (
     <div className="flex flex-col gap-1 px-2 py-1 text-xs">
-      <div className="flex items-center gap-2">
-        <span className="font-mono text-muted-foreground">backend:</span>
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="font-mono text-white/40">backend:</span>
         <select
           data-testid="backend-badge"
           value={selected}
@@ -21,12 +21,12 @@ export function BackendBadge() {
             setSelectedBackend(e.target.value);
             setSelected(e.target.value);
           }}
-          className="rounded border bg-background px-1 py-0.5 font-mono text-xs"
+          className="w-full max-w-[10.5rem] rounded border border-white/20 bg-slate-900 px-1 py-0.5 font-mono text-xs text-white"
         >
           <option value="">(env 默认)</option>
           {BACKENDS.map((b) => (
             <option key={b.key} value={b.key}>
-              {b.key} · {b.baseUrl}
+              {b.key} {b.baseUrl.replace("http://localhost", "")}
             </option>
           ))}
         </select>
