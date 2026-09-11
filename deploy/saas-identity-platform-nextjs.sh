@@ -64,6 +64,7 @@ if [ ! -f "$BASE/saas.env" ]; then
       printf 'NEXT_PUBLIC_SAAS_BASE_URL=https://%s\n' "$NGINX_DOMAIN"
       printf 'NEXT_PUBLIC_API_BASE_URL=\n'
       # 2026-08-28 key 对齐:key 集合与 .env.production 由 suite L0.5 check_deploy_parity 锁死
+      printf 'SAAS_CORS_ALLOWED_ORIGINS=https://saas-nextjs.xiangru.uk,https://saas-react.xiangru.uk,https://saas-vue.xiangru.uk\n'
       printf 'NEXT_PUBLIC_API_MODE=nextjs\n'
       printf 'LOCKOUT_MAX_FAILS=5\n'
       printf 'LOCKOUT_WINDOW_MIN=15\n'
@@ -197,6 +198,7 @@ if [ -f "$BASE/saas.env" ]; then
     fi
   }
   append_if_missing DATABASE_NAME 'saas_prod'
+  append_if_missing SAAS_CORS_ALLOWED_ORIGINS 'https://saas-nextjs.xiangru.uk,https://saas-react.xiangru.uk,https://saas-vue.xiangru.uk'
   append_if_missing DATABASE_USER 'postgres'
   append_if_missing DATABASE_PASSWORD 'changeme'
   append_if_missing JWT_AUTHORITY 'https://auth.example.com'

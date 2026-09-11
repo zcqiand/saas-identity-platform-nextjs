@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { StatusBadge } from "@/components/app/status-badge";
 import { PageHeader } from "@/components/app/page-header";
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { CrudDialog, type FieldDef } from "@/components/app/crud-dialog";
@@ -266,7 +267,11 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Code / 路径</TableHead>
                 <TableHead>名称</TableHead>
+                <TableHead>类型</TableHead>
+                <TableHead>排序</TableHead>
+                <TableHead>状态</TableHead>
                 <TableHead className="text-right w-0">操作</TableHead>
               </TableRow>
             </TableHeader>
@@ -295,8 +300,21 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
                           <span className="inline-block h-5 w-5 shrink-0" aria-hidden />
                         )}
                         <span className="font-medium">{menuName(r)}</span>
-                        <span className="ml-2 text-xs text-slate-400 font-mono">/{menuCode(r)}</span>
                       </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-slate-400">/{menuCode(r)}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                        {r.type === "directory" ? "分组" : r.type === "button" ? "按钮" : "页面"}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                        {r.sortOrder ?? 0}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={r.status === 0 ? "suspended" : "active"} />
                     </TableCell>
                     <TableCell className="text-right space-x-1 whitespace-nowrap">
                       <Button
