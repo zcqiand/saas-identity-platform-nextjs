@@ -562,8 +562,8 @@
         "M01.F04.I03 returns 200 LoginResponse for valid credentials",
         "M01.F04.I03 returns 400 BAD_REQUEST for invalid body",
         "M01.F04.I03 returns 401 UNAUTHORIZED for wrong password",
-        "渲染用户列表，邀请按钮挂 data-fn=M01.F04.I03",
-        "渲染登录表单，挂 data-fn=M01.F04.I03 的提交按钮"
+        "渲染登录表单，挂 data-fn=M01.F04.I03 的提交按钮",
+        "邀请按钮挂 data-fn=M01.F04.I03"
       ],
       "entry": [
         "app\\login\\page.tsx",
