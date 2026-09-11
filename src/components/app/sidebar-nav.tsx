@@ -21,7 +21,6 @@ export interface NavItem {
 interface SidebarNavProps {
   items: NavItem[];
   title?: string;
-  subtitle?: string;
   /** 主操作（如登出按钮），渲染在底部 footer 顶部 */
   footerAction?: ReactNode;
   /** 次要操作（如后端模式切换器），渲染在主操作之下、版本号之上 */
@@ -33,7 +32,6 @@ interface SidebarNavProps {
 export function SidebarNav({
   items,
   title = "SaaS 多租户多应用身份平台",
-  subtitle = "Identity Platform",
   footerAction,
   footerExtras,
   version = "v0.2.0",
@@ -57,7 +55,7 @@ export function SidebarNav({
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-sm font-bold leading-tight truncate">{title}</h1>
-            <p className="text-xs text-white/50 truncate">{subtitle}</p>
+            <p className="text-xs text-white/50 truncate">{version}</p>
           </div>
         </div>
       </div>
@@ -99,7 +97,6 @@ export function SidebarNav({
       <div className="p-3 space-y-2">
         {footerAction}
         {footerExtras}
-        {version && <div className="text-xs text-white/40 px-2">{version}</div>}
       </div>
     </aside>
   );

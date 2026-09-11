@@ -6,19 +6,19 @@ import { use, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FolderTree } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAdminClientsListClients } from "@/api/endpoints/admin-clients/admin-clients";
 import {
-  useAdminAppMenusCreateMenu,
-  useAdminAppMenusDeleteMenu,
-  useAdminAppMenusListMenus,
-  useAdminAppMenusMoveMenu,
-  useAdminAppMenusUpdateMenu,
-  useAdminAppsListApps,
-} from "@/api/endpoints/endpoints";
+  useClientMenusCreateSysMenu,
+  useClientMenusDeleteSysMenu,
+  useClientMenusListSysMenus,
+  useClientMenusMoveSysMenu,
+  useClientMenusUpdateSysMenu,
+} from "@/api/endpoints/client-menus/client-menus";
 import type {
   App,
-  CreateMenuRequest,
-  Menu,
-  UpdateMenuRequest,
+  CreateSysMenuRequest,
+  SysMenu,
+  UpdateSysMenuRequest,
 } from "@/api/endpoints/endpoints.schemas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,9 +87,13 @@ const EDIT_FIELDS = FIELDS.filter((f) => f.name !== "code");
 /** 把扁平菜单构造成带 children 的树（v0.5.0：替代旧 flatten 函数）。
  * 旧实现按 `(n as any).children` 走，但 API 返回的是扁平列表 + parentId，
  * 旧实现其实从未渲染出子菜单 —— v0.5.0 用 buildTree 真正构造树。 */
-type MenuNode = Menu & { children: MenuNode[] };
+/** 展示名：契约 SysMenu 是 title，msw fixture 同样有 title；code 兜底 path。 */
+const menuName = (m: SysMenu) => m.title ?? m.path ?? m.id;
+const menuCode = (m: SysMenu) => (m as unknown as { code?: string }).code ?? m.path ?? m.id;
 
-function buildMenuTree(flat: Menu[]): MenuNode[] {
+type MenuNode = SysMenu & { children: MenuNode[] };
+
+function buildMenuTree(flat: SysMenu[]): MenuNode[] {
   return buildTree(flat) as unknown as MenuNode[];
 }
 
@@ -111,27 +115,27 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
   const qc = useQueryClient();
   const router = useRouter();
 
-  const allAppsQ = useAdminAppsListApps();
-  const allApps = (allAppsQ.data?.data?.items ?? []) as App[];
+  const allAppsQ = useAdminClientsListClients();
+  const allApps = (allAppsQ.data?.data?.items ?? []) as unknown as App[];
   // URL 路径用 App.Code（slug 如 "lab-management"）；下拉 value 必须跟 URL 一致，
   // 否则 Select 显示 placeholder 且 onChange 找不到项。fallback 也走 code。
   const selectedAppCode = initialAppId || selectedApp.id || allApps[0]?.code || "";
   const currentApp = allApps.find((a) => a.code === selectedAppCode) ?? allApps[0];
   const selectedAppId = selectedAppCode;  // 后续 menusQ/mutation 统一用 slug（后端已兼容 Guid↔code）
 
-  const menusQ = useAdminAppMenusListMenus(selectedAppId);
-  const createMut = useAdminAppMenusCreateMenu();
-  const updateMut = useAdminAppMenusUpdateMenu();
-  const deleteMut = useAdminAppMenusDeleteMenu();
-  const moveMut = useAdminAppMenusMoveMenu();
+  const menusQ = useClientMenusListSysMenus(selectedAppId);
+  const createMut = useClientMenusCreateSysMenu();
+  const updateMut = useClientMenusUpdateSysMenu();
+  const deleteMut = useClientMenusDeleteSysMenu();
+  const moveMut = useClientMenusMoveSysMenu();
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<Menu | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Menu | null>(null);
-  const [moveTarget, setMoveTarget] = useState<Menu | null>(null);
+  const [editTarget, setEditTarget] = useState<SysMenu | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SysMenu | null>(null);
+  const [moveTarget, setMoveTarget] = useState<SysMenu | null>(null);
 
   const menuTree = useMemo(
-    () => buildMenuTree((menusQ.data?.data ?? []) as Menu[]),
+    () => buildMenuTree((menusQ.data?.data ?? []) as unknown as SysMenu[]),
     [menusQ.data],
   );
   // 父菜单下拉用：展开所有节点的扁平视图（无视 expand/collapse 状态）
@@ -151,7 +155,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
           parentId,
           sortOrder: Number(values.sortOrder ?? 0),
           status: values.status === "disabled" ? 0 : 1,
-        } as unknown as CreateMenuRequest,
+        } as unknown as CreateSysMenuRequest,
       });
       setCreateOpen(false);
       menusQ.refetch();
@@ -173,7 +177,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
           type: values.type as "group" | "page" | "action",
           sortOrder: Number(values.sortOrder ?? 0),
           status: values.status === "disabled" ? 0 : 1,
-        } as unknown as UpdateMenuRequest,
+        } as unknown as UpdateSysMenuRequest,
       });
       setEditTarget(null);
       menusQ.refetch();
@@ -290,8 +294,8 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
                         ) : (
                           <span className="inline-block h-5 w-5 shrink-0" aria-hidden />
                         )}
-                        <span className="font-medium">{r.name}</span>
-                        <span className="ml-2 text-xs text-slate-400 font-mono">/{r.code}</span>
+                        <span className="font-medium">{menuName(r)}</span>
+                        <span className="ml-2 text-xs text-slate-400 font-mono">/{menuCode(r)}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right space-x-1 whitespace-nowrap">
@@ -343,7 +347,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
               { value: "", label: "（无，顶级）" },
               ...rowsForSelect.map((m) => ({
                 value: m.id,
-                label: `${"  ".repeat(m.depth)}${m.code} · ${m.name}`,
+                label: `${"  ".repeat(m.depth)}${menuCode(m)} · ${menuName(m)}`,
               })),
             ],
             defaultValue: "",
@@ -362,7 +366,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
         initialValues={
           editTarget
             ? {
-                name: editTarget.name,
+                name: menuName(editTarget),
                 path: editTarget.path,
                 type: editTarget.type,
                 sortOrder: editTarget.sortOrder,
@@ -377,7 +381,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
       <CrudDialog
         open={Boolean(moveTarget)}
         onOpenChange={(o) => !o && setMoveTarget(null)}
-        title={`移动菜单：${moveTarget?.code ?? ""}`}
+        title={`移动菜单：${moveTarget ? menuCode(moveTarget) : ""}`}
         description="选择新的父级菜单。无父级 = 顶级。"
         fields={[
           {
@@ -390,7 +394,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
                 .filter((m) => m.id !== moveTarget?.id)
                 .map((m) => ({
                   value: m.id,
-                  label: `${"  ".repeat(m.depth)}${m.code} · ${m.name}`,
+                  label: `${"  ".repeat(m.depth)}${menuCode(m)} · ${menuName(m)}`,
                 })),
             ],
           },
@@ -404,7 +408,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         onOpenChange={(o) => !o && setDeleteTarget(null)}
-        title={`删除菜单「${deleteTarget?.name ?? ""}？`}
+        title={`删除菜单「${deleteTarget ? menuName(deleteTarget) : ""}」？`}
         description="删除菜单会同时移除其下所有子菜单。不可撤销。"
         confirmText="删除"
         destructive
