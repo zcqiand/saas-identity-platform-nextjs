@@ -82,8 +82,8 @@ describe("shared SQL 9 enum 全部注册(V001-V008)", () => {
 });
 
 describe("users.role_ids 三方一致", () => {
-  it("msw users.json 5 条都带 roleIds", () => {
-    const users = loadSeed("users.json") as Array<{ roleIds?: string[] }>;
+  it("msw sys_user.json 5 条都带 roleIds", () => {
+    const users = loadSeed("sys_user.json") as Array<{ roleIds?: string[] }>;
     expect(users.length).toBe(5);
     for (const u of users) {
       expect(Array.isArray(u.roleIds)).toBe(true);
@@ -101,8 +101,8 @@ describe("users.role_ids 三方一致", () => {
 
 describe("role_menu_grants.tenantId 三方一致", () => {
   it.skip("shared TypeSpec 路径已废，整段 skip", () => { /* skip if !SHARED_TSP_AVAILABLE */ });
-  it("msw role-menu-grants.json 3 条都带 tenantId", () => {
-    const grants = loadSeed("role-menu-grants.json") as Array<{
+  it("msw sys_role_menu.json 3 条都带 tenantId", () => {
+    const grants = loadSeed("sys_role_menu.json") as Array<{
       tenantId?: string;
     }>;
     expect(grants.length).toBe(3);

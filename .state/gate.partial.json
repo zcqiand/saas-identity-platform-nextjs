@@ -4,17 +4,17 @@
   "passed": true,
   "partial": true,
   "ran": [
-    "L0"
+    "L3"
   ],
-  "checked_at": "2026-09-11T10:19:01+0800",
+  "checked_at": "2026-09-11T12:39:04+0800",
   "gates": [
     {
-      "level": "L0",
-      "name": "结构完整性",
+      "level": "L3",
+      "name": "类型",
       "passed": true,
       "returncode": 0,
-      "duration_s": 0.11,
-      "output": ""
+      "duration_s": 2.719,
+      "output": "npm warn Unknown cli config \"--noEmit\". This will stop working in the next major version of npm."
     }
   ]
 }

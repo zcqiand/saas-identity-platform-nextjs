@@ -4,14 +4,15 @@
 
 import { use, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+// 2026-09-11 E2E REQ-2026-005：barrel 死桩切真源（client-menus/admin-clients/tenant-role-menus）
+import { clientMenusListSysMenus } from "@/api/endpoints/client-menus/client-menus";
+import type { SysMenu } from "@/api/endpoints/endpoints.schemas";
+import { useAdminClientsListClients } from "@/api/endpoints/admin-clients/admin-clients";
+import { useAdminTenantsGetTenant } from "@/api/endpoints/admin-tenants/admin-tenants";
 import {
-  adminAppMenusListMenus,
-  useAdminAppsListApps,
-  useAdminTenantsGetTenant,
-  useTenantRoleMenusListRoleMenus,
-  useTenantRoleMenusSetRoleMenus,
-} from "@/api/endpoints/endpoints";
-import type { SetRoleMenusRequest } from "@/api/endpoints/endpoints.schemas";
+  useTenantRoleMenusListSysRoleMenus,
+  useTenantRoleMenusSetSysRoleMenus,
+} from "@/api/endpoints/tenant-role-menus/tenant-role-menus";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/app/page-header";
@@ -24,8 +25,8 @@ export default function RoleMenuGrantPage({
   params: Promise<{ tenantId: string; roleId: string }>;
 }) {
   const { tenantId, roleId } = use(params);
-  const appsQ = useAdminAppsListApps();
-  const apps = (appsQ.data?.data?.items ?? []) as Array<{ id: string; code: string; name: string }>;
+  const appsQ = useAdminClientsListClients();
+  const apps = (appsQ.data?.data?.items ?? []) as Array<{ id: string; clientId: string; clientName: string }>;
   // getTenant via orval-generated useAdminTenantsGetTenant hook（ADR-0012 运行时 import 清零）。
   // 异步取租户名，加载中/失败显示 fallback。
   const tenantQ = useAdminTenantsGetTenant(tenantId, {
@@ -39,16 +40,16 @@ export default function RoleMenuGrantPage({
     queryFn: async () => {
       return Promise.all(
         apps.map(async (a) => ({
-          appCode: a.code,
-          appName: a.name,
-          menus: (await adminAppMenusListMenus(a.id)).data,
+          appCode: a.clientId,
+          appName: a.clientName,
+          menus: (await clientMenusListSysMenus(a.id)).data,
         })),
       );
     },
     enabled: !!tenantId && !!roleId && apps.length > 0,
   });
-  const grantQ = useTenantRoleMenusListRoleMenus(tenantId, roleId);
-  const saveMut = useTenantRoleMenusSetRoleMenus();
+  const grantQ = useTenantRoleMenusListSysRoleMenus(tenantId, roleId, { clientId: "" } as never);
+  const saveMut = useTenantRoleMenusSetSysRoleMenus();
 
   const [granted, setGranted] = useState<Set<string>>(new Set());
 
@@ -73,7 +74,7 @@ export default function RoleMenuGrantPage({
       await saveMut.mutateAsync({
         tenantId,
         roleId,
-        data: { menuIds: Array.from(granted) } as SetRoleMenusRequest,
+        data: { menuIds: Array.from(granted) }, params: { clientId: "" } as never,
       });
       grantQ.refetch();
       toast.success("菜单授权已保存");
@@ -123,7 +124,7 @@ export default function RoleMenuGrantPage({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {g.menus.map((m: { id: string; name: string; code: string }) => {
+            {g.menus.map((m) => {
               const checked = granted.has(m.id);
               return (
                 <label
@@ -137,8 +138,8 @@ export default function RoleMenuGrantPage({
                     onChange={() => toggle(m.id)}
                     className="h-4 w-4"
                   />
-                  <span className="font-medium text-sm">{m.name}</span>
-                  <span className="font-mono text-xs text-slate-500">{m.code}</span>
+                  <span className="font-medium text-sm">{m.title}</span>
+                  <span className="font-mono text-xs text-slate-500">{m.path}</span>
                 </label>
               );
             })}

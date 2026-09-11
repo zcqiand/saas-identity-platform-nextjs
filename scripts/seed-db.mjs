@@ -117,13 +117,13 @@ try {
   await client.connect();
   console.log("[seed-db] 已连接。");
 
-  const tenants = loadJson("tenants.json");
-  const users = loadJson("users.json");
-  const roles = loadJson("roles.json");
-  const memberships = loadJson("memberships.json");
-  const apps = loadJson("apps.json");
-  const menus = loadJson("menus.json");
-  const roleMenuGrants = loadJson("role-menu-grants.json");
+  const tenants = loadJson("tenant.json");
+  const users = loadJson("sys_user.json");
+  const roles = loadJson("sys_role.json");
+  const memberships = loadJson("tenant_member.json");
+  const apps = loadJson("oauth_client.json");
+  const menus = loadJson("sys_menu.json");
+  const roleMenuGrants = loadJson("sys_role_menu.json");
 
   console.log(
     `[seed-db] 读入 seeds：tenants=${tenants.length} users=${users.length} ` +
@@ -185,7 +185,7 @@ try {
   );
   console.log(`[seed-db] sys_user: ${users.length}`);
 
-  // 4. sys_role（fixture 无 client 分域 → 全挂 DEFAULT_CLIENT_ID；is_preset=true）
+  // 4. sys_role（2026-09-11 fixture 对齐契约字段 roleCode/roleName/clientId/isPreset/status）
   await insertAll(
     "sys_role",
     [
@@ -193,8 +193,9 @@ try {
       "description", "is_preset", "status", "created_at", "updated_at",
     ],
     roles.map((r) => [
-      resolveId(r.id), resolveId(r.tenantId), DEFAULT_CLIENT_ID,
-      r.code, r.name, null, true, 1, r.createdAt, r.updatedAt,
+      resolveId(r.id), resolveId(r.tenantId), r.clientId ?? DEFAULT_CLIENT_ID,
+      r.roleCode, r.roleName, r.description ?? null, r.isPreset ?? true,
+      r.status ?? 1, r.createdAt, r.updatedAt,
     ]),
   );
   console.log(`[seed-db] sys_role: ${roles.length}`);

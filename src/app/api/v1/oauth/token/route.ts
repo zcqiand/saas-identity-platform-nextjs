@@ -13,7 +13,7 @@ import "server-only";
 
 import { oauthStore, generateRefreshToken } from "@/lib/oauth-store";
 import { signToken } from "@/lib/jwt";
-import apps from "@/seeds/apps.json";
+import apps from "@/seeds/oauth_client.json";
 
 interface TokenRequest {
   grantType?: "authorization_code" | "refresh_token";

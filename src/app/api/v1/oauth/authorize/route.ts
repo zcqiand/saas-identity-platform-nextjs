@@ -14,8 +14,8 @@ import { NextResponse } from "next/server";
 import "server-only";
 
 import { oauthStore, generateAuthCode } from "@/lib/oauth-store";
-import apps from "@/seeds/apps.json";
-import users from "@/seeds/users.json";
+import apps from "@/seeds/oauth_client.json";
+import users from "@/seeds/sys_user.json";
 
 interface AuthorizeCodeRequest {
   clientId?: string;

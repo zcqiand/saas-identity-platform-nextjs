@@ -5,17 +5,18 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+// 2026-09-11 E2E REQ-2026-005：barrel 死桩切真源 + 契约字段 code/name→roleCode/roleName
+import { useAdminTenantsGetTenant } from "@/api/endpoints/admin-tenants/admin-tenants";
 import {
-  useAdminTenantsGetTenant,
-  useTenantRolesCreateRole,
-  useTenantRolesDeleteRole,
-  useTenantRolesListRoles,
-  useTenantRolesUpdateRole,
-} from "@/api/endpoints/endpoints";
+  useTenantRolesCreateSysRole,
+  useTenantRolesDeleteSysRole,
+  useTenantRolesListSysRoles,
+  useTenantRolesUpdateSysRole,
+} from "@/api/endpoints/tenant-roles/tenant-roles";
 import type {
-  CreateRoleRequest,
-  Role,
-  UpdateRoleRequest,
+  CreateSysRoleRequest,
+  SysRole,
+  UpdateSysRoleRequest,
 } from "@/api/endpoints/endpoints.schemas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,11 +39,11 @@ import { toast } from "sonner";
 // PERMISSION_OPTIONS 已废止（role_permissions 表 DROP，M00.F04.I01 仅 springboot 仓实现）
 
 const FIELDS: FieldDef[] = [
-  { name: "code", label: "Code", required: true, placeholder: "admin" },
-  { name: "name", label: "名称", required: true, placeholder: "管理员" },
+  { name: "roleCode", label: "Code", required: true, placeholder: "admin" },
+  { name: "roleName", label: "名称", required: true, placeholder: "管理员" },
 ];
 
-const EDIT_FIELDS = FIELDS.filter((f) => f.name !== "code");
+const EDIT_FIELDS = FIELDS.filter((f) => f.name !== "roleCode");
 
 export default function RoleListPage({ params }: { params: Promise<{ tenantId: string }> }) {
   const { tenantId } = use(params);
@@ -55,22 +56,22 @@ export default function RoleListPage({ params }: { params: Promise<{ tenantId: s
   const tenant = tenantQ.data?.data ?? null;
   const tenantLabel = tenant ? `租户 ${tenant.name}（${tenant.tenantKey}）` : "租户未知";
 
-  const list = useTenantRolesListRoles(tenantId);
-  const createMut = useTenantRolesCreateRole();
-  const updateMut = useTenantRolesUpdateRole();
-  const deleteMut = useTenantRolesDeleteRole();
+  const list = useTenantRolesListSysRoles(tenantId, { clientId: "" } as never);
+  const createMut = useTenantRolesCreateSysRole();
+  const updateMut = useTenantRolesUpdateSysRole();
+  const deleteMut = useTenantRolesDeleteSysRole();
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<Role | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Role | null>(null);
+  const [editTarget, setEditTarget] = useState<SysRole | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SysRole | null>(null);
 
-  const roles = (list.data?.data?.items ?? []) as Role[];
+  const roles = (list.data?.data?.items ?? []) as SysRole[];
 
   async function onCreate(values: Record<string, unknown>) {
     try {
       await createMut.mutateAsync({
         tenantId,
-        data: values as unknown as CreateRoleRequest,
+        data: { ...(values as unknown as CreateSysRoleRequest), clientId: "saas-console" },
       });
       setCreateOpen(false);
       list.refetch();
@@ -86,7 +87,7 @@ export default function RoleListPage({ params }: { params: Promise<{ tenantId: s
       await updateMut.mutateAsync({
         tenantId,
         roleId: editTarget.id,
-        data: { name: values.name as string } as UpdateRoleRequest,
+        data: { roleName: values.roleName as string } as UpdateSysRoleRequest,
       });
       setEditTarget(null);
       list.refetch();
@@ -134,20 +135,14 @@ export default function RoleListPage({ params }: { params: Promise<{ tenantId: s
               <TableRow>
                 <TableHead>Code</TableHead>
                 <TableHead>名称</TableHead>
-                <TableHead>权限</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {roles.map((r) => (
                 <TableRow key={r.id} data-testid="role-row">
-                  <TableCell className="font-mono text-xs">{r.code}</TableCell>
-                  <TableCell className="font-medium">{r.name}</TableCell>
-                  <TableCell>
-                    <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
-                      {(r.permissionIds ?? []).length} 项
-                    </span>
-                  </TableCell>
+                  <TableCell className="font-mono text-xs">{r.roleCode}</TableCell>
+                  <TableCell className="font-medium">{r.roleName}</TableCell>
                   <TableCell className="text-right space-x-1">
                     {/* 权限矩阵按钮已废止（role_permissions 表 DROP，setPermissions endpoint 整体删） */}
                     <Button variant="ghost" size="sm" data-fn="M00.F04.I02" asChild>
@@ -194,7 +189,7 @@ export default function RoleListPage({ params }: { params: Promise<{ tenantId: s
         onOpenChange={(o) => !o && setEditTarget(null)}
         title="编辑角色"
         fields={EDIT_FIELDS}
-        initialValues={editTarget ? { name: editTarget.name } : undefined}
+        initialValues={editTarget ? { roleName: editTarget.roleName } : undefined}
         loading={updateMut.isPending}
         onSubmit={onUpdate}
       />
@@ -204,7 +199,7 @@ export default function RoleListPage({ params }: { params: Promise<{ tenantId: s
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         onOpenChange={(o) => !o && setDeleteTarget(null)}
-        title={`删除角色「${deleteTarget?.name ?? ""}？`}
+        title={`删除角色「${deleteTarget?.roleName ?? ""}？`}
         description="角色删除将一并解除角色与用户的绑定关系。"
         confirmText="删除"
         destructive

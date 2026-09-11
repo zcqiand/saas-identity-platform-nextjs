@@ -216,11 +216,20 @@ vi.mock("@/api/endpoints/endpoints", () => ({
 // 2026-09-11 REQ-003：tenants page 改从真 orval tag 模块 import（barrel 的死桩
 // shadow 真函数——export * 后同名重导出，列表恒空）。测试 mock 跟随真源路径。
 vi.mock("@/api/endpoints/admin-tenants/admin-tenants", () => ({
+  useAdminTenantsGetTenant: (_id?: string) => queryStub({ data: tenants[0] }),
   adminTenantsListTenants: async () => ({ data: page(tenants) }),
   adminTenantsCreateTenant: async (body: any) => ({ data: { id: "new-tenant", ...body } }),
   adminTenantsGetTenant: async (id: string) => ({ data: { id, tenantKey: "acme", name: "ACME", status: "active" } }),
   adminTenantsUpdateTenant: async (id: string, body: any) => ({ data: { id, ...body } }),
   adminTenantsDeleteTenant: async () => ({ data: undefined }),
+}));
+
+// 2026-09-11 REQ-2026-005：角色页真源 mock（Sys 系契约字段）
+vi.mock("@/api/endpoints/tenant-roles/tenant-roles", () => ({
+  useTenantRolesListSysRoles: () => queryStub({ data: page(roles) }),
+  useTenantRolesCreateSysRole: () => mutationStub(),
+  useTenantRolesUpdateSysRole: () => mutationStub(),
+  useTenantRolesDeleteSysRole: () => mutationStub(),
 }));
 
 vi.mock("next/navigation", () => ({
