@@ -4,6 +4,7 @@
 
 import { use, useState } from "react";
 import {
+  useAdminClientsListClients,
   useAdminTenantsGetTenant,
   useTenantApplicationsListTenantApplications,
   useTenantApplicationsRemoveTenantApplication,
@@ -91,6 +92,25 @@ export default function TenantApplicationsListPage({
 
   const apps = (list.data?.data?.items ?? []) as TenantApplication[];
 
+  // 应用名称解析：clientId 兼容 code / 内部 UUID / OAuthClient.clientId 三路。
+  // OAuthClient 契约字段是 clientName，msw App fixture 是 name/code —— 双路兜底。
+  const clientsQ = useAdminClientsListClients();
+  const clients = (clientsQ.data?.data?.items ?? []) as Array<{
+    id?: string;
+    clientId?: string;
+    clientName?: string;
+    name?: string;
+    code?: string;
+  }>;
+  const appNameBy = new Map<string, string>();
+  for (const c of clients) {
+    const label = c.clientName ?? c.name ?? c.code ?? "";
+    for (const key of [c.clientId, c.code, c.id].filter(Boolean) as string[]) {
+      appNameBy.set(key, label);
+    }
+  }
+  const appName = (clientId: string) => appNameBy.get(clientId) ?? "未知应用";
+
   async function onSubscribe(values: Record<string, unknown>) {
     try {
       await subscribeMut.mutateAsync({
@@ -166,6 +186,7 @@ export default function TenantApplicationsListPage({
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>应用名称</TableHead>
                   <TableHead>Client ID</TableHead>
                   <TableHead>状态</TableHead>
                   <TableHead>到期时间</TableHead>
@@ -175,6 +196,7 @@ export default function TenantApplicationsListPage({
               <TableBody>
                 {apps.map((a) => (
                   <TableRow key={a.id} data-testid="tenant-app-row">
+                    <TableCell className="font-medium">{appName(a.clientId)}</TableCell>
                     <TableCell className="font-mono text-xs">{a.clientId}</TableCell>
                     <TableCell>
                       <span
@@ -250,7 +272,7 @@ export default function TenantApplicationsListPage({
       <ConfirmDialog
         open={Boolean(removeTarget)}
         onOpenChange={(o) => !o && setRemoveTarget(null)}
-        title={`取消订阅「${removeTarget?.clientId ?? ""}」？`}
+        title={`取消订阅「${removeTarget ? appName(removeTarget.clientId) : ""}」？`}
         description="租户下该应用的所有角色菜单授权将一并清除。不可撤销。"
         confirmText="取消订阅"
         destructive

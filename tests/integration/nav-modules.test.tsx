@@ -18,9 +18,9 @@ describe("侧边栏层级：一级=功能模块，二级=功能", () => {
     const labels = items.map((i) => i.label);
     expect(labels).toEqual([
       "租户维护",
+      "租户应用",
       "租户成员",
       "租户角色",
-      "租户应用",
       "应用维护",
       "菜单管理",
     ]);

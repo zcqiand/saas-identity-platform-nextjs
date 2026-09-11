@@ -28,6 +28,14 @@ export function buildNavItems(tenantForNav: string): NavItem[] {
       icon: <Building2 className="h-4 w-4" />,
       fnId: "M00.F01.I01",
     },
+    // M00.F05 租户应用（用户裁定 2026-09-11：顺序紧随租户维护）
+    {
+      to: `/tenants/${tenantForNav}/applications`,
+      label: "租户应用",
+      group: "租户管理",
+      icon: <Boxes className="h-4 w-4" />,
+      fnId: "M00.F05.I01",
+    },
     {
       to: `/tenants/${tenantForNav}/members`,
       label: "租户成员",
@@ -41,14 +49,6 @@ export function buildNavItems(tenantForNav: string): NavItem[] {
       group: "租户管理",
       icon: <Shield className="h-4 w-4" />,
       fnId: "M00.F03.I01",
-    },
-    // M00.F05 租户应用（开发中，4 后端 + msw 未全齐）
-    {
-      to: `/tenants/${tenantForNav}/applications`,
-      label: "租户应用",
-      group: "租户管理",
-      icon: <Boxes className="h-4 w-4" />,
-      fnId: "M00.F05.I01",
     },
     // M04 应用管理（模块）；M05（API Key）+ M06（审计日志）已废止，nav 链接删（route + UI page 已删）。
     {

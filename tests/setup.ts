@@ -188,6 +188,8 @@ vi.mock("@/api/endpoints/endpoints", () => ({
   useAdminAppsDeleteApp: () => mutationStub(),
   useAdminAppsSetAppStatus: () => mutationStub(),
 
+  useAdminClientsListClients: () => queryStub({ data: page(apps) }),
+
   useAdminAppMenusListMenus: () => queryStub({ data: menus }),
   useAdminAppMenusCreateMenu: () => mutationStub(),
   useAdminAppMenusGetMenu: () => queryStub(menus[0]),
