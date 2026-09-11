@@ -25,7 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { useQuery } from "@tanstack/react-query";
-import { adminTenantsListTenants } from "@/api/endpoints/endpoints";
+import { adminTenantsListTenants } from "@/api/endpoints/admin-tenants/admin-tenants";
 import { useTenant } from "@/state/tenant-context";
 import { useSelection } from "@/state/selection-context";
 
