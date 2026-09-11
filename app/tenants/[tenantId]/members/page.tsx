@@ -5,16 +5,32 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAdminTenantsGetTenant } from "@/api/endpoints/admin-tenants/admin-tenants";
 import {
-  useAdminTenantsGetTenant,
-  useTenantRolesListRoles,
-  useTenantUsersAssignRoles,
-  useTenantUsersCreateUser,
-  useTenantUsersDeleteUser,
-  useTenantUsersListUsers,
-  useTenantUsersUpdateUser,
-} from "@/api/endpoints/endpoints";
-import type { CreateUserRequest, UpdateUserRequest, User } from "@/api/endpoints/endpoints.schemas";
+  useTenantMembersAssignTenantMemberRoles,
+  useTenantMembersCreateTenantUser,
+  useTenantMembersDeleteTenantUser,
+  useTenantMembersListTenantUsers,
+  useTenantMembersUpdateTenantUser,
+} from "@/api/endpoints/tenant-members/tenant-members";
+import { useTenantRolesListSysRoles } from "@/api/endpoints/tenant-roles/tenant-roles";
+import type {
+  CreateSysUserRequest,
+  UpdateSysUserRequest,
+} from "@/api/endpoints/endpoints.schemas";
+
+// ADR-0029 待裁决：shared tsp 把 members list 200 定义为嵌套 TenantMemberView
+// {member,user,roles}，但 4 后端 + msw + contract-test（M96.F02.I10 仲裁）实际
+// 契约是扁平 User（id/tenantId/username/email/status/roleIds/createdAt/updatedAt）。
+// 页面按仲裁现实（扁平）读；shared 改判后此处随 gen-shared 一起调整。
+interface MemberUserRow {
+  id: string;
+  tenantId: string;
+  username: string;
+  email: string;
+  status: "active" | "suspended" | "archived" | "invited" | "disabled" | "revoked" | "expired";
+  roleIds?: string[];
+}
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -65,26 +81,31 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
   const tenant = tenantQ.data?.data ?? null;
   const tenantLabel = tenant ? `租户 ${tenant.name}（${tenant.tenantKey}）` : "租户未知";
 
-  const usersQ = useTenantUsersListUsers(tenantId);
-  const rolesQ = useTenantRolesListRoles(tenantId);
-  const createMut = useTenantUsersCreateUser();
-  const updateMut = useTenantUsersUpdateUser();
-  const deleteMut = useTenantUsersDeleteUser();
-  const roleAssignMut = useTenantUsersAssignRoles();
+  const usersQ = useTenantMembersListTenantUsers(tenantId);
+  const rolesQ = useTenantRolesListSysRoles(tenantId, { clientId: "" } as never);
+  const createMut = useTenantMembersCreateTenantUser();
+  const updateMut = useTenantMembersUpdateTenantUser();
+  const deleteMut = useTenantMembersDeleteTenantUser();
+  const roleAssignMut = useTenantMembersAssignTenantMemberRoles();
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<User | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
-  const [roleTarget, setRoleTarget] = useState<User | null>(null);
+  const [editTarget, setEditTarget] = useState<MemberUserRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MemberUserRow | null>(null);
+  const [roleTarget, setRoleTarget] = useState<MemberUserRow | null>(null);
 
-  const users = (usersQ.data?.data?.items ?? []) as User[];
-  const roles = (rolesQ.data?.data?.items ?? []) as Array<{ id: string; code: string; name: string }>;
+  const users = (usersQ.data?.data?.items ?? []) as unknown as MemberUserRow[];
+  // SysRole 契约：roleCode/roleName（不是 code/name）
+  const roles = (rolesQ.data?.data?.items ?? []) as Array<{
+    id: string;
+    roleCode: string;
+    roleName: string;
+  }>;
 
   async function onCreate(values: Record<string, unknown>) {
     try {
       await createMut.mutateAsync({
         tenantId,
-        data: values as unknown as CreateUserRequest,
+        data: values as unknown as CreateSysUserRequest,
       });
       setCreateOpen(false);
       usersQ.refetch();
@@ -99,11 +120,11 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
     try {
       await updateMut.mutateAsync({
         tenantId,
-        memberId: editTarget.id,
+        userId: editTarget.id,
         data: {
           email: values.email as string,
-          status: values.status as User["status"],
-        } as UpdateUserRequest,
+          status: values.status as UpdateSysUserRequest["status"],
+        } as UpdateSysUserRequest,
       });
       setEditTarget(null);
       usersQ.refetch();
@@ -119,7 +140,7 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
     try {
       await roleAssignMut.mutateAsync({
         tenantId,
-        memberId: roleTarget.id,
+        userId: roleTarget.id,
         data: { roleIds },
       });
       setRoleTarget(null);
@@ -133,7 +154,7 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
   async function confirmDelete() {
     if (!deleteTarget) return;
     try {
-      await deleteMut.mutateAsync({ tenantId, memberId: deleteTarget.id });
+      await deleteMut.mutateAsync({ tenantId, userId: deleteTarget.id });
       setDeleteTarget(null);
       usersQ.refetch();
       toast.success("用户已删除");
@@ -251,7 +272,7 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
             name: "roleIds",
             label: "角色（多选）",
             type: "select",
-            options: roles.map((r) => ({ value: r.id, label: `${r.code} · ${r.name}` })),
+            options: roles.map((r) => ({ value: r.id, label: `${r.roleCode} · ${r.roleName}` })),
           },
         ]}
         submitText="保存角色"
@@ -273,8 +294,8 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
                       onChange(Array.from(next));
                     }}
                   />
-                  <span className="font-mono text-xs">{r.code}</span>
-                  <span>{r.name}</span>
+                  <span className="font-mono text-xs">{r.roleCode}</span>
+                  <span>{r.roleName}</span>
                 </label>
               );
             })}
