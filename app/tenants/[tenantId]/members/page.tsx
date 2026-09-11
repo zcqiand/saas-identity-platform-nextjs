@@ -31,6 +31,24 @@ interface MemberUserRow {
   status: "active" | "suspended" | "archived" | "invited" | "disabled" | "revoked" | "expired";
   roleIds?: string[];
 }
+
+/** ADR-0029 双形态兼容：嵌套 TenantMemberView（aspnetcore）/扁平 User（msw/nextjs）统一归一化 */
+function normalizeMemberRow(raw: unknown): MemberUserRow {
+  const r = raw as Record<string, unknown>;
+  if (r.member && r.user) {
+    const member = r.member as { id: string; tenantId: string; status: MemberUserRow["status"] };
+    const user = r.user as { id: string; username: string; email: string; status?: MemberUserRow["status"] };
+    return {
+      id: user.id ?? member.id,
+      tenantId: member.tenantId as string,
+      username: user.username,
+      email: user.email,
+      status: (member.status ?? user.status) as MemberUserRow["status"],
+      roleIds: (r.roles as string[] | undefined) ?? [],
+    };
+  }
+  return r as unknown as MemberUserRow;
+}
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -93,7 +111,8 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
   const [deleteTarget, setDeleteTarget] = useState<MemberUserRow | null>(null);
   const [roleTarget, setRoleTarget] = useState<MemberUserRow | null>(null);
 
-  const users = (usersQ.data?.data?.items ?? []) as unknown as MemberUserRow[];
+  // ADR-0029 双形态兼容：嵌套 TenantMemberView（aspnetcore）与扁平 User（msw/nextjs）都归一化
+  const users = (usersQ.data?.data?.items ?? []).map(normalizeMemberRow);
   // SysRole 契约：roleCode/roleName（不是 code/name）
   const roles = (rolesQ.data?.data?.items ?? []) as Array<{
     id: string;
