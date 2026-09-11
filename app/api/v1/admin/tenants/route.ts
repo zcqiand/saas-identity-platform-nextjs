@@ -11,11 +11,15 @@
 // 2026-09-09 schema pivot：tenants → tenant（列：tenantKey / status:smallint）。
 
 import { NextRequest, NextResponse } from "next/server";
+
+/** 新建租户的默认订阅应用（code 形态，须存在于 oauth_client.client_id） */
+const DEFAULT_TENANT_APP = "lab-management";
 import { z } from "zod";
 import { sql, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { tenant } from "@/db/schema";
+import { tenant, tenantMember, tenantApplication, oauthClient } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
+import { claimsFromAuthHeader, JwtParseError } from "@/lib/jwt";
 
 const PAGE_DEFAULT = 20;
 const PAGE_MAX = 100;
@@ -103,6 +107,35 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         { code: "INTERNAL", message: "Tenant creation returned no row" },
         { status: 500 },
       );
+    }
+    // 默认设置（用户裁定 2026-09-12）：建租户自动授予创建者成员关系（可管理新租户，
+    // 修复「新建租户后成员/角色页 401」）并默认订阅应用（新租户开箱可用）。
+    // 创建者身份：从当前 token 取 sub（过期/无效则跳过默认成员关系，不影响建租户）
+    let creatorSub: string | null = null;
+    try {
+      creatorSub = (await claimsFromAuthHeader(req.headers.get("authorization")))?.sub ?? null;
+    } catch (e) {
+      if (!(e instanceof JwtParseError)) throw e;
+    }
+    const claims = creatorSub ? { sub: creatorSub } : null;
+    if (claims?.sub) {
+      await db.insert(tenantMember).values({
+        tenantId: created.id,
+        userId: claims.sub,
+        status: 1,
+      });
+    }
+    const defaultApp = await db
+      .select({ clientId: oauthClient.clientId })
+      .from(oauthClient)
+      .where(eq(oauthClient.clientId, DEFAULT_TENANT_APP))
+      .limit(1);
+    if (defaultApp[0]) {
+      await db.insert(tenantApplication).values({
+        tenantId: created.id,
+        clientId: DEFAULT_TENANT_APP,
+        status: 1,
+      });
     }
     return NextResponse.json({
       ...created,

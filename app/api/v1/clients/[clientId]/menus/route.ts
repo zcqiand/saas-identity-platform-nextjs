@@ -13,7 +13,7 @@ import { eq, asc } from "drizzle-orm";
 import { db } from "@/db";
 import { sysMenu } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
-import { resolveClientId } from "@/lib/client-resolver";
+import { resolveClientRow } from "@/lib/client-resolver";
 
 const CreateMenuBody = z.object({
   parentId: z.string().uuid().optional().nullable(),
@@ -63,13 +63,15 @@ export async function GET(
   try {
     await verifyPathTenant(null, req.headers.get("authorization"));
     const { clientId: clientIdParam } = await params;
-    const clientId = await resolveClientId(clientIdParam);
-    if (!clientId) {
+    // sys_menu.client_id 存 code 形态值 —— 用解析行的 client_id 列值查询
+    const resolved = await resolveClientRow(clientIdParam);
+    if (!resolved) {
       return NextResponse.json(
         { code: "NOT_FOUND", message: "App not found" },
         { status: 404 },
       );
     }
+    const clientId = resolved.clientId;
     const items = await db
       .select(menuFields)
       .from(sysMenu)
@@ -96,8 +98,8 @@ export async function POST(
   try {
     await verifyPathTenant(null, req.headers.get("authorization"));
     const { clientId: clientIdParam } = await params;
-    const clientId = await resolveClientId(clientIdParam);
-    if (!clientId) {
+    const resolved = await resolveClientRow(clientIdParam);
+    if (!resolved) {
       return NextResponse.json(
         { code: "NOT_FOUND", message: "App not found" },
         { status: 404 },
@@ -114,7 +116,7 @@ export async function POST(
     const [created] = await db
       .insert(sysMenu)
       .values({
-        clientId: clientId,
+        clientId: resolved.clientId,
         parentId: b.parentId ?? "00000000-0000-0000-0000-000000000000",
         title: b.title,
         path: b.path ?? null,

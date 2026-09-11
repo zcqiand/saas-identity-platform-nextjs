@@ -9,14 +9,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { tenantMember } from "@/db/schema";
-import { claimsFromAuthHeader, signToken } from "@/lib/jwt";
+import { claimsFromAuthHeader, JwtParseError, signToken } from "@/lib/jwt";
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ tenantId: string }> },
 ): Promise<NextResponse> {
   const { tenantId } = await params;
-  const claims = await claimsFromAuthHeader(req.headers.get("authorization"));
+  // 过期/无效 token → 401（此前未捕获 JwtParseError，过期 token 直接 500）
+  let claims;
+  try {
+    claims = await claimsFromAuthHeader(req.headers.get("authorization"));
+  } catch (e) {
+    if (!(e instanceof JwtParseError)) throw e;
+    claims = null;
+  }
   if (!claims?.sub) {
     return NextResponse.json({ code: "UNAUTHORIZED", message: "Missing JWT sub" }, { status: 401 });
   }

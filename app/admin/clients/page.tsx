@@ -217,9 +217,6 @@ export default function AppListPage() {
                 <TableRow>
                   <TableHead>Code / ClientID</TableHead>
                   <TableHead>名称</TableHead>
-                  <TableHead>Scopes</TableHead>
-                  <TableHead>一方</TableHead>
-                  <TableHead>排序</TableHead>
                   <TableHead>状态</TableHead>
                   <TableHead className="text-right">操作</TableHead>
                 </TableRow>
@@ -234,25 +231,6 @@ export default function AppListPage() {
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">{rowName(a)}</TableCell>
-                    <TableCell className="text-xs text-slate-600">
-                      {rowScopes(a).length > 0 ? rowScopes(a).join(", ") : "—"}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs ${
-                          a.isFirstParty
-                            ? "bg-blue-50 text-blue-700"
-                            : "bg-slate-100 text-slate-600"
-                        }`}
-                      >
-                        {a.isFirstParty ? "一方" : "三方"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
-                        {a.sortOrder ?? 0}
-                      </span>
-                    </TableCell>
                     <TableCell>
                       <StatusBadge status={a.status === "active" ? "active" : "suspended"} />
                     </TableCell>
