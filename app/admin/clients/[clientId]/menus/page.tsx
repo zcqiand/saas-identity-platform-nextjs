@@ -54,11 +54,11 @@ const FIELDS: FieldDef[] = [
     label: "类型",
     type: "select",
     required: true,
-    defaultValue: "page",
+    defaultValue: "menu",
     options: [
-      { value: "group", label: "分组（容器）" },
-      { value: "page", label: "页面（叶子）" },
-      { value: "action", label: "操作（按钮）" },
+      { value: "directory", label: "分组（容器）" },
+      { value: "menu", label: "页面（叶子）" },
+      { value: "button", label: "操作（按钮）" },
     ],
   },
   {
@@ -74,10 +74,10 @@ const FIELDS: FieldDef[] = [
     label: "状态",
     type: "select",
     required: true,
-    defaultValue: "active",
+    defaultValue: "1",
     options: [
-      { value: "active", label: "启用" },
-      { value: "disabled", label: "停用" },
+      { value: "1", label: "启用" },
+      { value: "0", label: "停用" },
     ],
   },
 ];
@@ -154,7 +154,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
           type: values.type as "group" | "page" | "action",
           parentId,
           sortOrder: Number(values.sortOrder ?? 0),
-          status: values.status === "disabled" ? 0 : 1,
+          status: Number(values.status ?? 1),
         } as unknown as CreateSysMenuRequest,
       });
       setCreateOpen(false);
@@ -176,7 +176,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
           path: (values.path as string) || undefined,
           type: values.type as "group" | "page" | "action",
           sortOrder: Number(values.sortOrder ?? 0),
-          status: values.status === "disabled" ? 0 : 1,
+          status: Number(values.status ?? 1),
         } as unknown as UpdateSysMenuRequest,
       });
       setEditTarget(null);
@@ -362,15 +362,31 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
         open={Boolean(editTarget)}
         onOpenChange={(o) => !o && setEditTarget(null)}
         title="编辑菜单"
-        fields={EDIT_FIELDS}
+        fields={EDIT_FIELDS.map((f) =>
+          f.name === "parentId"
+            ? {
+                ...f,
+                options: [
+                  { value: "", label: "（无，顶级）" },
+                  ...rowsForSelect
+                    .filter((m) => m.id !== editTarget?.id)
+                    .map((m) => ({
+                      value: m.id,
+                      label: `${"  ".repeat(m.depth)}${menuCode(m)} · ${menuName(m)}`,
+                    })),
+                ],
+              }
+            : f,
+        )}
         initialValues={
           editTarget
             ? {
                 name: menuName(editTarget),
                 path: editTarget.path,
                 type: editTarget.type,
+                parentId: editTarget.parentId ?? "",
                 sortOrder: editTarget.sortOrder,
-                status: editTarget.status,
+                status: String(editTarget.status ?? 1),
               }
             : undefined
         }
