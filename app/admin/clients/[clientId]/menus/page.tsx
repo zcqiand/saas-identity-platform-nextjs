@@ -15,8 +15,8 @@ import {
   useClientMenusUpdateSysMenu,
 } from "@/api/endpoints/client-menus/client-menus";
 import type {
-  App,
   CreateSysMenuRequest,
+  OAuthClient,
   SysMenu,
   UpdateSysMenuRequest,
 } from "@/api/endpoints/endpoints.schemas";
@@ -116,11 +116,11 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
   const router = useRouter();
 
   const allAppsQ = useAdminClientsListClients();
-  const allApps = (allAppsQ.data?.data?.items ?? []) as unknown as App[];
-  // URL 路径用 App.Code（slug 如 "lab-management"）；下拉 value 必须跟 URL 一致，
-  // 否则 Select 显示 placeholder 且 onChange 找不到项。fallback 也走 code。
-  const selectedAppCode = initialAppId || selectedApp.id || allApps[0]?.code || "";
-  const currentApp = allApps.find((a) => a.code === selectedAppCode) ?? allApps[0];
+  const allApps = (allAppsQ.data?.data?.items ?? []) as unknown as OAuthClient[];
+  // URL 路径用 OAuthClient.clientId（slug 如 "lab-management"）；下拉 value 必须跟 URL 一致，
+  // 否则 Select 显示 placeholder 且 onChange 找不到项。fallback 也走 clientId。
+  const selectedAppCode = initialAppId || selectedApp.id || allApps[0]?.clientId || "";
+  const currentApp = allApps.find((a) => a.clientId === selectedAppCode) ?? allApps[0];
   const selectedAppId = selectedAppCode;  // 后续 menusQ/mutation 统一用 slug（后端已兼容 Guid↔code）
 
   const menusQ = useClientMenusListSysMenus(selectedAppId);
@@ -222,8 +222,8 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
         title="菜单管理"
         description={
           <>
-            当前应用 <span className="font-semibold text-slate-700">{currentApp?.name ?? "—"}</span>{" "}
-            <span className="font-mono text-xs text-slate-500">({currentApp?.code})</span>
+            当前应用 <span className="font-semibold text-slate-700">{currentApp?.clientName ?? "—"}</span>{" "}
+            <span className="font-mono text-xs text-slate-500">({currentApp?.clientId})</span>
           </>
         }
         actions={
@@ -231,10 +231,10 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
             <Select
               value={selectedAppCode}
               onValueChange={(code) => {
-                const a = allApps.find((x) => x.code === code);
+                const a = allApps.find((x) => x.clientId === code);
                 if (a) {
-                  setSelectedApp({ id: a.id, name: a.name });
-                  router.push(`/admin/clients/${a.code}/menus`);
+                  setSelectedApp({ id: a.id, name: a.clientName });
+                  router.push(`/admin/clients/${a.clientId}/menus`);
                 }
               }}
             >
@@ -243,8 +243,8 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
               </SelectTrigger>
               <SelectContent>
                 {allApps.map((a) => (
-                  <SelectItem key={a.id} value={a.code} data-testid={`app-option-${a.id}`}>
-                    {a.name}
+                  <SelectItem key={a.id} value={a.clientId} data-testid={`app-option-${a.id}`}>
+                    {a.clientName}
                   </SelectItem>
                 ))}
               </SelectContent>

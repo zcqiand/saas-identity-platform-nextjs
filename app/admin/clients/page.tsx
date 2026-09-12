@@ -2,8 +2,8 @@
 
 // M04 — 平台级应用管理（CRUD + 启用/停用；同时承担 OAuth client 职责）
 // 数据源直连真源 tag 模块 admin-clients（此前 import legacy 死桩 → 列表恒空）。
-// 契约 OAuthClient（clientName/scopes:string）与 msw App fixture（name/scopes:[]）
-// 字段有漂移，行渲染做双路兜底。
+// 2026-09-12 形状收敛：fixture 与后端已统一为契约 OAuthClient
+// （clientId/clientName/status:number），不再读旧 App 形状的 code/name。
 
 import { useState } from "react";
 import Link from "next/link";
@@ -33,29 +33,27 @@ import { CrudDialog, type FieldDef } from "@/components/app/crud-dialog";
 import { toApiError } from "@/api/http-client";
 import { toast } from "sonner";
 
-/** 展示行：契约 OAuthClient 与 msw App fixture 的字段并集（全可选兜底）。 */
+/** 展示行：契约 OAuthClient（status 为数字 smallint，家族约定 1=启用 / 0=停用）。 */
 interface AppRow {
   id: string;
-  code?: string;
-  name?: string;
-  clientName?: string;
-  clientId?: string;
+  clientId: string;
+  clientName: string;
+  description?: string;
   icon?: string;
   scopes?: string[] | string;
   isFirstParty?: boolean;
   sortOrder?: number;
-  status?: string;
+  status: number;
 }
 
 const FIELDS: FieldDef[] = [
-  { name: "code", label: "Code", required: true, placeholder: "lab-management" },
   {
-    name: "name",
+    name: "clientName",
     label: "名称",
     required: true,
     placeholder: "建筑工程实验室管理系统",
   },
-  { name: "clientId", label: "Client ID", required: true, placeholder: "lab-mgmt" },
+  { name: "clientId", label: "Client ID", required: true, placeholder: "lab-management" },
   { name: "icon", label: "图标（lucide 名称）", placeholder: "FlaskConical" },
   { name: "sortOrder", label: "排序", type: "number", defaultValue: 0 },
   {
@@ -70,34 +68,33 @@ const FIELDS: FieldDef[] = [
     label: "状态",
     type: "select",
     required: true,
-    defaultValue: "active",
+    defaultValue: "1",
     options: [
-      { value: "active", label: "启用" },
-      { value: "disabled", label: "停用" },
+      { value: "1", label: "启用" },
+      { value: "0", label: "停用" },
     ],
   },
   { name: "scopesText", label: "Scopes（逗号分隔）", placeholder: "lab.read, lab.write" },
 ];
 
-const EDIT_FIELDS = FIELDS.filter((f) => f.name !== "code" && f.name !== "clientId");
+const EDIT_FIELDS = FIELDS.filter((f) => f.name !== "clientId");
 
-const rowName = (a: AppRow) => a.name ?? a.clientName ?? "—";
+// status 家族约定：契约/后端/fixture 全是 smallint 数字（1=启用 / 0=停用）
+const statusIsActive = (s: unknown) => s === 1;
+
+const rowName = (a: AppRow) => a.clientName;
 const rowScopes = (a: AppRow): string[] =>
   Array.isArray(a.scopes) ? a.scopes : a.scopes ? String(a.scopes).split(",").filter(Boolean) : [];
 
 function toClientInput(values: Record<string, unknown>): Record<string, unknown> {
-  const name = String(values.name ?? "").trim();
   return {
-    // msw App fixture 扩展字段
-    code: String(values.code ?? "").trim(),
-    name,
     icon: values.icon ? String(values.icon) : undefined,
     sortOrder: Number(values.sortOrder ?? 0),
-    status: (values.status as "active" | "disabled") ?? "active",
+    status: Number(values.status ?? 1),
     isFirstParty: Boolean(values.isFirstParty),
     // 契约 CreateOAuthClientRequest 必填：clientId/clientName/clientSecret/grantTypes/redirectUris
     clientId: String(values.clientId ?? "").trim(),
-    clientName: name,
+    clientName: String(values.clientName ?? "").trim(),
     clientSecret: `sec-${Math.random().toString(36).slice(2, 14)}`,
     grantTypes: "authorization_code,client_credentials",
     redirectUris: "",
@@ -143,11 +140,10 @@ export default function AppListPage() {
       await updateMut.mutateAsync({
         clientId: editTarget.id,
         data: {
-          clientName: values.name as string,
-          name: values.name as string,
+          clientName: values.clientName as string,
           icon: (values.icon as string) || undefined,
           sortOrder: Number(values.sortOrder ?? 0),
-          status: values.status as "active" | "disabled",
+          status: Number(values.status ?? 1),
           isFirstParty: Boolean(values.isFirstParty),
           scopes: values.scopesText
             ? String(values.scopesText)
@@ -170,7 +166,7 @@ export default function AppListPage() {
     try {
       await statusMut.mutateAsync({
         clientId: a.id,
-        data: { status: a.status === "active" ? "disabled" : "active" },
+        data: { status: statusIsActive(a.status) ? 0 : 1 },
       } as never);
       list.refetch();
       toast.success("状态已切换");
@@ -225,14 +221,14 @@ export default function AppListPage() {
                 {apps.map((a) => (
                   <TableRow key={a.id} data-testid="app-row">
                     <TableCell>
-                      <div className="font-mono text-xs">{a.code ?? "—"}</div>
+                      <div className="font-mono text-xs">{a.clientId}</div>
                       <div className="font-mono text-[10px] text-slate-500">
-                        clientId: {a.clientId ?? a.id}
+                        clientId: {a.clientId}
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">{rowName(a)}</TableCell>
                     <TableCell>
-                      <StatusBadge status={a.status === "active" ? "active" : "suspended"} />
+                      <StatusBadge status={statusIsActive(a.status) ? "active" : "suspended"} />
                     </TableCell>
                     <TableCell className="text-right space-x-1">
                       <Button
@@ -241,7 +237,7 @@ export default function AppListPage() {
                         data-fn="M04.F02.I01"
                         onClick={() => toggleStatus(a)}
                       >
-                        {a.status === "active" ? "停用" : "启用"}
+                        {statusIsActive(a.status) ? "停用" : "启用"}
                       </Button>
                       <Button
                         variant="ghost"
@@ -261,7 +257,7 @@ export default function AppListPage() {
                         删除
                       </Button>
                       <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/admin/clients/${a.code ?? a.id}/menus`}>菜单</Link>
+                        <Link href={`/admin/clients/${a.clientId}/menus`}>菜单</Link>
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -291,11 +287,11 @@ export default function AppListPage() {
         initialValues={
           editTarget
             ? {
-                name: rowName(editTarget),
+                clientName: rowName(editTarget),
                 icon: editTarget.icon,
                 sortOrder: editTarget.sortOrder,
                 isFirstParty: editTarget.isFirstParty,
-                status: editTarget.status,
+                status: String(editTarget.status ?? 1),
                 scopesText: rowScopes(editTarget).join(", "),
               }
             : undefined

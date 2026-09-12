@@ -13,8 +13,8 @@ const { state } = vi.hoisted(() => ({
       { id: "t2", tenantId: "abc", clientId: "erp", status: 0, createdAt: "2026-02-14T09:30:00Z" },
     ],
     clients: [
-      { id: "c1", clientId: "c1", code: "lab-management", name: "建筑工程实验室管理系统" },
-      { id: "c2", clientId: "c2", code: "erp", name: "企业资源计划系统" },
+      { id: "c1", clientId: "lab-management", clientName: "建筑工程实验室管理系统" },
+      { id: "c2", clientId: "erp", clientName: "企业资源计划系统" },
     ] as Array<Record<string, string>>,
   },
 }));

@@ -5,8 +5,8 @@
 // Consumers import from `@/api/endpoints/endpoints.schemas` for the legacy
 // single-file surface.
 //
-// Legacy types (App, Menu, Role, ApiKey, CreateApiKeyRequest, CreateAppRequest,
-// UpdateAppRequest, CreateMenuRequest, UpdateMenuRequest, CreateRoleRequest,
+// Legacy types (Menu, Role, ApiKey, CreateApiKeyRequest,
+// CreateMenuRequest, UpdateMenuRequest, CreateRoleRequest,
 // UpdateRoleRequest, CreateUserRequest, UpdateUserRequest, SetRoleMenusRequest)
 // were emitted by older orval / shared OpenAPI revs. They are kept here as
 // structural shims so existing pages still typecheck; the runtime contract
@@ -104,48 +104,10 @@ export type LoginRequest = {
 // typecheck PASS, not runtime fidelity. Pages reach for `k.code`, `t.code`,
 // `r.code` etc.; we model those as required strings so consumer pages keep
 // compiling. When the legacy concepts are re-introduced or rewritten against
-// the current contract (OAuthClient / SysMenu / SysRole / etc.), these shims
+// the current contract (SysMenu / SysRole / etc.), these shims
 // should be removed.
-
-/** Legacy "App" — pre-refactor naming for OAuthClient + tenant application. */
-export interface App {
-  id: string;
-  code: string;
-  name: string;
-  clientId: string;
-  clientSecretHash?: string;
-  description?: string;
-  icon?: string;
-  sortOrder: number;
-  status: "active" | "disabled";
-  scopes: string[];
-  grantTypes: string[];
-  redirectUris: string[];
-  isFirstParty: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-export interface CreateAppRequest {
-  code: string;
-  name: string;
-  clientId: string;
-  clientSecret?: string;
-  icon?: string;
-  sortOrder?: number;
-  status?: "active" | "disabled";
-  scopes?: string[];
-  grantTypes?: string[];
-  redirectUris?: string[];
-  isFirstParty?: boolean;
-}
-export interface UpdateAppRequest {
-  name?: string;
-  icon?: string;
-  sortOrder?: number;
-  status?: "active" | "disabled";
-  scopes?: string[];
-  isFirstParty?: boolean;
-}
+// 2026-09-12：App / CreateAppRequest / UpdateAppRequest 三个 shim 已删 ——
+// 应用域全面收敛到契约 OAuthClient（clientId/clientName/status:number）。
 
 /** Legacy "Menu" — pre-refactor naming for SysMenu. */
 export interface Menu {

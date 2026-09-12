@@ -92,22 +92,15 @@ export default function TenantApplicationsListPage({
 
   const apps = (list.data?.data?.items ?? []) as TenantApplication[];
 
-  // 应用名称解析：clientId 兼容 code / 内部 UUID / OAuthClient.clientId 三路。
-  // OAuthClient 契约字段是 clientName，msw App fixture 是 name/code —— 双路兜底。
+  // 应用名称解析：单键 clientId → clientName（2026-09-12 契约形状收敛后唯一寻址路径）。
   const clientsQ = useAdminClientsListClients();
   const clients = (clientsQ.data?.data?.items ?? []) as Array<{
-    id?: string;
     clientId?: string;
     clientName?: string;
-    name?: string;
-    code?: string;
   }>;
   const appNameBy = new Map<string, string>();
   for (const c of clients) {
-    const label = c.clientName ?? c.name ?? c.code ?? "";
-    for (const key of [c.clientId, c.code, c.id].filter(Boolean) as string[]) {
-      appNameBy.set(key, label);
-    }
+    if (c.clientId) appNameBy.set(c.clientId, c.clientName ?? "—");
   }
   const appName = (clientId: string) => appNameBy.get(clientId) ?? "未知应用";
 
