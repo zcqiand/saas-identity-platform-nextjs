@@ -2,9 +2,9 @@
   "api_synced_sha": "4767663ba393fb500a776cd2c83a16df6514b87e",
   "api_synced_at": "2026-09-12T17:28:09.958323+00:00",
   "api_synced_cmd": "gen-shared.sh",
-  "shared_sha": "baeeebb18e5c37a7ba50ea4b1128d6352b728b04",
+  "shared_sha": "4767663ba393fb500a776cd2c83a16df6514b87e",
   "consumer_repo": "saas-identity-platform-nextjs",
-  "db_synced_sha": "baeeebb18e5c37a7ba50ea4b1128d6352b728b04",
-  "db_synced_at": "2026-09-12T18:12:48.124051+00:00",
+  "db_synced_sha": "29e3855860e5dbf29455d1acccdf7bb757acc3c6",
+  "db_synced_at": "2026-09-12T22:40:23.014711+00:00",
   "db_synced_cmd": "pull-schema.sh"
 }
