@@ -72,8 +72,8 @@ chmod 700 /etc/nginx/ssl
 #   JWT_SIGNING_KEY     — Phase 5 HS256 签名密钥(jose)，与 springboot/aspnetcore
 #                         JWT_KEY 同步。env 镜像 CLAUDE.md §JWT。
 #   OAUTH_CODE_TTL / OAUTH_REFRESH_TTL — M04.F03 OAuth 2.0 TTL
-# 注:SAAS_CORS_ALLOWED_ORIGINS 不写 — nextjs 容器无 CORS reader
-#   (只有 springboot/aspnetcore 后端读 CORS,见它们各自的 deploy 脚本)
+# 注:SAAS_CORS_ALLOWED_ORIGINS 由 deploy 脚本 append(三前端白名单)—
+#   middleware.ts 读它挂 /api/v1/* 的 CORS 头(2026-09-13 修正,曾误标死键删除)
 if [ ! -f "$BASE/saas.env" ]; then
   log "generate $BASE/saas.env (DATABASE_URL + JWT_SIGNING_KEY + .env.production 全集 key)"
   if [ -z "${DATABASE_URL:-}" ]; then

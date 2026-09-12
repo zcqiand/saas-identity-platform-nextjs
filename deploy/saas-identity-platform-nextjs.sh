@@ -193,8 +193,8 @@ if ! grep -q '^NEXT_PUBLIC_LOGIN_CLIENT_ID=' "$BASE/saas.env"; then
 fi
 
 # 2026-09-09 key 对齐 (L0.5 env 一致性): 老 env-file 逐 key append-if-missing 到 .env.production 全集
-# (key 集合契约由 suite L0.5 check_deploy_parity 锁死;SAAS_CORS_ALLOWED_ORIGINS 已死
-# 删 — nextjs 容器不需要 CORS env,只有 springboot/aspnetcore 后端要)
+# (key 集合契约由 suite L0.5 check_deploy_parity 锁死。SAAS_CORS_ALLOWED_ORIGINS 是活键 —
+# middleware.ts 读它挂 /api/v1/* 的 CORS 头,读不到时 fail-safe 全拒,2026-09-13 修复曾误删)
 if [ -f "$BASE/saas.env" ]; then
   append_if_missing() {
     key="$1"; val="$2"
@@ -216,6 +216,18 @@ if [ -f "$BASE/saas.env" ]; then
   append_if_missing PG_PASSWORD 'changeme'
   append_if_missing PG_DATABASE 'saas_prod'
   append_if_missing NEXT_PUBLIC_SAAS_BASE_URL "https://${NGINX_DOMAIN}"
+
+  # 2026-09-13 CORS origin 级无损追加（aspnetcore 仓同款）：三前端（react/vue/nextjs）
+  # 都可以跨源调本后端 /api/v1/*（middleware.ts 白名单），存量 env-file 缺哪个 origin 就
+  # 补哪个（origin 级，不整值覆盖，运维手工 origin 保留）。
+  for cors_origin in "https://saas-nextjs.xiangru.uk" \
+                     "https://saas-react.xiangru.uk" \
+                     "https://saas-vue.xiangru.uk"; do
+    if grep -q '^SAAS_CORS_ALLOWED_ORIGINS=' "$BASE/saas.env" && ! grep '^SAAS_CORS_ALLOWED_ORIGINS=' "$BASE/saas.env" | grep -qF "$cors_origin"; then
+      sed -i "s#^\(SAAS_CORS_ALLOWED_ORIGINS=.*\)#\1,${cors_origin}#" "$BASE/saas.env"
+      echo "→ reconcile SAAS_CORS_ALLOWED_ORIGINS: 追加缺失 origin ${cors_origin}（origin 级，不整值覆盖）"
+    fi
+  done
 
   # 一次性 stale 值 reconcile —— append_if_missing 只补 key, 不覆盖值。
   # 同 springboot 仓 reconcile 范本 (migrate_if_stale KEY OLD NEW)。
@@ -242,12 +254,6 @@ if [ -f "$BASE/saas.env" ]; then
     exit 1
   fi
 
-  # 死键清理:SAAS_CORS_ALLOWED_ORIGINS 不在 .env.production 契约中 (nextjs 容器无 CORS reader)
-  if grep -q '^SAAS_CORS_ALLOWED_ORIGINS=' "$BASE/saas.env"; then
-    echo "→ drop dead key SAAS_CORS_ALLOWED_ORIGINS from $BASE/saas.env"
-    umask 077
-    sed -i '/^SAAS_CORS_ALLOWED_ORIGINS=/d' "$BASE/saas.env"
-  fi
 fi
 
 echo "→ image: $IMAGE"
