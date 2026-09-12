@@ -233,7 +233,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
               onValueChange={(code) => {
                 const a = allApps.find((x) => x.clientId === code);
                 if (a) {
-                  setSelectedApp({ id: a.id, name: a.clientName });
+                  setSelectedApp({ id: a.clientId, name: a.clientName });
                   router.push(`/admin/clients/${a.clientId}/menus`);
                 }
               }}

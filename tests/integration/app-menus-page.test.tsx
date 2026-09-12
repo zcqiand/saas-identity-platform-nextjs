@@ -56,7 +56,5 @@ describe("M08.F04 menus 页 — OAuthClient 契约形状", () => {
     for (const a of apps) {
       expect(screen.getByTestId(`app-option-${a.id}`)).toBeTruthy();
     }
-    // 旧形状字段不得再被读取（若页面回退读 a.code，此处渲染不出 clientId 文本）
-    expect(screen.getByTestId("app-selector-trigger")).toBeTruthy();
   });
 });

@@ -138,7 +138,7 @@ export default function AppListPage() {
     if (!editTarget) return;
     try {
       await updateMut.mutateAsync({
-        clientId: editTarget.id,
+        clientId: editTarget.clientId,
         data: {
           clientName: values.clientName as string,
           icon: (values.icon as string) || undefined,
@@ -165,7 +165,7 @@ export default function AppListPage() {
   async function toggleStatus(a: AppRow) {
     try {
       await statusMut.mutateAsync({
-        clientId: a.id,
+        clientId: a.clientId,
         data: { status: statusIsActive(a.status) ? 0 : 1 },
       } as never);
       list.refetch();
@@ -178,7 +178,7 @@ export default function AppListPage() {
   async function confirmDelete() {
     if (!deleteTarget) return;
     try {
-      await deleteMut.mutateAsync({ clientId: deleteTarget.id });
+      await deleteMut.mutateAsync({ clientId: deleteTarget.clientId });
       setDeleteTarget(null);
       list.refetch();
       toast.success("应用已删除");
