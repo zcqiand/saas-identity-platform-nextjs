@@ -105,8 +105,11 @@ async function insertAll(table, columns, rows) {
   }
 }
 
-// msw status 字符串 → 新 schema smallint（家族约定 2026-09-10：1=active, 2=invited, 0=disabled）
-const statusToSmallint = (s) => (s === "active" ? 1 : s === "invited" ? 2 : 0);
+// status → smallint：oauth_client.json 已契约化为 number（1=active, 0=disabled, 2=suspended）
+// 直接透传；tenant/user 等仍是 msw 字符串（ADR-0032 四值：1=active, 2=invited, 3=suspended, 0=disabled；
+// 与 src/lib/member-roles.ts MEMBER_STATUS_TO_SMALLINT 同源）
+const statusToSmallint = (s) =>
+  typeof s === "number" ? s : s === "active" ? 1 : s === "invited" ? 2 : s === "suspended" ? 3 : 0;
 // msw menu type → sys_menu.type smallint（与 nextjs/aspnetcore 一致：group=1 page=2）
 const menuTypeToSmallint = (t) => (t === "directory" ? 1 : t === "menu" ? 2 : 3);
 
@@ -154,7 +157,7 @@ try {
   );
   console.log(`[seed-db] tenant: ${tenants.length}`);
 
-  // 2. oauth_client（client_id 列 = app code 字符串；clientSecret 透传 fixture）
+  // 2. oauth_client（client_id 列 = clientId，业务 code 形如 "lab-management"；clientSecret 透传 fixture）
   await insertAll(
     "oauth_client",
     [
@@ -164,7 +167,7 @@ try {
       "auto_approve", "status", "created_at", "updated_at",
     ],
     apps.map((a) => [
-      resolveId(a.id), a.code, a.clientSecret, a.name,
+      resolveId(a.id), a.clientId, a.clientSecret, a.clientName,
       (a.grantTypes ?? []).join(","), (a.redirectUris ?? []).join(","),
       (a.scopes ?? []).join(","),
       7200, 2592000,
@@ -233,8 +236,8 @@ try {
   );
   console.log(`[seed-db] tenant_application: ${tenants.length}`);
 
-  // 7. sys_menu（parentId null→零 UUID；sys_menu.client_id = app code 字符串）
-  const appCodeById = new Map(apps.map((a) => [a.id, a.code]));
+  // 7. sys_menu（parentId null→零 UUID；sys_menu.client_id = app clientId，业务 code 形）
+  const appCodeById = new Map(apps.map((a) => [a.id, a.clientId]));
   await insertAll(
     "sys_menu",
     [

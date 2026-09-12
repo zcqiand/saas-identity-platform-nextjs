@@ -11,8 +11,8 @@ console.log("apps.length=", apps.length);
 console.log("menus.length=", menus.length);
 console.log("roleMenuGrants.length=", roleMenuGrants.length);
 
-const app = apps.find((a) => a.code === "lab-management");
-console.log("found app:", app ? { id: app.id, code: app.code, status: app.status } : null);
+const app = apps.find((a) => a.clientId === "lab-management");
+console.log("found app:", app ? { id: app.id, clientId: app.clientId, status: app.status } : null);
 
 // 2026-08-29：种子 ID 收敛为 canonical UUID（shared V016），
 // 改用 msw 派生的 ROLE_IDS，不再拼字符串。
