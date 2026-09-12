@@ -8,12 +8,14 @@
 //
 // 2026-09-09 schema pivot：users → sysUser（无 tenantId/displayName 列），
 // tenantMemberships → tenantMember（无 roleIds/joinedAt 列）。
+// 2026-09-12 四方对齐：joinedAt 统一 toISOString（drizzle mode:'string' 裸吐 PG 原始串）。
 
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
 import { sysUser, tenantMember } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
+import { getMemberRoleIdsBatch, smallintToMemberStatus } from "@/lib/member-roles";
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
@@ -60,17 +62,29 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     const currentTenantId = claims.tenant_id ?? memberships[0]?.tenantId ?? undefined;
 
+    // roleIds 真值链：tenant_member_role ⨝ sys_role（roleIds 挂 tenant_member.id，
+    // sys_role 按 tenant 分域 —— 按租户分组批量查，防 N+1）
+    const byTenant = new Map<string, string[]>();
+    for (const m of memberships) {
+      const ids = byTenant.get(m.tenantId) ?? [];
+      ids.push(m.id);
+      byTenant.set(m.tenantId, ids);
+    }
+    const roleMapByTenant = new Map<string, Map<string, string[]>>();
+    for (const [tid, memberIds] of byTenant) {
+      roleMapByTenant.set(tid, await getMemberRoleIdsBatch(memberIds, tid));
+    }
+
     return NextResponse.json({
       id: user.id,
-      email: user.email,
-      displayName: user.mobile ?? undefined, // mobile 字段在 sysUser 是显示名
+      email: user.email ?? undefined,
       memberships: memberships.map((m) => ({
         id: m.id,
         userId: m.userId,
         tenantId: m.tenantId,
-        roleIds: [] as string[],
-        status: m.status === 1 ? "active" : "disabled",
-        joinedAt: m.createdAt,
+        roleIds: roleMapByTenant.get(m.tenantId)?.get(m.id) ?? [],
+        status: smallintToMemberStatus(m.status),
+        joinedAt: new Date(m.createdAt).toISOString(),
       })),
       currentTenantId,
     });

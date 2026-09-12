@@ -36,10 +36,10 @@ function statusFromSmallint(n: number): "active" | "disabled" {
   return n === 1 ? "active" : "disabled";
 }
 
-function typeFromSmallint(n: number): "group" | "page" | "action" {
-  if (n === 1) return "group";
-  if (n === 2) return "page";
-  return "action";
+function typeFromSmallint(n: number): "directory" | "menu" | "button" {
+  if (n === 1) return "directory";
+  if (n === 2) return "menu";
+  return "button";
 }
 
 export async function PUT(

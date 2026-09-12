@@ -49,7 +49,9 @@ export async function GET(
       .where(eq(sysRole.tenantId, tenantId))
       .limit(pageSize)
       .offset(page * pageSize)
-      .orderBy(sql`created_at DESC`);
+      // 2026-09-12 四方 live 修复（roles list 排序）：msw oracle 是插入序（created_at ASC），
+      // 此前 DESC 让 normalize 后第 5 行起与 oracle 分叉；显式 asc, id asc 对齐。
+      .orderBy(sql`created_at asc, id asc`);
     return NextResponse.json({
       items: items.map((r) => ({
         id: r.id,

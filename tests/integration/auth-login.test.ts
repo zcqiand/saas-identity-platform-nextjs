@@ -45,16 +45,25 @@ describe("M01.F04.I03 + M01.F04.I02 /api/v1/auth/login", () => {
                 id: "user-id-1",
                 status: 1,
                 password: "plain:secret-pw",
+                // 2026-09-12 四方对齐：login 出参时间戳走 toISOString，mock 行需带时间列
+                createdAt: "2026-01-01T00:00:00Z",
+                updatedAt: "2026-01-01T00:00:00Z",
               },
             ]),
         }),
       }),
     });
-    // 2) tenantMember 查询（按 userId + status=1）
+    // 2) tenantMember 查询（按 userId + status=1）。
+    // 2026-09-12 契约测试修复：解析「当前租户」必须确定性排序
+    // （tenant.created_at ASC + id tie-break），mock 桩同步 innerJoin+orderBy 链。
     dbMock.select.mockReturnValueOnce({
       from: () => ({
-        where: () => ({
-          limit: () => Promise.resolve([{ tenantId: tenantUuid }]),
+        innerJoin: () => ({
+          where: () => ({
+            orderBy: () => ({
+              limit: () => Promise.resolve([{ tenantId: tenantUuid }]),
+            }),
+          }),
         }),
       }),
     });
@@ -63,6 +72,30 @@ describe("M01.F04.I03 + M01.F04.I02 /api/v1/auth/login", () => {
       from: () => ({
         where: () => ({
           limit: () => Promise.resolve([{ id: tenantUuid, status: 1 }]),
+        }),
+      }),
+    });
+    // 4) availableTenants：tenantMember ⨝ tenant_application（ADR-0032 扁平行）
+    dbMock.select.mockReturnValueOnce({
+      from: () => ({
+        innerJoin: () => ({
+          where: () =>
+            Promise.resolve([
+              {
+                id: "member-id-1",
+                userId: "user-id-1",
+                tenantId: tenantUuid,
+                joinedAt: "2026-01-01T00:00:00Z",
+              },
+            ]),
+        }),
+      }),
+    });
+    // 5) roleIds 真值链：tenant_member_role ⨝ sys_role
+    dbMock.select.mockReturnValueOnce({
+      from: () => ({
+        innerJoin: () => ({
+          where: () => Promise.resolve([]),
         }),
       }),
     });
@@ -79,6 +112,19 @@ describe("M01.F04.I03 + M01.F04.I02 /api/v1/auth/login", () => {
     expect(json.expiresIn).toBe(3600);
     expect(json.userId).toBe("user-id-1");
     expect(json.currentTenantId).toBe(tenantUuid);
+    // ADR-0032 LoginResponse required：user / availableTenants / clientId
+    expect(json.user?.id).toBe("user-id-1");
+    expect(Array.isArray(json.availableTenants)).toBe(true);
+    expect(json.availableTenants?.[0]).toMatchObject({
+      id: "member-id-1",
+      userId: "user-id-1",
+      tenantId: tenantUuid,
+      roleIds: [],
+      status: "active",
+      // toISOString 序列化：毫秒精度 + Z 后缀（msw oracle 同形）
+      joinedAt: "2026-01-01T00:00:00.000Z",
+    });
+    expect(json.clientId).toBe("");
   });
 
   it("M01.F04.I03 returns 401 UNAUTHORIZED for wrong password", async () => {

@@ -10,6 +10,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { tenantMember, sysUser } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
+import { getMemberRoleIds, MEMBER_STATUS_TO_SMALLINT, smallintToMemberStatus } from "@/lib/member-roles";
 
 const Body = z.object({
   status: z.enum(["active", "invited", "suspended", "disabled"]),
@@ -29,7 +30,8 @@ export async function PATCH(
         { status: 400 },
       );
     }
-    const statusNum = parsed.data.status === "active" || parsed.data.status === "invited" ? 1 : 0;
+    // seed 约定（ADR-0032）：1=active 2=invited 3=suspended 0=disabled
+    const statusNum = MEMBER_STATUS_TO_SMALLINT[parsed.data.status];
     const updated = await db
       .update(tenantMember)
       .set({ status: statusNum, updatedAt: new Date().toISOString() })
@@ -60,9 +62,10 @@ export async function PATCH(
       tenantId,
       username: u.username,
       email: u.email,
-      displayName: u.mobile ?? undefined,
-      status: parsed.data.status,
-      roleIds: [] as string[],
+      // 回显 DB 真值（写进去的 smallint 换回字符串），不是请求字面
+      status: smallintToMemberStatus(m.status),
+      // m.id 是 tenant_member.id；roleIds 真值链 tenant_member_role ⨝ sys_role
+      roleIds: await getMemberRoleIds(m.id, tenantId),
       createdAt: u.createdAt,
       updatedAt: u.updatedAt,
     });

@@ -88,10 +88,10 @@ export interface CreateTenantRequest {
 }
 
 export interface CurrentUser {
-  user: SysUser;
-  memberships: TenantMember[];
+  id: string;
+  email?: string;
+  memberships: TenantMembership[];
   currentTenantId?: string;
-  clientId?: string;
 }
 
 export interface EffectiveMenuNode {
@@ -139,7 +139,9 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   user: SysUser;
-  availableTenants: TenantMember[];
+  availableTenants: TenantMembership[];
+  userId: string;
+  currentTenantId?: string;
   accessToken?: string;
   refreshToken?: string;
   tokenType?: string;
@@ -203,7 +205,6 @@ export interface SwitchTenantResponse {
   refreshToken: string;
   expiresAt: string;
   tenantId: string;
-  clientId: string;
 }
 
 export interface SysMenu {
@@ -321,13 +322,39 @@ export type TenantMemberStatus = typeof TenantMemberStatus[keyof typeof TenantMe
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const TenantMemberStatus = {
   active: 'active',
+  invited: 'invited',
+  suspended: 'suspended',
   disabled: 'disabled',
 } as const;
+
+export interface TenantMemberUserView {
+  id: string;
+  tenantId: string;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   */
+  username: string;
+  email?: string;
+  status: TenantMemberStatus;
+  roleIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface TenantMemberView {
   member: TenantMember;
   user: SysUser;
   roles: string[];
+}
+
+export interface TenantMembership {
+  id: string;
+  userId: string;
+  tenantId: string;
+  roleIds: string[];
+  status: TenantMemberStatus;
+  joinedAt: string;
 }
 
 export type TenantStatus = typeof TenantStatus[keyof typeof TenantStatus];
@@ -493,7 +520,7 @@ status?: TenantMemberStatus;
 };
 
 export type TenantMembersListTenantUsers200 = {
-  items: TenantMemberView[];
+  items: TenantMemberUserView[];
   page: number;
   pageSize: number;
   total: number;

@@ -18,9 +18,10 @@ const UpdateMenuBody = z.object({
   title: z.string().min(2).max(64).optional(),
   path: z.string().optional().nullable(),
   icon: z.string().optional().nullable(),
-  type: z.enum(["group", "page", "action"]).optional(),
+  // SSOT SysMenuType（shared openapi）：directory | menu | button
+  type: z.enum(["directory", "menu", "button"]).optional(),
   sortOrder: z.number().int().optional(),
-  status: z.enum(["active", "disabled"]).optional(),
+  status: z.union([z.literal(0), z.literal(1), z.enum(["active", "disabled"])]).optional(),
 });
 
 const menuFields = {
@@ -38,20 +39,22 @@ const menuFields = {
   createdAt: sysMenu.createdAt,
 };
 
-function typeToSmallint(t: "group" | "page" | "action"): number {
-  if (t === "group") return 1;
-  if (t === "page") return 2;
+function typeToSmallint(t: "directory" | "menu" | "button"): number {
+  if (t === "directory") return 1;
+  if (t === "menu") return 2;
   return 3;
 }
 
-function statusFromSmallint(n: number): "active" | "disabled" {
-  return n === 1 ? "active" : "disabled";
+// status 落库归一化：数字/字符串别名统一转 smallint；响应透传数字（契约对齐 msw oracle）
+function statusToSmallint(s: number | "active" | "disabled"): number {
+  if (typeof s === "number") return s;
+  return s === "active" ? 1 : 0;
 }
 
-function typeFromSmallint(n: number): "group" | "page" | "action" {
-  if (n === 1) return "group";
-  if (n === 2) return "page";
-  return "action";
+function typeFromSmallint(n: number): "directory" | "menu" | "button" {
+  if (n === 1) return "directory";
+  if (n === 2) return "menu";
+  return "button";
 }
 
 async function getMenuById(id: string) {
@@ -64,7 +67,7 @@ function toDto(m: Awaited<ReturnType<typeof getMenuById>>) {
   return {
     ...m,
     type: typeFromSmallint(m.type),
-    status: statusFromSmallint(m.status),
+    status: m.status,
   };
 }
 
@@ -119,7 +122,7 @@ export async function PATCH(
     if (icon !== undefined) patch.icon = icon ?? null;
     if (type !== undefined) patch.type = typeToSmallint(type);
     if (sortOrder !== undefined) patch.sortOrder = sortOrder;
-    if (status !== undefined) patch.status = status === "active" ? 1 : 0;
+    if (status !== undefined) patch.status = statusToSmallint(status);
     if (Object.keys(patch).length === 0) {
       return NextResponse.json(toDto(existing));
     }

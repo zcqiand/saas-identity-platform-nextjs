@@ -11,7 +11,8 @@ import { oauthClient } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const StatusBody = z.object({
-  status: z.enum(["active", "disabled"]),
+  // 契约/msw oracle 的 status 是 smallint 数字（0/1）；字符串别名兼容落库归一化
+  status: z.union([z.literal(0), z.literal(1), z.enum(["active", "disabled"])]),
 });
 
 const appFields = {
@@ -29,8 +30,10 @@ const appFields = {
   updatedAt: oauthClient.updatedAt,
 };
 
-function statusFromSmallint(n: number): "active" | "disabled" {
-  return n === 1 ? "active" : "disabled";
+// status 落库归一化：数字/字符串别名统一转 smallint；响应回传数字
+function statusToSmallint(s: number | "active" | "disabled"): number {
+  if (typeof s === "number") return s;
+  return s === "active" ? 1 : 0;
 }
 
 export async function PATCH(
@@ -49,7 +52,7 @@ export async function PATCH(
     }
     const [updated] = await db
       .update(oauthClient)
-      .set({ status: parsed.data.status === "active" ? 1 : 0, updatedAt: new Date().toISOString() })
+      .set({ status: statusToSmallint(parsed.data.status), updatedAt: new Date().toISOString() })
       .where(eq(oauthClient.clientId, clientId))
       .returning(appFields);
     if (!updated) {
@@ -58,7 +61,8 @@ export async function PATCH(
         { status: 404 },
       );
     }
-    return NextResponse.json({ ...updated, status: statusFromSmallint(updated.status) });
+    // status 透传 smallint 数字（契约对齐 msw oracle）
+    return NextResponse.json(updated);
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;

@@ -9,8 +9,15 @@
 // 流程：
 // 1. JWT 必填 (401) -> claims.sub = sys_user.id
 // 2. tenant_member 拉用户所有 active membership
-// 3. tenant_member_role → sys_role → sys_role_menu → menuIds
-// 4. 遍历所有 active oauthClient，每个 client 建树: 一级节点始终可见, 子节点须在授权集内
+// 3. tenant_member_role → sys_role → sys_role_menu → menuIds（授权集）
+// 4. 遍历所有 active oauthClient，授权集 ∪ 祖先闭包建树（aspnetcore oracle 同构）：
+//    未授权祖先作为容器进树，未授权菜单本身不出现
+//
+// 2026-09-12 四方对齐修复（I05 crm 组空数组）：
+// - PG 里根菜单 parent_id = 全零哨兵 UUID（非 NULL，schema default），旧代码只把
+//   parentId === null 当根 → 全部节点成孤儿 → 每个 app 都输出 []。
+// - 出参根节点 parentId 归一为 null（msw oracle 形态；normalize null≡缺失）。
+// - type smallint(1/2/3) → "directory"/"menu"/"button"（msw/aspnetcore 同码表）。
 
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and, asc, inArray } from "drizzle-orm";
@@ -23,13 +30,22 @@ type MenuRow = {
   clientId: string;
   parentId: string | null;
   title: string;
-  type: number;
+  type: "directory" | "menu" | "button";
   path: string | null;
   icon: string | null;
   sortOrder: number;
 };
 
 type EffectiveMenuNode = MenuRow & { children: EffectiveMenuNode[] };
+
+// PG 根菜单的 parent_id 哨兵（sys_menu.parent_id notNull default 全零 UUID）
+const ROOT_PARENT_ID = "00000000-0000-0000-0000-000000000000";
+
+function typeFromSmallint(n: number): "directory" | "menu" | "button" {
+  if (n === 1) return "directory";
+  if (n === 2) return "menu";
+  return "button";
+}
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
@@ -87,32 +103,48 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       .where(eq(sysMenu.status, 1))
       .orderBy(asc(sysMenu.sortOrder), asc(sysMenu.title));
 
+    // 5. 授权集 ∪ 祖先闭包（aspnetcore MeController 同构）：从授权菜单出发，
+    //    沿 parent_id 向上收未授权祖先作容器；未授权菜单本身不进树。
+    const byId = new Map(allRows.map((m) => [m.id, m]));
+    const included = new Set<string>();
+    for (const id of allowed) {
+      let cur = byId.get(id);
+      while (cur && !included.has(cur.id)) {
+        included.add(cur.id);
+        cur =
+          cur.parentId && cur.parentId !== ROOT_PARENT_ID
+            ? byId.get(cur.parentId)
+            : undefined;
+      }
+    }
+
     const result: Record<string, EffectiveMenuNode[]> = {};
     for (const c of activeClients) {
       const byParent = new Map<string | null, MenuRow[]>();
       for (const m of allRows) {
-        if (m.clientId !== c.clientId) continue;
-        const key = m.parentId ?? null;
+        if (m.clientId !== c.clientId || !included.has(m.id)) continue;
+        // 哨兵 parent ≡ 根 → 归一为 null（msw oracle 形态）
+        const key = !m.parentId || m.parentId === ROOT_PARENT_ID ? null : m.parentId;
         if (!byParent.has(key)) byParent.set(key, []);
         byParent.get(key)!.push({
           id: m.id,
           clientId: m.clientId,
-          parentId: m.parentId ?? null,
+          parentId: m.parentId === ROOT_PARENT_ID ? null : m.parentId,
           title: m.title,
-          type: m.type,
+          type: typeFromSmallint(m.type),
           path: m.path ?? null,
           icon: m.icon ?? null,
           sortOrder: m.sortOrder,
         });
       }
-      const build = (parentId: string | null): EffectiveMenuNode[] =>
-        (byParent.get(parentId) ?? [])
-          .filter((m) => parentId === null || allowed.has(m.id))
-          .map((m) => ({ ...m, children: build(m.id) }));
-      if (
-        allowed.size > 0 &&
-        allRows.some((m) => m.clientId === c.clientId && allowed.has(m.id))
-      ) {
+      // 只有该 app 下确有可见根节点才占位（授权集为空 → 无任何 app 分组）
+      const roots = byParent.get(null) ?? [];
+      if (roots.length > 0) {
+        const build = (parentId: string | null): EffectiveMenuNode[] =>
+          (byParent.get(parentId) ?? []).map((m) => ({
+            ...m,
+            children: build(m.id),
+          }));
         result[c.clientId] = build(null);
       }
     }

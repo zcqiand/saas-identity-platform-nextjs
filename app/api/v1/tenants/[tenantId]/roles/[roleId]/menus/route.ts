@@ -10,7 +10,7 @@
 // 旧 role_menu_grants 有 tenantId 列，新 sys_role_menu 只有 (roleId, menuId) PK。
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, notInArray } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { sysRole, sysRoleMenu } from "@/db/schema";
@@ -80,13 +80,24 @@ export async function PUT(
         { status: 400 },
       );
     }
-    // 整批替换：先删旧 roleId 关联的所有菜单，再插新
-    await db.delete(sysRoleMenu).where(eq(sysRoleMenu.roleId, roleId));
-    if (parsed.data.menuIds.length > 0) {
-      await db
-        .insert(sysRoleMenu)
-        .values(parsed.data.menuIds.map((menuId) => ({ roleId, menuId })));
-    }
+    // 整批替换改为单事务差量写（2026-09-12 并发 500 修复）：
+    // 以前 delete 全量 + insert 两条独立 autocommit，四方并发 PUT 同一 role 会撞
+    // 23505/deadlock。事务内 delete(差量) + insert(onConflictDoNothing) 幂等可并发。
+    await db.transaction(async (tx) => {
+      if (parsed.data.menuIds.length > 0) {
+        await tx
+          .delete(sysRoleMenu)
+          .where(
+            and(eq(sysRoleMenu.roleId, roleId), notInArray(sysRoleMenu.menuId, parsed.data.menuIds)),
+          );
+        await tx
+          .insert(sysRoleMenu)
+          .values(parsed.data.menuIds.map((menuId) => ({ roleId, menuId })))
+          .onConflictDoNothing();
+      } else {
+        await tx.delete(sysRoleMenu).where(eq(sysRoleMenu.roleId, roleId));
+      }
+    });
     return NextResponse.json({
       roleId,
       tenantId,

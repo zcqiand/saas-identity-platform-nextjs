@@ -15,11 +15,12 @@
 // - 列表改为：找 tenantMember + LEFT JOIN sysUser
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { sysUser, tenantMember } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
+import { getMemberRoleIdsBatch, MEMBER_STATUS_TO_SMALLINT, smallintToMemberStatus } from "@/lib/member-roles";
 
 const PAGE_DEFAULT = 20;
 const PAGE_MAX = 100;
@@ -49,13 +50,21 @@ export async function GET(
     );
     const statusParam = url.searchParams.get("status");
 
-    // tenantMember 限定此 tenant，status 过滤
-    const memberWhere = statusParam
-      ? and(
-          eq(tenantMember.tenantId, tenantId),
-          eq(tenantMember.status, statusParam === "active" ? 1 : 0),
-        )
-      : eq(tenantMember.tenantId, tenantId);
+    // tenantMember 限定此 tenant，status 过滤（4 值契约，未知值 → 400）
+    let memberWhere: SQL = eq(tenantMember.tenantId, tenantId);
+    if (statusParam) {
+      const statusNum =
+        MEMBER_STATUS_TO_SMALLINT[statusParam as keyof typeof MEMBER_STATUS_TO_SMALLINT];
+      if (statusNum === undefined) {
+        return NextResponse.json(
+          { code: "BAD_REQUEST", message: `Invalid status: ${statusParam}` },
+          { status: 400 },
+        );
+      }
+      memberWhere =
+        and(eq(tenantMember.tenantId, tenantId), eq(tenantMember.status, statusNum)) ??
+        memberWhere;
+    }
 
     const totalResult = await db
       .select({ count: sql<number>`count(*)::int` })
@@ -65,6 +74,7 @@ export async function GET(
 
     const items = await db
       .select({
+        memberId: tenantMember.id,
         id: sysUser.id,
         username: sysUser.username,
         email: sysUser.email,
@@ -81,15 +91,19 @@ export async function GET(
       .offset(page * pageSize)
       .orderBy(sql`created_at DESC`);
 
+    // roleIds 真值链：tenant_member_role ⨝ sys_role（按 sys_role.tenant_id 过滤），批量防 N+1
+    const roleMap = await getMemberRoleIdsBatch(
+      items.map((u) => u.memberId),
+      tenantId,
+    );
     return NextResponse.json({
       items: items.map((u) => ({
         id: u.id,
         tenantId,
         username: u.username,
         email: u.email,
-        displayName: u.mobile ?? undefined,
-        status: u.memberStatus === 1 ? "active" : "disabled",
-        roleIds: [] as string[],
+        status: smallintToMemberStatus(u.memberStatus),
+        roleIds: roleMap.get(u.memberId) ?? [],
         createdAt: u.createdAt,
         updatedAt: u.updatedAt,
       })),
@@ -163,7 +177,6 @@ export async function POST(
         tenantId,
         username: parsed.data.username,
         email: parsed.data.email,
-        displayName: parsed.data.mobile ?? undefined,
         status: "active",
         roleIds: [] as string[],
         createdAt: nowIso,

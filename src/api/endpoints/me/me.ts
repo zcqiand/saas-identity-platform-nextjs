@@ -38,7 +38,7 @@ import type {
   MeListMyTenantsParams,
   MeSwitchTenantParams,
   SwitchTenantResponse,
-  TenantMember
+  TenantMembership
 } from '../title.schemas';
 
 
@@ -217,7 +217,7 @@ export function useMeGetMyMenus<TData = Awaited<ReturnType<typeof meGetMyMenus>>
 
 export const meListMyTenants = (
     params?: MeListMyTenantsParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<TenantMember[]>> => {
+ ): Promise<AxiosResponse<TenantMembership[]>> => {
     
     
     return axios.get(

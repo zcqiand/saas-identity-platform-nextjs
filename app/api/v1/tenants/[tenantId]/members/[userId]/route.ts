@@ -15,11 +15,13 @@ import { z } from "zod";
 import { db } from "@/db";
 import { sysUser, tenantMember } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
+import { getMemberRoleIds, MEMBER_STATUS_TO_SMALLINT, smallintToMemberStatus } from "@/lib/member-roles";
 
 const UpdateUserBody = z.object({
   email: z.string().email().optional(),
   mobile: z.string().optional(),
-  status: z.enum(["active", "disabled"]).optional(),
+  // ADR-0032：TenantMemberStatus 4 值
+  status: z.enum(["active", "invited", "suspended", "disabled"]).optional(),
 });
 
 async function findMember(tenantId: string, userId: string) {
@@ -42,15 +44,15 @@ async function findMember(tenantId: string, userId: string) {
   return rows[0];
 }
 
-function toDto(u: NonNullable<Awaited<ReturnType<typeof findMember>>>) {
+// roleIds 真值链：tenant_member_role ⨝ sys_role（u.id 是 tenant_member.id）
+function toDto(u: NonNullable<Awaited<ReturnType<typeof findMember>>>, roleIds: string[]) {
   return {
     id: u.userId,
     tenantId: u.tenantId,
     username: u.username,
     email: u.email,
-    displayName: u.mobile ?? undefined,
-    status: u.memberStatus === 1 ? "active" : "disabled",
-    roleIds: [] as string[],
+    status: smallintToMemberStatus(u.memberStatus),
+    roleIds,
     createdAt: u.createdAt,
     updatedAt: u.updatedAt,
   };
@@ -67,7 +69,7 @@ export async function GET(
     if (!u) {
       return NextResponse.json({ code: "NOT_FOUND", message: "User not found" }, { status: 404 });
     }
-    return NextResponse.json(toDto(u));
+    return NextResponse.json(toDto(u, await getMemberRoleIds(u.id, tenantId)));
   } catch (e) {
     const g = tenantGuardErrorToNextResponse(e);
     if (g) return g;
@@ -100,7 +102,10 @@ export async function PATCH(
     if (parsed.data.status !== undefined) {
       await db
         .update(tenantMember)
-        .set({ status: parsed.data.status === "active" ? 1 : 0, updatedAt: new Date().toISOString() })
+        .set({
+          status: MEMBER_STATUS_TO_SMALLINT[parsed.data.status],
+          updatedAt: new Date().toISOString(),
+        })
         .where(
           and(eq(tenantMember.tenantId, tenantId), eq(tenantMember.userId, userId)),
         );
@@ -109,7 +114,7 @@ export async function PATCH(
     if (!after) {
       return NextResponse.json({ code: "NOT_FOUND", message: "User not found after update" }, { status: 404 });
     }
-    return NextResponse.json(toDto(after));
+    return NextResponse.json(toDto(after, await getMemberRoleIds(after.id, tenantId)));
   } catch (e) {
     const g = tenantGuardErrorToNextResponse(e);
     if (g) return g;

@@ -20,9 +20,10 @@ const CreateMenuBody = z.object({
   title: z.string().min(2).max(64),
   path: z.string().optional().nullable(),
   icon: z.string().optional().nullable(),
-  type: z.enum(["group", "page", "action"]).optional(),
+  // SSOT SysMenuType（shared openapi）：directory | menu | button
+  type: z.enum(["directory", "menu", "button"]).optional(),
   sortOrder: z.number().int().optional(),
-  status: z.enum(["active", "disabled"]).optional(),
+  status: z.union([z.literal(0), z.literal(1), z.enum(["active", "disabled"])]).optional(),
 });
 
 const menuFields = {
@@ -40,20 +41,22 @@ const menuFields = {
   createdAt: sysMenu.createdAt,
 };
 
-function typeToSmallint(t: "group" | "page" | "action" | undefined): number {
-  if (t === "group") return 1;
-  if (t === "page") return 2;
-  return 3; // action 或缺省
+function typeToSmallint(t: "directory" | "menu" | "button" | undefined): number {
+  if (t === "directory") return 1;
+  if (t === "menu") return 2;
+  return 3; // button 或缺省
 }
 
-function statusFromSmallint(n: number): "active" | "disabled" {
-  return n === 1 ? "active" : "disabled";
+// status 落库归一化：数字/字符串别名统一转 smallint；响应透传数字（契约对齐 msw oracle）
+function statusToSmallint(s: number | "active" | "disabled"): number {
+  if (typeof s === "number") return s;
+  return s === "active" ? 1 : 0;
 }
 
-function typeFromSmallint(n: number): "group" | "page" | "action" {
-  if (n === 1) return "group";
-  if (n === 2) return "page";
-  return "action";
+function typeFromSmallint(n: number): "directory" | "menu" | "button" {
+  if (n === 1) return "directory";
+  if (n === 2) return "menu";
+  return "button";
 }
 
 export async function GET(
@@ -81,7 +84,7 @@ export async function GET(
       items.map((m) => ({
         ...m,
         type: typeFromSmallint(m.type),
-        status: statusFromSmallint(m.status),
+        status: m.status,
       })),
     );
   } catch (e) {
@@ -123,7 +126,7 @@ export async function POST(
         icon: b.icon ?? null,
         type: typeToSmallint(b.type),
         sortOrder: b.sortOrder ?? 0,
-        status: b.status === "disabled" ? 0 : 1,
+        status: b.status === undefined ? 1 : statusToSmallint(b.status),
       })
       .returning(menuFields);
     if (!created) {
@@ -135,7 +138,7 @@ export async function POST(
     return NextResponse.json({
       ...created,
       type: typeFromSmallint(created.type),
-      status: statusFromSmallint(created.status),
+      status: created.status,
     });
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);

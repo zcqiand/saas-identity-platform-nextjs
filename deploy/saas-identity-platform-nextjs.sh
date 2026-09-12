@@ -178,11 +178,18 @@ if ! grep -q '^NEXT_PUBLIC_API_MODE=' "$BASE/saas.env"; then
 fi
 
 # 2026-09-11 B 方案 (ADR-0030 REQ-2026-001): 补 NEXT_PUBLIC_LOGIN_CLIENT_ID
-# (登录页 clientId 兜底 = saas-console 自身应用 …1114；缺了 prod 直接打开登录页会被 clientId 门拒绝)
+# (登录页 clientId 兜底 = saas-console 自身应用；缺了 prod 直接打开登录页会被 clientId 门拒绝)
+# 2026-09-12 值修正：老值 …1114 是 oauth_client.id (UUID)，不是 client_id 字符串；
+# springboot login 把 clientId 写 oauth_*_token.client_id (FK→oauth_client.client_id)，
+# UUID 值 → 23503 → 空 401「用户名或密码错误」。migrate_if_stale 锚定整行换掉老值。
+if grep -q '^NEXT_PUBLIC_LOGIN_CLIENT_ID=11111111-1111-1111-1111-111111111114$' "$BASE/saas.env" 2>/dev/null; then
+  echo "→ migrate NEXT_PUBLIC_LOGIN_CLIENT_ID: …1114 (id) → saas-console (client_id)"
+  sed -i 's|^NEXT_PUBLIC_LOGIN_CLIENT_ID=11111111-1111-1111-1111-111111111114$|NEXT_PUBLIC_LOGIN_CLIENT_ID=saas-console|' "$BASE/saas.env"
+fi
 if ! grep -q '^NEXT_PUBLIC_LOGIN_CLIENT_ID=' "$BASE/saas.env"; then
-  echo "→ append NEXT_PUBLIC_LOGIN_CLIENT_ID=11111111-1111-1111-1111-111111111114"
+  echo "→ append NEXT_PUBLIC_LOGIN_CLIENT_ID=saas-console"
   umask 077
-  printf 'NEXT_PUBLIC_LOGIN_CLIENT_ID=11111111-1111-1111-1111-111111111114\n' >> "$BASE/saas.env"
+  printf 'NEXT_PUBLIC_LOGIN_CLIENT_ID=saas-console\n' >> "$BASE/saas.env"
 fi
 
 # 2026-09-09 key 对齐 (L0.5 env 一致性): 老 env-file 逐 key append-if-missing 到 .env.production 全集

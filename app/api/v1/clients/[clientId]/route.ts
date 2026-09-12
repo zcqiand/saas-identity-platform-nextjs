@@ -19,7 +19,6 @@ export async function GET(
   const { clientId } = await params;
   const rows = await db
     .select({
-      id: oauthClient.id,
       clientId: oauthClient.clientId,
       clientName: oauthClient.clientName,
       status: oauthClient.status,
@@ -34,10 +33,11 @@ export async function GET(
       { status: 404 },
     );
   }
+  // 2026-09-12 SSOT 对齐：返 OAuthClientPublicInfo {clientId, clientName, status:int32}
+  // （msw oracle handlers-extra.ts:1278 同构；status 是 smallint 原样透传，非 "active" 字符串）
   return NextResponse.json({
-    id: app.id,
     clientId: app.clientId,
-    name: app.clientName,
-    status: "active",
+    clientName: app.clientName,
+    status: app.status,
   });
 }

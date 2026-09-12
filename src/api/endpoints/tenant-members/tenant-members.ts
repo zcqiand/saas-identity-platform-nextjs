@@ -34,6 +34,7 @@ import type {
   CreateSysUserRequest,
   ErrorResponse,
   SetTenantMemberRolesRequest,
+  TenantMemberUserView,
   TenantMemberView,
   TenantMembersChangeTenantUserStatusBody,
   TenantMembersInviteTenantUserBody,
@@ -142,7 +143,7 @@ export function useTenantMembersListTenantUsers<TData = Awaited<ReturnType<typeo
 export const tenantMembersCreateTenantUser = (
     tenantId: string,
     createSysUserRequest: CreateSysUserRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<TenantMemberView>> => {
+ ): Promise<AxiosResponse<TenantMemberUserView>> => {
     
     
     return axios.post(
@@ -254,7 +255,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export const tenantMembersGetTenantUser = (
     tenantId: string,
     userId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<TenantMemberView>> => {
+ ): Promise<AxiosResponse<TenantMemberUserView>> => {
     
     
     return axios.get(
@@ -346,7 +347,7 @@ export const tenantMembersUpdateTenantUser = (
     tenantId: string,
     userId: string,
     updateSysUserRequest: UpdateSysUserRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<TenantMemberView>> => {
+ ): Promise<AxiosResponse<TenantMemberUserView>> => {
     
     
     return axios.patch(
@@ -458,7 +459,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     tenantId: string,
     userId: string,
     setTenantMemberRolesRequest: SetTenantMemberRolesRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<TenantMemberView>> => {
+ ): Promise<AxiosResponse<TenantMemberUserView>> => {
     
     
     return axios.put(
@@ -515,7 +516,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     tenantId: string,
     userId: string,
     tenantMembersChangeTenantUserStatusBody: TenantMembersChangeTenantUserStatusBody, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<TenantMemberView>> => {
+ ): Promise<AxiosResponse<TenantMemberUserView>> => {
     
     
     return axios.patch(

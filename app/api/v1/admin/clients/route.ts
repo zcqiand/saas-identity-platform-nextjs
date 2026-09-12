@@ -42,7 +42,7 @@ const CreateAppBody = z.object({
   autoApprove: z.boolean().optional(),
   accessTokenValidity: z.number().int().optional(),
   refreshTokenValidity: z.number().int().optional(),
-  status: z.enum(["active", "disabled"]).optional(),
+  status: z.union([z.literal(0), z.literal(1), z.enum(["active", "disabled"])]).optional(),
 });
 
 const appFields = {
@@ -60,8 +60,10 @@ const appFields = {
   updatedAt: oauthClient.updatedAt,
 };
 
-function statusFromSmallint(n: number): "active" | "disabled" {
-  return n === 1 ? "active" : "disabled";
+// status 落库归一化：接受 smallint 数字或字符串别名，统一转 smallint 存储/回传
+function statusToSmallint(s: number | "active" | "disabled"): number {
+  if (typeof s === "number") return s;
+  return s === "active" ? 1 : 0;
 }
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
@@ -83,8 +85,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       .limit(pageSize)
       .offset(page * pageSize)
       .orderBy(sql`created_at DESC`);
+    // status 直接透传 smallint 数字（契约/msw oracle 是数字，不再转 "active" 字符串）
     return NextResponse.json({
-      items: items.map((c) => ({ ...c, status: statusFromSmallint(c.status) })),
+      items,
       page,
       pageSize,
       total,
@@ -120,7 +123,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         autoApprove: b.autoApprove ?? false,
         accessTokenValidity: b.accessTokenValidity ?? 3600,
         refreshTokenValidity: b.refreshTokenValidity ?? 86400,
-        status: b.status === "disabled" ? 0 : 1,
+        status: b.status === undefined ? 1 : statusToSmallint(b.status),
       })
       .returning(appFields);
     if (!created) {
@@ -129,7 +132,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         { status: 500 },
       );
     }
-    return NextResponse.json({ ...created, status: statusFromSmallint(created.status) });
+    // status 透传 smallint 数字（契约对齐 msw oracle）
+    return NextResponse.json(created);
   } catch (e) {
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;

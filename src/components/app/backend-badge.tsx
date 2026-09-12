@@ -2,6 +2,8 @@
 // 视觉对齐 TenantSwitcher（DropdownMenu + 图标 + ChevronsUpDown）。
 // 选择持久化 localStorage（saas.api.backend），http-client 每次请求动态读取，
 // 切完下一个请求即生效，无需刷新。未选择 = env 默认目标。
+// variant="sidebar"（默认）：深色侧边栏 footer 用白字样式；
+// variant="plain"：浅色背景（登录页卡片）用默认 ghost 样式（2026-09-12）。
 "use client";
 
 import { useState } from "react";
@@ -17,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { BACKENDS, getSelectedBackend, setSelectedBackend } from "@/api/backend-config";
 
-export function BackendBadge() {
+export function BackendBadge({ variant = "sidebar" }: { variant?: "sidebar" | "plain" }) {
   const [selected, setSelected] = useState(getSelectedBackend());
   const current = BACKENDS.find((b) => b.key === selected);
 
@@ -27,13 +29,20 @@ export function BackendBadge() {
   }
 
   return (
-    <div className="w-full px-2 py-1 text-xs" data-testid="backend-badge">
+    <div
+      className={variant === "sidebar" ? "w-full px-2 py-1 text-xs" : "w-full text-xs"}
+      data-testid="backend-badge"
+    >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-between gap-2 border border-white/20 bg-transparent text-white/80 hover:bg-white/10 hover:text-white"
+            className={
+              variant === "sidebar"
+                ? "w-full justify-between gap-2 border border-white/20 bg-transparent text-white/80 hover:bg-white/10 hover:text-white"
+                : "w-full justify-between gap-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            }
           >
             <span className="flex min-w-0 items-center gap-2">
               <Server className="h-4 w-4 text-slate-500" />
