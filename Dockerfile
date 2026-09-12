@@ -74,10 +74,11 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=5101
 ENV HOSTNAME=0.0.0.0
-# sync-db.mjs 在 runtime /app/scripts/,默认算法 MIGRATIONS_DIR=/app/sql/migrations 不存在。
-# Dockerfile 把 sibling migrations 拷到 /saas-identity-platform-shared/sql/migrations,
-# 这里显式指过去。
-ENV MIGRATIONS_DIR=/saas-identity-platform-shared/sql/migrations
+# 迁移机制（2026-09-13，ADR-0025 收尾）：shared 仓 26a7281 删除 sql/ + sync-db.mjs 旧
+# Flyway 链，迁移唯一真相 = shared/drizzle/（drizzle-kit migrate，journal
+# public.__drizzle_migrations）。Dockerfile 把 sibling drizzle/ 拷到同绝对路径，
+# drizzle.runtime.config.ts 从 DRIZZLE_MIGRATIONS_DIR 读。
+ENV DRIZZLE_MIGRATIONS_DIR=/saas-identity-platform-shared/drizzle
 
 # standalone/server.js 是 Next 生成的入口
 COPY --from=builder --chown=node:node /app/.next/standalone ./
@@ -93,13 +94,14 @@ COPY --from=builder --chown=node:node /app/public ./public
 # 但 sync-db.mjs 必能命中所有 transitives。
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 
-# sync-db.mjs 读 sibling 仓 ../saas-identity-platform-shared/sql/migrations。
+# 迁移 SQL 读 sibling 仓 ../saas-identity-platform-shared/drizzle。
 # sibling 仓 git clone 在 builder stage /app 父目录下，运行时容器里没有 ——
-# 显式 COPY 到容器同绝对路径，sync-db.mjs 不用改。
-COPY --from=builder --chown=node:node /saas-identity-platform-shared/sql/migrations /saas-identity-platform-shared/sql/migrations
+# 显式 COPY 到容器同绝对路径，drizzle.runtime.config.ts 的 DRIZZLE_MIGRATIONS_DIR 不用改。
+COPY --from=builder --chown=node:node /saas-identity-platform-shared/drizzle /saas-identity-platform-shared/drizzle
 
-# scripts/：sync-db / seed-db，entrypoint.sh 会调用
+# scripts/：seed-db，entrypoint.sh 会调用；drizzle.runtime.config.ts 供 drizzle-kit migrate
 COPY --from=builder --chown=node:node /app/scripts ./scripts
+COPY --from=builder --chown=node:node /app/drizzle.runtime.config.ts ./drizzle.runtime.config.ts
 COPY --from=builder --chown=node:node /app/package.json ./package.json
 # 种子 JSON（apps/menus/grants 等，scripts/seed-db.mjs 灌库用）。
 # v0.7.38 起 BFF 路由不再读 JSON，src/lib/demo-seeds.ts 已删；这份 seed 仅给

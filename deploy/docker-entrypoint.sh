@@ -4,10 +4,11 @@
 # 数据库:PostgreSQL(远程)。DATABASE_URL 由 `--env-file saas.env` 注入,
 # 缺则 fail fast —— 不要回退到 dev 默认 URL,prod 不允许。
 #
-# - scripts/sync-db.mjs 幂等,从 shared/sql/migrations/V*.sql 增量 apply,
-#   写到 saas_dev.__schema_migrations 跟踪表。可重跑,不会重复执行。
+# - drizzle-kit migrate 幂等,从 shared/drizzle/ 增量 apply,journal 落
+#   public.__drizzle_migrations(ADR-0025 收尾,2026-09-13;旧 sync-db/Flyway 链已删)。
+#   可重跑,已 apply 的迁移不会重复执行。
 # - scripts/seed-db.mjs 默认 TRUNCATE 后灌,会**重置**种子数据。
-#   仅在 __schema_migrations 还没有行(全新库)时执行,避免每次重启覆盖生产改动。
+#   仅在 __drizzle_migrations 还没有行(全新库)时执行,避免每次重启覆盖生产改动。
 #
 # standalone:next start 跑 server.js(已 COPY 进来)。
 set -eu
@@ -22,10 +23,10 @@ FIRST=0
 ROW_COUNT=$(node -e "
   import('pg').then(({Client}) => {
     const c = new Client({connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 5000});
-    c.connect().then(() => c.query('SELECT COUNT(*)::int AS n FROM pg_tables WHERE tablename = \$1', ['__schema_migrations']))
+    c.connect().then(() => c.query('SELECT COUNT(*)::int AS n FROM pg_tables WHERE tablename = \$1', ['__drizzle_migrations']))
       .then(r => {
         if (r.rows[0].n === 0) { console.log('0'); process.exit(0); }
-        return c.query('SELECT COUNT(*)::int AS n FROM __schema_migrations');
+        return c.query('SELECT COUNT(*)::int AS n FROM __drizzle_migrations');
       })
       .then(r => { console.log(String(r.rows[0].n)); process.exit(0); })
       .catch(e => { console.error('probe failed:', e.message); process.exit(1); })
@@ -37,16 +38,14 @@ if [ "${ROW_COUNT}" = "0" ]; then
   FIRST=1
 fi
 
-echo "→ sync-db (apply Flyway V*.sql from shared/, tracking __schema_migrations)"
-# --incremental：基于 tracking 表只跑未记录的 V 文件，库非空不 ABORT
-# （mirror lab-nextjs v0.3.43 fix：全量模式只用于空库手动重建）。
-node scripts/sync-db.mjs --incremental
+echo "→ drizzle-kit migrate (apply shared/drizzle/*.sql, journal public.__drizzle_migrations)"
+npx --no drizzle-kit migrate --config drizzle.runtime.config.ts
 
 if [ "$FIRST" = 1 ]; then
   echo "→ first run: seeding demo data from MSW seeds/*.json"
   node scripts/seed-db.mjs
 else
-  echo "→ not first run, skipping seed (rows in __schema_migrations: ${ROW_COUNT})"
+  echo "→ not first run, skipping seed (rows in __drizzle_migrations: ${ROW_COUNT})"
 fi
 
 echo "→ next start -p ${PORT:-5101}"
