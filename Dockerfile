@@ -62,6 +62,10 @@ ENV DATABASE_URL=${DATABASE_URL}
 # → 浏览器 fetch localhost:CORS fail。 显式 "" 让 bundle 烤进空串 → 浏览器用同源相对路径。
 ENV NEXT_PUBLIC_API_BASE_URL=""
 ENV NEXT_PUBLIC_API_MODE=nextjs
+# 登录页 clientId 兜底（ADR-0030 REQ-2026-001，app/login/page.tsx 客户端组件字面读，
+# build 时烤入 bundle）。不设 → prod /login 直接 toast「缺少 clientId」。
+# saas.env 里的同名 key 只影响 SSR/服务端进程，救不了浏览器 bundle —— 必须 build 期 ENV。
+ENV NEXT_PUBLIC_LOGIN_CLIENT_ID=saas-console
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
