@@ -13,7 +13,7 @@
 
 set -euo pipefail
 
-cd "$(git rev-parse --show-toplevel)"
+cd "$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
 SHARED_DIR="$(cd .. && pwd -P)/saas-identity-platform-shared"
 
 echo "[gen-shared] step 1/2 — shared: emit OpenAPI.yaml..."
@@ -27,11 +27,15 @@ echo "[gen-shared]    DB schema 同步请跑: bash scripts/pull-schema.sh"
 
 # ADR-0026 §2: 写 last-gen-shared.json marker（API 类别），失败不阻塞 gen-shared。
 # set -e 在 marker 块之前的任何 step 失败已 exit；此处仅在 emit + orval 全绿后到达。
-SHARED_SHA=$(cd "$SHARED_DIR" && git rev-parse HEAD)
-MARKER="$(git rev-parse --show-toplevel)/.state/last-gen-shared.json"
-mkdir -p "$(dirname "$MARKER")"
+# 2026-09-13 修复：Docker builder 无 .git（sibling 仓 clone 在 /app 之外），
+# `git rev-parse --show-toplevel` 在 set -e 下 exit 128 炸掉 npm run build（prebuild），
+# v0.7.61 起首个 tag 部署即炸。非 git 仓环境跳过 marker 写，仅 WARN（本块原意即不阻塞）。
+if MARKER_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+  SHARED_SHA=$(cd "$SHARED_DIR" && git rev-parse HEAD)
+  MARKER="$MARKER_ROOT/.state/last-gen-shared.json"
+  mkdir -p "$(dirname "$MARKER")"
 
-if python3 - "$MARKER" "$SHARED_SHA" "$(basename "$0")" "saas-identity-platform-nextjs" <<'PYEOF'
+  if python3 - "$MARKER" "$SHARED_SHA" "$(basename "$0")" "saas-identity-platform-nextjs" <<'PYEOF'
 import datetime, json, sys
 
 marker_path, shared_sha, cmd, repo = sys.argv[1:5]
@@ -60,7 +64,10 @@ with open(marker_path, "w", encoding="utf-8") as f:
     f.write("\n")
 PYEOF
 then
-  echo "[gen-shared]    ADR-0026 marker 已落盘: $MARKER (shared HEAD ${SHARED_SHA:0:7})"
+    echo "[gen-shared]    ADR-0026 marker 已落盘: $MARKER (shared HEAD ${SHARED_SHA:0:7})"
+  else
+    echo "[gen-shared]    WARN: marker 写失败（python3 缺失？）—— staleness 将报 UNKNOWN" >&2
+  fi
 else
-  echo "[gen-shared]    WARN: marker 写失败（python3 缺失？）—— staleness 将报 UNKNOWN" >&2
+  echo "[gen-shared]    WARN: 非 git 仓（Docker builder？）—— 跳过 ADR-0026 marker 写" >&2
 fi
