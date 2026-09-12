@@ -81,11 +81,19 @@ if [ ! -f "$BASE/saas.env" ]; then
     exit 1
   fi
   SECRET="$(openssl rand -hex 32)"
+  # PG_PASSWORD 从 DATABASE_URL 密码段派生(2026-09-13 'changeme' 占位清理,与
+  # saas-identity-platform-nextjs.sh 派生块同款;DATABASE_URL 必填已在上面 fail-fast)
+  PG_URL_PASSWORD="$(printf '%s' "$DATABASE_URL" | sed -n 's#^[A-Za-z][A-Za-z0-9+.-]*://[^:/@]*:\([^@]*\)@.*#\1#p')"
+  case "$PG_URL_PASSWORD" in
+    *%*) PG_PASSWORD_DERIVED="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.unquote(sys.argv[1]))' "$PG_URL_PASSWORD")" \
+          || { echo "ERROR: DATABASE_URL 密码段 percent-decode 失败(python3 缺失?)" >&2; exit 1; } ;;
+    *) PG_PASSWORD_DERIVED="$PG_URL_PASSWORD" ;;
+  esac
+  [ -n "$PG_PASSWORD_DERIVED" ] || { echo "ERROR: 无法从 DATABASE_URL 解析密码段" >&2; exit 1; }
   {
     printf 'DATABASE_URL=%s\n' "$DATABASE_URL"
     printf 'DATABASE_NAME=saas_prod\n'
     printf 'DATABASE_USER=postgres\n'
-    printf 'DATABASE_PASSWORD=changeme\n'
     printf 'JWT_SIGNING_KEY=%s\n' "$SECRET"
     printf 'JWT_AUTHORITY=https://auth.example.com\n'
     printf 'JWT_ISSUER=saas-identity-platform\n'
@@ -95,7 +103,7 @@ if [ ! -f "$BASE/saas.env" ]; then
     printf 'PG_HOST=100.79.128.25\n'
     printf 'PG_PORT=5432\n'
     printf 'PG_USER=postgres\n'
-    printf 'PG_PASSWORD=changeme\n'
+    printf 'PG_PASSWORD=%s\n' "$PG_PASSWORD_DERIVED"
     printf 'PG_DATABASE=saas_prod\n'
     printf 'NEXT_PUBLIC_SAAS_BASE_URL=https://saas.YOUR_DOMAIN\n'
     printf 'LOCKOUT_MAX_FAILS=5\n'
