@@ -1,24 +1,23 @@
 {
   "schema": 2,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "三端收口盘点（2026-09-10）：38/55 已上线（领先 react/vue 的 34/51），唯一挡门是 L4.db.drift 的 PG 凭据（环境非代码）",
-  "last_session_at": "2026-09-10",
-  "last_session_summary": "本仓无代码改动。L0-L4 测试全绿，L4.db.drift 挂在 pull-schema.sh FATAL: PG_PASSWORD 未设。尝试用 shared/.env.test 的凭据连 100.79.128.25 → password authentication failed（凭据已失效，springboot L4.db.scaffold 同样死法）。代码侧干净，纯环境凭据欠账。",
+  "current_task": "2026-09-12/13 四方 live 一致性收敛提交（17d9765）：ADR-0032 扁平成员视图（member-roles.ts roleIds 真 join）+ roles 列表 created_at asc 排序 + login 空订阅退化不过滤 + 菜单域 clientId code 归一",
+  "last_session_at": "2026-09-13",
+  "last_session_summary": "6 code-review blocker（本仓 PASS 无阻塞）；route 修复全入库；四方终验 222/240（唯一失败=本仓 dev server 30s 瞬时超时，单跑即过）",
   "done": [
-    "盘点：38/55 已上线 + 14 开发中 + 3 规划；已上线数领先是 M00.F05 pages（cdf7e33）先在本仓落地",
-    "L0/L0.5/L1/L2/L3/L4 测试全 PASS（2026-09-10 gate）"
+    "成员域扁平 TenantMemberUserView + src/lib/member-roles.ts 入库",
+    "roles 列表 orderBy created_at asc, id asc（此前 DESC 与 oracle 分叉）",
+    "login availableTenants 空订阅退化不过滤；me 三端点 ADR-0032 形态",
+    "deploy 脚本 + .env.example 同步；门禁全绿"
   ],
   "next": [
-    "拿到有效 PG 凭据后：bash scripts/pull-schema.sh && git add src/db/schema.ts（L4.db.drift 门禁说明）",
-    "M01.F04.I03 密码登录 UI / I07 全局 SSO 登出（规划态，本仓是 OAuth IdP 主体、4 端点已在）"
+    "dev server 冷编译慢（login 3-15s 常态），跑 live 前先预热或接受 30s 超时偶发（本次终验唯一失败即此类）"
   ],
   "open_questions": [
-    "shared/.env.test 和 .env.production 里的 PG_PASSWORD 连 100.79.128.25 认证失败——密码已轮换？需要人提供新凭据或更新这两份仓内契约文件"
+    "评审非阻塞项：clientId ?? '' 是否改 fail-fast（ADR-0019 口径，未动）"
   ],
   "dont": [
-    "不要给 pull-schema.sh 加 PG_PASSWORD 默认值兜底（CLAUDE.md §2 硬规则，fail-fast 是设计行为）",
-    "不要 module-scope 单例（HMR 会重置，用 globalThis 缓存——oauth-store/login-lockout 前例）",
-    "audit emit 失败别 throw（best-effort swallow 家族约定）"
+    "route handler 顶层禁止 requireEnv（Docker build 崩）；必须惰性求值"
   ],
   "active_branch": "master"
 }
