@@ -17,11 +17,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BACKENDS, getSelectedBackend, setSelectedBackend } from "@/api/backend-config";
+import {
+  SELECTABLE_BACKENDS,
+  getSelectedBackend,
+  resolveSelectedBackendUrl,
+  setSelectedBackend,
+} from "@/api/backend-config";
 
 export function BackendBadge({ variant = "sidebar" }: { variant?: "sidebar" | "plain" }) {
   const [selected, setSelected] = useState(getSelectedBackend());
-  const current = BACKENDS.find((b) => b.key === selected);
+  const current = SELECTABLE_BACKENDS.find((b) => b.key === selected);
 
   function pick(key: string) {
     setSelectedBackend(key);
@@ -59,7 +64,7 @@ export function BackendBadge({ variant = "sidebar" }: { variant?: "sidebar" | "p
             <span className="flex-1">env 默认（部署配置）</span>
             {!selected && <Check className="h-4 w-4" />}
           </DropdownMenuItem>
-          {BACKENDS.map((b) => (
+          {SELECTABLE_BACKENDS.map((b) => (
             <DropdownMenuItem
               key={b.key}
               onSelect={() => pick(b.key)}
@@ -68,7 +73,9 @@ export function BackendBadge({ variant = "sidebar" }: { variant?: "sidebar" | "p
               <Server className="mr-2 h-4 w-4 text-slate-500" />
               <div className="flex flex-1 flex-col">
                 <span className="font-medium">{b.key}</span>
-                <span className="font-mono text-xs text-slate-500">{b.baseUrl}</span>
+                <span className="font-mono text-xs text-slate-500">
+                  {resolveSelectedBackendUrl(b.key)}
+                </span>
               </div>
               {selected === b.key && <Check className="h-4 w-4" />}
             </DropdownMenuItem>

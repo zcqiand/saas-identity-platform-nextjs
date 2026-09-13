@@ -15,14 +15,32 @@
 import { env } from "./env";
 
 // === 2026-09-11 用户裁定：恢复 4 后端运行时切换（用户指令覆盖 ADR-0014 dev 单 URL）===
-// prod 仍走部署期 env 同源反代；切换器是 dev/local 诊断工具（localStorage 持久化，
-// 每次请求经 http-client 拦截器动态读取，切完下一个请求即生效）。端口表 = multi-repo-family §6。
+// 切换器是 dev/local 诊断工具；2026-09-13 用户裁定补 prod 分流（同 react/vue）：
+// prod 构建下选择映射到 prod 域名（含 msw → saas-msw.xiangru.uk，2026-09-13 用户裁定）。
+// 端口表 = multi-repo-family §6。
+const IS_PROD_BUILD = process.env.NODE_ENV === "production";
+
 export const BACKENDS = [
-  { key: "msw", baseUrl: "http://localhost:5100" },
-  { key: "nextjs", baseUrl: "http://localhost:5101" },
-  { key: "aspnetcore", baseUrl: "http://localhost:5104" },
-  { key: "springboot", baseUrl: "http://localhost:5105" },
+  { key: "msw", baseUrl: "http://localhost:5100", prodBaseUrl: "https://saas-msw.xiangru.uk" },
+  { key: "nextjs", baseUrl: "http://localhost:5101", prodBaseUrl: "https://saas-nextjs.xiangru.uk" },
+  { key: "aspnetcore", baseUrl: "http://localhost:5104", prodBaseUrl: "https://saas-aspnetcore.xiangru.uk" },
+  { key: "springboot", baseUrl: "http://localhost:5105", prodBaseUrl: "https://saas-springboot.xiangru.uk" },
 ] as const;
+
+/** prod 可选后端：剔除无 prodBaseUrl 的项（当前四项都有 prod 部署）。 */
+export const SELECTABLE_BACKENDS = BACKENDS.filter(
+  (b) => !IS_PROD_BUILD || b.prodBaseUrl !== null,
+);
+
+function resolveBaseUrl(b: (typeof BACKENDS)[number]): string {
+  return (IS_PROD_BUILD && b.prodBaseUrl) || b.baseUrl;
+}
+
+/** 选择 key → 实际 base URL（prod 返回 prod 域名，dev 返回 localhost）。 */
+export function resolveSelectedBackendUrl(key: string): string {
+  const hit = BACKENDS.find((b) => b.key === key);
+  return hit ? resolveBaseUrl(hit) : "";
+}
 
 const BACKEND_LS_KEY = "saas.api.backend";
 
@@ -45,11 +63,12 @@ export function setSelectedBackend(key: string): void {
 }
 
 export function getApiBaseUrl(): string {
-  // 运行时切换优先；未选择时走 env。
+  // 运行时切换优先；未选择时走 env。prod 下命中 SELECTABLE 项返回 prod 域名，
+  // 未知/已下线的 key（localStorage 跨构建遗留）落空 → 走 env 默认。
   const selected = getSelectedBackend();
   if (selected) {
-    const hit = BACKENDS.find((b) => b.key === selected);
-    if (hit) return hit.baseUrl;
+    const hit = SELECTABLE_BACKENDS.find((b) => b.key === selected);
+    if (hit) return resolveBaseUrl(hit);
   }
   // 用 ?? 而非 ||：prod 部署 saas.env NEXT_PUBLIC_API_BASE_URL="" 时
   // 应走同源相对路径（nginx 反代到 127.0.0.1:8022 容器）,"" 不是 nullish
