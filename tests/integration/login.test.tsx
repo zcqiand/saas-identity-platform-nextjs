@@ -9,15 +9,39 @@ import { TestProviders } from "../state-helpers";
 import LoginPage from "../../app/login/page";
 import { ApiError } from "../../src/api/http-client";
 
-// mock orval hook（LoginPage 用 useSessionsLogin().mutateAsync）
-const { sessionsLoginMock } = vi.hoisted(() => ({ sessionsLoginMock: vi.fn() }));
+// mock orval hook（LoginPage 用 useSessionsLogin().mutateAsync）；
+// loginHookOptions 捕获 hook 收到的 {axios} options（IdP 同源钉死回归用）
+const { sessionsLoginMock, loginHookOptions } = vi.hoisted(() => ({
+  sessionsLoginMock: vi.fn(),
+  loginHookOptions: { current: undefined as unknown },
+}));
 vi.mock("../../src/api/endpoints/auth/auth", async (importOriginal) => {
   const actual = await importOriginal<
     typeof import("../../src/api/endpoints/auth/auth")
   >();
   return {
     ...actual,
-    useSessionsLogin: () => ({ mutateAsync: sessionsLoginMock }),
+    useSessionsLogin: (options?: unknown) => {
+      loginHookOptions.current = options;
+      return { mutateAsync: sessionsLoginMock };
+    },
+  };
+});
+
+const { authorizeMock, authorizeHookOptions } = vi.hoisted(() => ({
+  authorizeMock: vi.fn(),
+  authorizeHookOptions: { current: undefined as unknown },
+}));
+vi.mock("../../src/api/endpoints/oauth/oauth", async (importOriginal) => {
+  const actual = await importOriginal<
+    typeof import("../../src/api/endpoints/oauth/oauth")
+  >();
+  return {
+    ...actual,
+    useOAuthAuthorize: (options?: unknown) => {
+      authorizeHookOptions.current = options;
+      return { mutateAsync: authorizeMock };
+    },
   };
 });
 
@@ -79,6 +103,9 @@ async function fillAndSubmit() {
 
 beforeEach(() => {
   sessionsLoginMock.mockReset();
+  authorizeMock.mockReset();
+  loginHookOptions.current = undefined;
+  authorizeHookOptions.current = undefined;
   toastError.mockReset();
   localStorage.clear();
   window.history.replaceState({}, "", "/login");
@@ -168,6 +195,38 @@ describe("M01.F04.I03 账号密码登录", () => {
 
 // 2026-09-12：登录页「当前后端模式」静态标签 → BackendBadge 切换器
 // （dev 诊断工具，不挂功能 ID，与侧边栏 BackendBadge 一致）
+describe("登录页 IdP 流程同源钉死", () => {
+  it("切换器指向别的后端时，login 仍以页面 origin 为 baseURL（code 不再落别家内存）", async () => {
+    // 回归：登录页是 IdP 自己的页面，登录 + authorize 必须打到与页面同源的
+    // 后端。此前走全局拦截器 baseURL（读 localStorage 切换器），dev 把切换器
+    // 留在 msw 时 authorize 领的 code 落在 msw 内存里，lab RP 拿去配对后端
+    // 换 token 必 INVALID_GRANT「code 不存在或已被使用」。
+    localStorage.setItem("saas.api.backend", "springboot");
+    sessionsLoginMock.mockResolvedValue({ data: LOGIN_RESPONSE });
+    renderLogin("/login?client_id=cid-test");
+    await fillAndSubmit();
+    const opts = loginHookOptions.current as { axios?: { baseURL?: string } };
+    expect(opts?.axios?.baseURL).toBe(window.location.origin);
+  });
+
+  it("OAuth 跳板分支的 authorize 同样钉同源", async () => {
+    localStorage.setItem("saas.api.backend", "msw");
+    sessionsLoginMock.mockResolvedValue({ data: LOGIN_RESPONSE });
+    authorizeMock.mockResolvedValue({
+      data: { code: "c-1", state: "s-1" },
+    });
+    renderLogin(
+      "/login?client_id=cid-test&redirect_uri=" +
+        encodeURIComponent("http://localhost:5201/login") +
+        "&state=s-1",
+    );
+    await fillAndSubmit();
+    await waitFor(() => expect(authorizeMock).toHaveBeenCalled());
+    const opts = authorizeHookOptions.current as { axios?: { baseURL?: string } };
+    expect(opts?.axios?.baseURL).toBe(window.location.origin);
+  });
+});
+
 describe("登录页后端切换器", () => {
   function badgeTrigger(): HTMLElement {
     const badge = screen.getByTestId("backend-badge");

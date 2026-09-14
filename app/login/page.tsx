@@ -43,8 +43,17 @@ export default function LoginPage() {
   const { login } = useTenant();
   const apiMode = getApiMode();
   const [submitting, setSubmitting] = useState(false);
-  const loginMut = useSessionsLogin();
-  const authorizeMut = useOAuthAuthorize();
+  // IdP 流程钉死同源：登录页是 IdP 自己的页面，登录 + authorize 必须打到与
+  // 页面同源的后端。此前走全局拦截器 baseURL（读 localStorage 切换器）——dev
+  // 把切换器留在 msw/springboot 时，authorize 领的 code 落在别家后端内存里，
+  // lab RP 拿去自己配对的 saas 换 token 必 INVALID_GRANT「code 不存在或已被使用」。
+  // 拦截器只在 config.baseURL 为空时才覆盖，这里显式给值即绕开切换器。
+  const idpAxios = useMemo(
+    () => ({ axios: { baseURL: window.location.origin } }),
+    [],
+  );
+  const loginMut = useSessionsLogin(idpAxios);
+  const authorizeMut = useOAuthAuthorize(idpAxios);
 
   // B 方案（2026-09-11，对齐 vue 基准）：clientId 取 ?client_id= ?? env
   // （NEXT_PUBLIC_LOGIN_CLIENT_ID，值 = saas-console 自身应用）；缺即拒，不猜。
