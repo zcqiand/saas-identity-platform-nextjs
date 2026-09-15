@@ -720,14 +720,25 @@
       "flows": [],
       "designs": [],
       "tests": [
-        "M04.F03.I01 returns 200 { code, state } for valid request",
-        "M04.F03.I01 returns 400 INVALID_CLIENT when clientId unknown",
-        "M04.F03.I01 returns 400 INVALID_REDIRECT_URI when redirectUri not in whitelist",
-        "M04.F03.I01 returns 400 INVALID_REQUEST when fields missing",
-        "M04.F03.I01 returns 400 NO_USER when tenant has no user",
-        "M04.F03.I01 returns 400 UNSUPPORTED_RESPONSE_TYPE when not 'code'",
-        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:1791 (path)",
-        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:2692 (path)"
+        "M04.F03.I01 Bearer + 登录页形状（无 tenantId）→ 200 { code, state }，code 落 oauth_code 表",
+        "M04.F03.I01 Bearer sub 不在 sys_user → 401（msw oracle『session user not found』同款）",
+        "M04.F03.I01 Bearer 缺 tenant_id claim → 401（tenant 必须来自认证身份，不信 body）",
+        "M04.F03.I01 body 多带 tenantId（contract-test/lab 消费端形状）→ 200，body tenantId 被忽略不拒收",
+        "M04.F03.I01 clientId 未注册 → 400 INVALID_CLIENT",
+        "M04.F03.I01 redirectUri 不在白名单 → 400 INVALID_REDIRECT_URI",
+        "M04.F03.I01 responseType != 'code' → 400 UNSUPPORTED_RESPONSE_TYPE",
+        "M04.F03.I01 坏 Bearer → 401 UNAUTHORIZED",
+        "M04.F03.I01 无 Authorization → 401 UNAUTHORIZED（禁匿名签 code）",
+        "M04.F03.I01 白名单前缀 + '?query' 边界 → 200（RFC 6749 §3.1.2，lab 回跳带 ?from）",
+        "M04.F03.I01 白名单条目的子路径（无 '?' 边界）→ 400 INVALID_REDIRECT_URI（csv 语义，非子串匹配）",
+        "M04.F03.I01 缺必填字段 → 400 INVALID_REQUEST",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:1799 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:2700 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:3431 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:4566 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:5331 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:8048 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:9541 (path)"
       ],
       "entry": []
     },
@@ -739,14 +750,19 @@
       "flows": [],
       "designs": [],
       "tests": [
-        "M04.F03.I02 returns 200 TokenResponse for valid authorization_code",
+        "M04.F03.I02 body 多带 tenantId（错值）→ 仍 200（tenantId 非契约字段，取 code 行绑定值）",
+        "M04.F03.I02 code 过期 → 400 INVALID_GRANT 且删行",
+        "M04.F03.I02 redirectUri 与 authorize 时不一致 → 400 INVALID_GRANT（RFC 6749 §4.1.3）",
+        "M04.F03.I02 returns 200 TokenResponse for valid authorization_code（无 body tenantId）",
         "M04.F03.I02 returns 400 INVALID_CLIENT when clientId unknown",
         "M04.F03.I02 returns 400 INVALID_GRANT when code unknown",
         "M04.F03.I02 returns 400 UNSUPPORTED_GRANT_TYPE for unknown grant",
-        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:3442 (path)",
-        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:4674 (path)",
-        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:5722 (path)",
-        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:6672 (path)"
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:11105 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:12055 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:6035 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:7267 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:8493 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:9983 (path)"
       ],
       "entry": []
     },
@@ -760,10 +776,12 @@
       "tests": [
         "M04.F03.I03 returns 200 rotated TokenResponse for valid refresh_token",
         "M04.F03.I03 returns 400 INVALID_GRANT when refreshToken unknown",
-        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:3442 (path)",
-        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:4674 (path)",
-        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:5722 (path)",
-        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:6672 (path)"
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:11105 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:12055 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:6035 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:7267 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:8493 (path)",
+        "output\\saas-identity-platform-contract-test\\tests\\oauth.test.ts:9983 (path)"
       ],
       "entry": []
     },

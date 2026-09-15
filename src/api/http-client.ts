@@ -38,6 +38,12 @@ export function toApiError(err: unknown): ApiError {
  * 注入运行时 baseUrl + Bearer token。
  * 在 main.tsx 启动时调一次；getToken 用 callback 形式避免循环依赖
  * （tenant-context → http-client 不能反向指）。
+ *
+ * 幂等（2026-09-14）：重复 install 先 eject 上一次的拦截器再装新的。
+ * axios 请求拦截器后注册先跑、旧的总在链尾收尾——若只叠加不 eject，
+ * 旧闭包捕获的过期 token 会在链尾把 Authorization 头重新覆盖一遍，
+ * 重新登录拿到的新 token 永远被盖掉（表现为 authorize 401
+ * "saas session or Bearer token required"，且仅当首帧 token 过期后复现）。
  */
 
 /** 401 时清本地会话并跳登录页（保留后端切换选择）。 */
@@ -48,8 +54,13 @@ function handleUnauthorized(): void {
   window.location.assign("/login");
 }
 
+let ejectRequest: (() => void) | null = null;
+let ejectResponse: (() => void) | null = null;
+
 export function installHttpClient(getToken: () => string | null): void {
-  axios.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  ejectRequest?.();
+  ejectResponse?.();
+  const requestId = axios.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     config.baseURL = getApiBaseUrl();
     const token = getToken();
     if (token) {
@@ -57,8 +68,9 @@ export function installHttpClient(getToken: () => string | null): void {
     }
     return config;
   });
+  ejectRequest = () => axios.interceptors.request.eject(requestId);
     // 401（token 过期/无效）→ 清本地会话并踢回登录页重新登录（用户裁定 2026-09-12）。
-    axios.interceptors.response.use(
+    const responseId = axios.interceptors.response.use(
       (res) => res,
       (err) => {
         if (axios.isAxiosError(err) && err.response?.status === 401) {
@@ -72,6 +84,7 @@ export function installHttpClient(getToken: () => string | null): void {
         return Promise.reject(err);
       },
     );
+  ejectResponse = () => axios.interceptors.response.eject(responseId);
 }
 
 // 兼容老调用方：低阶 fetch 包装（仅用于不走 axios 的兜底场景）

@@ -19,7 +19,7 @@ npm run build      # 生产构建
 - **前端**：shadcn-ui（Radix primitive + Tailwind v4）+ AppShell + SidebarNav
 - **后端**：OAuth 2.0 IdP Route Handlers（v0.7.x，修 prod lab-nextjs 502）+ `/api/v1/*` CORS middleware
 - **DB**：PostgreSQL via Drizzle（node-pg-migrate + sync-db --incremental）
-- 作为 lab 家族的 SSO 身份源（lab-mgmt client 白名单）
+- 作为 lab 家族的 SSO 身份源（lab-management client 白名单）
 
 ## 技术栈
 
