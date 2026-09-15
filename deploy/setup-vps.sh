@@ -81,7 +81,7 @@ if [ ! -f "$BASE/saas.env" ]; then
     exit 1
   fi
   SECRET="$(openssl rand -hex 32)"
-  # PG_PASSWORD 从 DATABASE_URL 密码段派生(2026-09-13 'changeme' 占位清理,与
+  # PG_PASSWORD 从 DATABASE_URL 密码段派生(2026-09-13 'qiand68+++' 占位清理,与
   # saas-identity-platform-nextjs.sh 派生块同款;DATABASE_URL 必填已在上面 fail-fast)
   PG_URL_PASSWORD="$(printf '%s' "$DATABASE_URL" | sed -n 's#^[A-Za-z][A-Za-z0-9+.-]*://[^:/@]*:\([^@]*\)@.*#\1#p')"
   case "$PG_URL_PASSWORD" in

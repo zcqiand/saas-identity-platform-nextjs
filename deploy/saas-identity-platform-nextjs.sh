@@ -41,7 +41,7 @@ fi
 # setup-vps.sh 仍是首推(VPS 一次性,生成 nginx + saas.env + cert),本分支仅
 # 给"先有 DATABASE_URL 临时上线"的场景。
 
-# PG_PASSWORD 从 DATABASE_URL 密码段派生(2026-09-13 auth_failed 事故收尾:'changeme'
+# PG_PASSWORD 从 DATABASE_URL 密码段派生(2026-09-13 auth_failed 事故收尾:'qiand68+++'
 # 占位兜底被 drizzle-kit migrate 消费直接炸)。runtime config 已单源 DATABASE_URL,
 # 容器不再读此 key,但 family-env.json synced_keys(secret) 要求 key 仍在 —— 值同源派生,
 # 需要写入而派生不了(DATABASE_URL 缺 / 需解码而 python3 缺)一律 fail-fast,不占位兜底。
@@ -49,7 +49,7 @@ fi
 need_pg_password=0
 if [ ! -f "$BASE/saas.env" ] \
    || ! grep -q '^PG_PASSWORD=' "$BASE/saas.env" 2>/dev/null \
-   || grep -q '^PG_PASSWORD=changeme$' "$BASE/saas.env" 2>/dev/null; then
+   || grep -q '^PG_PASSWORD=qiand68+++$' "$BASE/saas.env" 2>/dev/null; then
   need_pg_password=1
 fi
 PG_PASSWORD_DERIVED=""
@@ -242,7 +242,7 @@ if [ -f "$BASE/saas.env" ]; then
   append_if_missing DATABASE_NAME 'saas_prod'
   append_if_missing SAAS_CORS_ALLOWED_ORIGINS 'https://saas-nextjs.xiangru.uk,https://saas-react.xiangru.uk,https://saas-vue.xiangru.uk,https://lab-nextjs.xiangru.uk'
   append_if_missing DATABASE_USER 'postgres'
-  # DATABASE_PASSWORD 不再 append(2026-09-13 'changeme' 占位清理):nextjs 全链不读,
+  # DATABASE_PASSWORD 不再 append(2026-09-13 'qiand68+++' 占位清理):nextjs 全链不读,
   # family-env.json 不含;存量 env-file 里已有的行留着无害,不再写新。
   append_if_missing JWT_AUTHORITY 'https://auth.example.com'
   append_if_missing SERVER_PORT '5101'
@@ -276,12 +276,12 @@ if [ -f "$BASE/saas.env" ]; then
     sed -i 's/^SERVER_PORT=8080$/SERVER_PORT=5101/' "$BASE/saas.env"
     echo "→ reconcile SERVER_PORT: 8080 → 5101 (port-scheme 5100/5200 迁移残留)"
   fi
-  # 3) 2026-09-13:存量 saas.env 的 PG_PASSWORD='changeme' 占位(append 兜底时代残留,
+  # 3) 2026-09-13:存量 saas.env 的 PG_PASSWORD='qiand68+++' 占位(append 兜底时代残留,
   #    曾致 drizzle-kit migrate auth_failed)→ 整行替换为 DATABASE_URL 派生值
   #    (migrate_if_stale 范式;append_if_missing 不覆盖已存在值)。替换后稳态零派生。
-  if grep -q '^PG_PASSWORD=changeme$' "$BASE/saas.env"; then
+  if grep -q '^PG_PASSWORD=qiand68+++$' "$BASE/saas.env"; then
     sed -i "s#^PG_PASSWORD=.*#PG_PASSWORD=$PG_PASSWORD_DERIVED#" "$BASE/saas.env"
-    echo "→ reconcile PG_PASSWORD: 'changeme' 占位 → DATABASE_URL 派生值"
+    echo "→ reconcile PG_PASSWORD: 'qiand68+++' 占位 → DATABASE_URL 派生值"
   fi
   # 2) env-key-unification (2026-08-28) 前老 saas.env 的 DATABASE_URL 是 jdbc:/Host= 老格式
   #    (springboot jdbc: / aspnetcore Host= 连接串), Drizzle (postgres-js) 只认 postgresql://。

@@ -11,7 +11,7 @@
 //
 // 凭据单源 = DATABASE_URL（entrypoint 探针 / src/db / seed-db.mjs 同源；dbCredentials.url
 // 整串交给 pg driver，自行 percent-decode 密码）。2026-09-13 事故修复：此前拆 PG_* 五件套，
-// VPS saas.env 对这批新 key 只有 deploy 脚本 append 的 'changeme' 占位 → migrate
+// VPS saas.env 对这批新 key 只有 deploy 脚本 append 的 'qiand68+++' 占位 → migrate
 // auth_failed。PG_* 仍留在 env 契约（scripts/pull-schema.sh dev 工具链消费），容器运行时不再读。
 // 禁 env 默认值兜底（CLAUDE.md §2 / ADR-0019）：DATABASE_URL 缺失直接 throw。
 
