@@ -26,7 +26,7 @@ const { dbMock, insertValuesMock } = vi.hoisted(() => {
 });
 vi.mock("@/db", () => ({ db: dbMock }));
 
-import { POST } from "../../app/api/v1/oauth/authorize/route";
+import { POST } from "../../src/app/api/v1/oauth/authorize/route";
 import { signTestToken } from "@/lib/jwt";
 
 const USER_ID = "00000000-0000-0000-0000-b00000000001";

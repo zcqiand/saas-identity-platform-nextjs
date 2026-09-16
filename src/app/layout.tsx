@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Providers } from "../src/components/providers";
-import { RequireAuth } from "../src/components/require-auth";
-import "../src/app/globals.css";
+import { Providers } from "../components/providers";
+import { RequireAuth } from "../components/require-auth";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SaaS Identity Platform",

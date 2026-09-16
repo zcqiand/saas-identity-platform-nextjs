@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { TestProviders } from "../state-helpers";
-import LoginPage from "../../app/login/page";
+import LoginPage from "../../src/app/login/page";
 import { ApiError } from "../../src/api/http-client";
 
 // mock orval hook（LoginPage 用 useSessionsLogin().mutateAsync）；

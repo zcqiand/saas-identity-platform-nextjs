@@ -5,7 +5,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { TestProviders } from "../state-helpers";
-import UserListPage from "../../app/tenants/[tenantId]/members/page";
+import UserListPage from "../../src/app/tenants/[tenantId]/members/page";
 
 const USERS = [
   { id: "u1", tenantId: "t1", username: "alice", email: "alice@acme.io", status: "active", roleIds: ["r1"] },

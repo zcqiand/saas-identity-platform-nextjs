@@ -13,7 +13,7 @@ const { dbMock } = vi.hoisted(() => ({
 }));
 vi.mock("@/db", () => ({ db: dbMock }));
 
-import { POST } from "../../app/api/v1/auth/login/route";
+import { POST } from "../../src/app/api/v1/auth/login/route";
 import { loginLockout } from "../../src/lib/login-lockout";
 
 function makeReq(body: unknown): Request {

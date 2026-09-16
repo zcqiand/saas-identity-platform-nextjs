@@ -18,7 +18,7 @@ const { dbMock } = vi.hoisted(() => ({
 }));
 vi.mock("@/db", () => ({ db: dbMock }));
 
-import { POST } from "../../app/api/v1/oauth/token/route";
+import { POST } from "../../src/app/api/v1/oauth/token/route";
 import { oauthStore } from "../../src/lib/oauth-store";
 
 function makeReq(body: unknown): Request {

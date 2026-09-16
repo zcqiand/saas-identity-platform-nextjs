@@ -1,169 +1,167 @@
-// POST /api/v1/oauth/token
+// /api/v1/oauth/token — M04.F03.I02 + M04.F03.I03
 //
-// OAuth 2.0 Token 端点（RFC 6749 §4.1.3 + §6）。grantType:
-//   - authorization_code: 一次性 code 换 access_token (+ refresh_token)
-//   - refresh_token: refresh token rotation (旧删新发)
+// TypeSpec: TokenRequest { grantType: "authorization_code" | "refresh_token", code?, refreshToken?, clientId, clientSecret?, redirectUri? }
+// 响应：TokenResponse { accessToken, refreshToken?, tokenType, expiresIn, scope }
 //
-// 镜像 saas-identity-platform-msw/src/handlers-extra.ts:415-489 的 dev mock 逻辑;
-// accessToken 走 src/lib/jwt.ts 真签 HS256（与 prod saas-springboot/aspnetcore 镜像），
-// refreshToken 仍是 oauthStore 内存 Map 的 opaque string。
+// 语义（镜像 saas-identity-platform-msw/src/handlers-extra.ts:381-491）：
+// - 缺 grantType/clientId → 400 INVALID_REQUEST
+//   （tenantId 不是契约字段——2026-09-15 收敛，此前 zod 必填 + 比对是单侧漂移；
+//   user/tenant 一律取 code 行绑定值，不信 body）
+// - oauthClient.clientId 不存在 → 400 INVALID_CLIENT
+// - grantType=authorization_code:
+//   - 缺 code/redirectUri → 400 INVALID_REQUEST
+//   - oauth_code 表无该行（含 clientId 不匹配）→ 400 INVALID_GRANT
+//   - 过期 / redirectUri 与 authorize 时不一致 → 400 INVALID_GRANT
+//   - 删除 code 行（一次性）→ 签 saas-jwt-${userId}-${nonce} + saas-rt-… → 写入 oauth-store.refreshTokens
+// - grantType=refresh_token:
+//   - 缺 refreshToken → 400 INVALID_REQUEST
+//   - oauth-store.refreshTokens 中无 rt → 400 INVALID_GRANT
+//   - 删除旧 rt（rotation）→ 签新 pair → 写入新 rt
+// - 其他 grantType → 400 UNSUPPORTED_GRANT_TYPE
+//
+// 注意：dev 不严验 clientSecret；生产由 springboot/aspnetcore 真后端验。
+// refresh token 仍在 oauth-store 内存（Phase 6 Redis）；code 自 2026-09-15 落 oauth_code 表
+// （对齐 springboot/aspnetcore，dev server 重启不再丢 code → INVALID_GRANT）。
 
-import { NextResponse } from "next/server";
-import "server-only";
-
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { and, eq } from "drizzle-orm";
+import { db } from "@/db";
+import { oauthClient, oauthCode } from "@/db/schema";
 import { oauthStore, generateRefreshToken } from "@/lib/oauth-store";
 import { signToken } from "@/lib/jwt";
-import apps from "@/seeds/oauth_client.json";
 
-interface TokenRequest {
-  grantType?: "authorization_code" | "refresh_token";
-  code?: string;
-  refreshToken?: string;
-  clientId?: string;
-  clientSecret?: string;
-  tenantId?: string;
-  redirectUri?: string;
-}
+const TokenRequest = z.object({
+  grantType: z.enum(["authorization_code", "refresh_token"]),
+  code: z.string().min(1).max(512).optional(),
+  refreshToken: z.string().min(1).max(512).optional(),
+  clientId: z.string().min(1).max(128),
+  clientSecret: z.string().optional(),
+  redirectUri: z.string().min(1).max(2048).optional(),
+});
 
-interface TokenResponse {
-  accessToken: string;
-  refreshToken?: string;
-  tokenType: string;
-  expiresIn: number;
-  scope: string;
-  userId: string;
-  clientId: string;
-  tenantId: string;
-}
-
-interface ErrorResponse {
-  code: string;
-  message: string;
-}
-
-export async function POST(request: Request): Promise<NextResponse> {
-  const body = (await request.json().catch(() => ({}))) as TokenRequest;
-
-  if (!body.grantType) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  const parsed = TokenRequest.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) {
     return NextResponse.json(
-      { code: "INVALID_REQUEST", message: "缺 grantType" } satisfies ErrorResponse,
+      {
+        code: "INVALID_REQUEST",
+        message: "OAuth 2.0 token: 缺必填字段或字段非法",
+        details: parsed.error.flatten(),
+      },
       { status: 400 },
     );
   }
+  const body = parsed.data;
 
-  // 1. clientId 必须注册 + 校验 clientSecret（生产 saas 必查;dev 可宽松）
-  const app = (apps as Array<{
-    clientId: string;
-    clientSecret: string;
-    id: string;
-    scopes: string[];
-  }>).find((a) => a.clientId === body.clientId);
+  const appRows = await db
+    .select({ id: oauthClient.id })
+    .from(oauthClient)
+    .where(eq(oauthClient.clientId, body.clientId))
+    .limit(1);
+  const app = appRows[0];
   if (!app) {
     return NextResponse.json(
-      { code: "INVALID_CLIENT", message: "clientId 未注册" } satisfies ErrorResponse,
+      { code: "INVALID_CLIENT", message: "clientId 未注册或不可用" },
       { status: 400 },
     );
   }
-  // dev 宽松（生产 saas 必查;与 saas-msw 一致）—— 实际生产部署应配 clientSecret
 
   if (body.grantType === "authorization_code") {
-    // === authorization_code grant ===
-    if (!body.code || !body.tenantId || !body.redirectUri) {
+    if (!body.code || !body.redirectUri) {
       return NextResponse.json(
-        { code: "INVALID_REQUEST", message: "authorization_code: 缺必填字段" } satisfies ErrorResponse,
+        { code: "INVALID_REQUEST", message: "authorization_code: 缺 code 或 redirectUri" },
         { status: 400 },
       );
     }
-
-    const entry = oauthStore.consumeCode(body.code);
-    if (!entry) {
+    const rows = await db
+      .select()
+      .from(oauthCode)
+      .where(and(eq(oauthCode.code, body.code), eq(oauthCode.clientId, body.clientId)))
+      .limit(1);
+    const row = rows[0];
+    if (!row) {
       return NextResponse.json(
-        { code: "INVALID_GRANT", message: "code 不存在或已被使用" } satisfies ErrorResponse,
+        { code: "INVALID_GRANT", message: "code 不存在或已被使用" },
         { status: 400 },
       );
     }
-    if (entry.redirectUri !== body.redirectUri) {
+    if (new Date(row.expiresAt).getTime() <= Date.now()) {
+      await db.delete(oauthCode).where(eq(oauthCode.id, row.id));
       return NextResponse.json(
-        { code: "INVALID_GRANT", message: "redirect_uri 与 authorize 时不一致" } satisfies ErrorResponse,
+        { code: "INVALID_GRANT", message: "code 已过期" },
         { status: 400 },
       );
     }
-    if (entry.tenantId !== body.tenantId) {
+    if (row.redirectUri !== body.redirectUri) {
+      // RFC 6749 §4.1.3：redirect_uri 必须与 authorize 时一致；不一致即撤销 code
+      await db.delete(oauthCode).where(eq(oauthCode.id, row.id));
       return NextResponse.json(
-        { code: "INVALID_GRANT", message: "tenantId 与 authorize 时不一致" } satisfies ErrorResponse,
+        { code: "INVALID_GRANT", message: "redirectUri 与 authorize 时不一致" },
         { status: 400 },
       );
     }
-
-    // 真签 HS256 accessToken（RFC 7519 via jose）
+    // 一次性消费：删 code 行（msw/springboot/aspnetcore 同款，重放 → 上方 not found）
+    await db.delete(oauthCode).where(eq(oauthCode.id, row.id));
     const accessToken = await signToken({
-      sub: entry.userId,
-      tenant_id: entry.tenantId,
-      scope: entry.scope,
+      sub: row.userId,
+      tenant_id: row.tenantId,
+      scope: row.scope ?? undefined,
     });
-    const refreshToken = generateRefreshToken(entry.userId);
+    const refreshToken = generateRefreshToken(row.userId);
     oauthStore.putRefresh(refreshToken, {
-      clientId: entry.clientId,
-      userId: entry.userId,
-      tenantId: entry.tenantId,
-      scope: entry.scope,
+      clientId: row.clientId,
+      userId: row.userId,
+      tenantId: row.tenantId,
+      scope: row.scope ?? "",
     });
+
+    // audit_events 在新 schema 不存在 → no-op（先前由 audit.ts lib 兜底）
 
     return NextResponse.json({
       accessToken,
       refreshToken,
       tokenType: "Bearer",
       expiresIn: 3600,
-      scope: entry.scope,
-      // T11(2026-09-16) SSOT TokenResponse 必填三件回显（与根 app/ 同步，防死副本复活漂移）。
-      userId: entry.userId,
-      clientId: entry.clientId,
-      tenantId: entry.tenantId,
-    } satisfies TokenResponse);
-  }
-
-  if (body.grantType === "refresh_token") {
-    // === refresh_token grant ===
-    if (!body.refreshToken) {
-      return NextResponse.json(
-        { code: "INVALID_REQUEST", message: "refresh_token: 缺 refreshToken" } satisfies ErrorResponse,
-        { status: 400 },
-      );
-    }
-    const entry = oauthStore.rotateRefresh(body.refreshToken);
-    if (!entry) {
-      return NextResponse.json(
-        { code: "INVALID_GRANT", message: "refreshToken 不存在或已被使用" } satisfies ErrorResponse,
-        { status: 400 },
-      );
-    }
-    // 旧 refreshToken 已 rotateRefresh 删了; 发新 access + 新 refresh
-    const accessToken = await signToken({
-      sub: entry.userId,
-      tenant_id: entry.tenantId,
-      scope: entry.scope,
+      scope: row.scope ?? "",
+      // T11(2026-09-16) SSOT TokenResponse 必填三件回显（三方共库 UUID 逐字相等）。
+      userId: row.userId,
+      clientId: row.clientId,
+      tenantId: row.tenantId,
     });
-    const newRefresh = generateRefreshToken(entry.userId);
-    oauthStore.putRefresh(newRefresh, entry);
-
-    return NextResponse.json({
-      accessToken,
-      refreshToken: newRefresh,
-      tokenType: "Bearer",
-      expiresIn: 3600,
-      scope: entry.scope,
-      // T11(2026-09-16) SSOT TokenResponse 必填三件回显（与根 app/ 同步，防死副本复活漂移）。
-      userId: entry.userId,
-      clientId: entry.clientId,
-      tenantId: entry.tenantId,
-    } satisfies TokenResponse);
   }
 
-  return NextResponse.json(
-    {
-      code: "UNSUPPORTED_GRANT_TYPE",
-      message: "仅支持 grantType=authorization_code | refresh_token",
-    } satisfies ErrorResponse,
-    { status: 400 },
-  );
+  // body.grantType === "refresh_token"
+  if (!body.refreshToken) {
+    return NextResponse.json(
+      { code: "INVALID_REQUEST", message: "refresh_token: 缺 refreshToken" },
+      { status: 400 },
+    );
+  }
+  const entry = oauthStore.rotateRefresh(body.refreshToken);
+  if (!entry) {
+    return NextResponse.json(
+      { code: "INVALID_GRANT", message: "refreshToken 不存在或已被使用" },
+      { status: 400 },
+    );
+  }
+  const accessToken = await signToken({
+    sub: entry.userId,
+    tenant_id: entry.tenantId,
+    scope: entry.scope,
+  });
+  const newRefresh = generateRefreshToken(entry.userId);
+  oauthStore.putRefresh(newRefresh, entry);
+
+  return NextResponse.json({
+    accessToken,
+    refreshToken: newRefresh,
+    tokenType: "Bearer",
+    expiresIn: 3600,
+    scope: entry.scope,
+    // T11(2026-09-16) SSOT TokenResponse 必填三件回显（三方共库 UUID 逐字相等）。
+    userId: entry.userId,
+    clientId: entry.clientId,
+    tenantId: entry.tenantId,
+  });
 }

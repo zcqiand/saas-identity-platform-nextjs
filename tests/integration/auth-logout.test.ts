@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from "vitest";
 
-import { POST } from "../../app/api/v1/auth/logout/route";
+import { POST } from "../../src/app/api/v1/auth/logout/route";
 
 function makeReq(authHeader?: string): Request {
   const headers: Record<string, string> = {};

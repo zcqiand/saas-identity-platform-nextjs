@@ -2,7 +2,7 @@
 // 背景 bug：运行时切到真后端（OAuthClient 形状）时页面读旧 App 字段 → 「当前应用 — ()」+ 下拉空。
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
-import MenuTreePage from "../../app/admin/clients/[clientId]/menus/page";
+import MenuTreePage from "../../src/app/admin/clients/[clientId]/menus/page";
 import { TestProviders } from "../state-helpers";
 import { apps } from "../../../saas-identity-platform-msw/src/fixtures/seed";
 

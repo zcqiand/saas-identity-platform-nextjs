@@ -4,7 +4,7 @@
 import { beforeEach, describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { TestProviders } from "../state-helpers";
-import TenantApplicationsListPage from "../../app/tenants/[tenantId]/applications/page";
+import TenantApplicationsListPage from "../../src/app/tenants/[tenantId]/applications/page";
 
 const { state } = vi.hoisted(() => ({
   state: {
