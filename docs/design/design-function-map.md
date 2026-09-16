@@ -12,8 +12,6 @@
 |---|---|---|---|---|---|---|
 | M03.F01.I01 | src/components/app/login-form.tsx (submit Button) | POST /api/v1/auth/login | users + tenants + audit_events | M03.F01.I01 | – | 已上线 |
 | M03.F01.I02 | src/lib/login-lockout.ts (loginLockout.isLockedOut/recordFailure) | POST /api/v1/auth/login (429 ACCOUNT_LOCKED) | (进程内 Map) | M03.F01.I02 | – | 已上线 |
-| M03.F02.I03 | app/api/v1/auth/oidc/callback/route.ts | POST /api/v1/auth/oidc/callback | apps + users + oauth-store | M03.F02.I03 | – | 开发中 |
-| M03.F02.I04 | app/api/v1/auth/refresh/route.ts | POST /api/v1/auth/refresh | oauth-store (refresh tokens) | M03.F02.I04 | – | 已上线 |
 | M03.F03.I05 | src/components/app/sidebar-nav.tsx (logout Button) + app/api/v1/auth/logout/route.ts | POST /api/v1/auth/logout | – (best-effort 204) | M03.F03.I05 | – | 已上线 |
 | M04.F03.I07 | app/api/v1/oauth/authorize/route.ts | POST /api/v1/oauth/authorize | apps + users + oauth-store (codes) | M04.F03.I07 | – | 已上线 |
 | M04.F03.I08 | app/api/v1/oauth/token/route.ts | POST /api/v1/oauth/token (grantType=authorization_code) | apps + audit_events + oauth-store | M04.F03.I08 | – | 已上线 |

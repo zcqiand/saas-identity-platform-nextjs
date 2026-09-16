@@ -79,7 +79,7 @@ saas-identity-platform-nextjs/
 │   ├── admin/apps/[appId]/menus/     ← M04 应用 + M08 菜单 + M09 授权
 │   └── api/
 │       └── v1/
-│           ├── auth/{login,logout,refresh,oidc/callback}/route.ts      ← M03
+│           ├── auth/{login,logout}/route.ts      ← M03
 │           ├── oauth/{authorize,token}/route.ts                        ← M04 OAuth
 │           ├── me/{,tenants,menus}/route.ts                            ← M00 whoami + 切换 + 菜单
 │           ├── me/tenants/[tenantId]/switch/route.ts                   ← M00 切换当前租户
@@ -203,9 +203,7 @@ export function getApiMode(): string { return env.NEXT_PUBLIC_API_MODE; }
 app/api/v1/
 ├── auth/
 │   ├── login/route.ts                            ← M03.F01.I01/I02（账号密码 + 锁定）
-│   ├── refresh/route.ts                          ← M03.F02.I04 refresh token
 │   ├── logout/route.ts                           ← M03.F03.I05 登出（本地清理）
-│   └── oidc/callback/route.ts                    ← M03.F02.I03 OIDC Code 换取
 ├── oauth/
 │   ├── authorize/route.ts                        ← M04.F03.I07 授权码签发
 │   └── token/route.ts                            ← M04.F03.I08/I09 令牌交换 + 刷新

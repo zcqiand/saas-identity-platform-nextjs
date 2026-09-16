@@ -25,13 +25,6 @@ POST /api/v1/auth/login  {username, password, [tenantCode]}
 
 [某业务 API] → JWT 验签失败 → 401
    ↓
-POST /api/v1/auth/refresh  {refreshToken, clientId, tenantId}    (M03.F02.I04)
-   ↓ oauthStore.rotateRefresh
-   ├─ 不存在 / 已用 → 400 INVALID_GRANT
-   └─ 存在 → 删除旧 + 签新对 (saas-jwt-… + saas-rt-…)
-            + oauthStore.putRefresh(new)
-            → 200 TokenResponse
-
 [用户] 点 sidebar 「登出」按钮
    ↓
 POST /api/v1/auth/logout  (Authorization: Bearer <token>)         (M03.F03.I05)
@@ -53,13 +46,6 @@ POST /api/v1/auth/logout  (Authorization: Bearer <token>)         (M03.F03.I05)
 [前端] 调用方（lab-react / lab-vue / lab-nextjs 自己）
    ├─ window.location 跳 OIDC provider authorize URL（dev 占位：直接构造 code+state）
    └─ 用户授权 → provider 回跳 redirect_uri?code=…&state=…
-
-POST /api/v1/auth/oidc/callback  {code, state, clientId}    (M03.F02.I03)
-   ├─ 缺字段 → 400 INVALID_REQUEST
-   ├─ clientId 未注册 → 400 INVALID_CLIENT
-   ├─ 无 active 用户 → 400 NO_USER
-   └─ 成功 → oauthStore.putRefresh(saas-rt-…)
-            → 200 TokenResponse {accessToken: saas-jwt-…, refreshToken: saas-rt-…, scope: "openid"}
 
 [前端] 后续 refresh 走 /api/v1/oauth/token grantType=refresh_token (M04.F03.I09)
 ```
@@ -109,7 +95,7 @@ POST /api/v1/oauth/token  {grantType: "refresh_token", refreshToken, clientId, t
 涉及 fnId：
 - M04.F03.I07 — 授权码签发（/oauth/authorize）
 - M04.F03.I08 — 令牌交换（/oauth/token grantType=authorization_code）
-- M04.F03.I09 — 令牌刷新（/oauth/token grantType=refresh_token；与 /api/v1/auth/refresh 同 store）
+- M04.F03.I02 — 令牌交换与刷新（/oauth/token 双 grant；同 oauth-store）
 
 ### 孤儿功能
 

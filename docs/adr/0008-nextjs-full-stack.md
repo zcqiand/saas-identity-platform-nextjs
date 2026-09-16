@@ -66,7 +66,7 @@ profile 拆分：
 
 ### 2026-08-19 — M03/M04 auth 批次（5 路由 + 2 增强 + 1 in-memory store）
 
-落地 5 个新 Route Handler（`/auth/oidc/callback`、`/oauth/authorize`、`/oauth/token`），并对现有 `/auth/login` 加锁定策略（`LOCKOUT_MAX_FAILS` / `LOCKOUT_WINDOW_MIN` / `LOCKOUT_COOLDOWN_MIN`）+ `audit_events` 写 `login_success`/`login_failed`、对 `/auth/refresh` 切到 `src/lib/oauth-store.ts` in-memory Map（与 saas-msw `handlers-extra.ts` 同款语义：code 一次性、refresh token rotation）。
+落地 3 个新 Route Handler（`/oauth/authorize`、`/oauth/token`），并对现有 `/auth/login` 加锁定策略（`LOCKOUT_MAX_FAILS` / `LOCKOUT_WINDOW_MIN` / `LOCKOUT_COOLDOWN_MIN`）+ `audit_events` 写 `login_success`/`login_failed`。`/auth/refresh` 与 `/auth/oidc/callback` 已废弃（2026-09-16 saas-shared 提案 -001+003）；token exchange 改走 `/oauth/token`（M04.F03.I02 双 grant），refresh token rotate 改走 `/oauth/token` grantType=refresh_token。
 
 新增两个进程内工具：`src/lib/oauth-store.ts`（`oauthCodes` + `oauthRefreshTokens` Maps + TTL 懒清理 + `generateAuthCode`/`generateAccessToken`/`generateRefreshToken` 三个 helper）、`src/lib/login-lockout.ts`（按 username 计失败次数，窗口 + 冷却）。
 
@@ -97,8 +97,6 @@ fnTest 覆盖：`tests/integration/{oauth-authorize,oauth-token,auth-oidc-callba
 
 5 个 Route Handler 切到 `signToken`：
 - `/api/v1/auth/login` —— 移除本地 b64url 占位 + `JWT_SIGNING_KEY` 缺失告警（signToken 内部已 throw）
-- `/api/v1/auth/refresh` —— 复用 `signToken`
-- `/api/v1/auth/oidc/callback` —— 复用 `signToken`
 - `/api/v1/oauth/token` grantType=authorization_code + refresh_token —— 复用 `signToken`
 - `/api/v1/me/tenants/[id]/switch` —— 复用 `signToken`
 
