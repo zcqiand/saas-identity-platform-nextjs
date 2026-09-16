@@ -124,6 +124,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       tokenType: "Bearer",
       expiresIn: 3600,
       scope: row.scope ?? "",
+      // T11(2026-09-16) SSOT TokenResponse 必填三件回显（三方共库 UUID 逐字相等）。
+      userId: row.userId,
+      clientId: row.clientId,
+      tenantId: row.tenantId,
     });
   }
 
@@ -155,5 +159,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     tokenType: "Bearer",
     expiresIn: 3600,
     scope: entry.scope,
+    // T11(2026-09-16) SSOT TokenResponse 必填三件回显（三方共库 UUID 逐字相等）。
+    userId: entry.userId,
+    clientId: entry.clientId,
+    tenantId: entry.tenantId,
   });
 }

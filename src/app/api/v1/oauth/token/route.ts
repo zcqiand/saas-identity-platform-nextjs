@@ -31,6 +31,9 @@ interface TokenResponse {
   tokenType: string;
   expiresIn: number;
   scope: string;
+  userId: string;
+  clientId: string;
+  tenantId: string;
 }
 
 interface ErrorResponse {
@@ -112,6 +115,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       tokenType: "Bearer",
       expiresIn: 3600,
       scope: entry.scope,
+      // T11(2026-09-16) SSOT TokenResponse 必填三件回显（与根 app/ 同步，防死副本复活漂移）。
+      userId: entry.userId,
+      clientId: entry.clientId,
+      tenantId: entry.tenantId,
     } satisfies TokenResponse);
   }
 
@@ -145,6 +152,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       tokenType: "Bearer",
       expiresIn: 3600,
       scope: entry.scope,
+      // T11(2026-09-16) SSOT TokenResponse 必填三件回显（与根 app/ 同步，防死副本复活漂移）。
+      userId: entry.userId,
+      clientId: entry.clientId,
+      tenantId: entry.tenantId,
     } satisfies TokenResponse);
   }
 

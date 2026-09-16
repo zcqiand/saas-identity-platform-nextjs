@@ -59,5 +59,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     tokenType: "Bearer",
     expiresIn: 3600,
     scope: entry.scope,
+    // T11(2026-09-16) SSOT TokenResponse 全字段回显（tsp/routes/oauth.tsp）：
+    // userId/clientId/tenantId 是契约必填。三方共库 → 同一 user/tenant 的 UUID
+    // 逐字相等，回显即对齐（此前缺失使 nextjs 成 compareBodies 基准上的离群）。
+    userId: entry.userId,
+    clientId: parsed.data.clientId,
+    tenantId: entry.tenantId,
   });
 }
