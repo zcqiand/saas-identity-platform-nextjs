@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import MenuTreePage from "../../src/app/admin/clients/[clientId]/menus/page";
 import { TestProviders } from "../state-helpers";
-import { apps } from "../../../saas-identity-platform-msw/src/fixtures/seed";
+import { apps } from "../../../saas-identity-platform-shared/seeds";
 
 function queryResult(data: unknown) {
   return {

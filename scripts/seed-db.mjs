@@ -1,4 +1,4 @@
-// scripts/seed-db.mjs - 把 @saas/identity-platform-msw 的 seeds/*.json 灌到 PG 库。
+// scripts/seed-db.mjs - 把 saas-identity-platform-shared 的 seeds/*.json 灌到 PG 库。
 //
 // 背景：contract-test live（start-family.sh）与本地 dev 共用 saas_dev；
 // 表由 shared 仓 db:migrate（ADR-0025 drizzle journal）建好但空。本脚本读
@@ -42,11 +42,11 @@ const NEXTJS_ROOT = resolve(__dirname, "..");
 // seed JSON 候选目录（按优先级）：
 //   1. <NEXTJS_ROOT>/src/seeds          —— tracked 源码树（Dockerfile runtime stage
 //                                         COPY --from=builder /app/src/seeds ./src/seeds）。
-//   2. ../saas-identity-platform-msw/src/seeds —— sibling 仓（dev 期间 fallback，
-//                                              仍可能有人手动 cp 进去调试）
+//   2. ../saas-identity-platform-shared/seeds —— sibling 权威源（msw 仓已删，
+//                                              Phase 1 起 shared/seeds 是唯一事实源）
 const SEEDS_CANDIDATE_DIRS = [
   resolve(NEXTJS_ROOT, "src/seeds"),
-  resolve(NEXTJS_ROOT, "../saas-identity-platform-msw/src/seeds"),
+  resolve(NEXTJS_ROOT, "../saas-identity-platform-shared/seeds"),
 ];
 
 // 借 nextjs 的 pg driver（shared 仓禁 runtime 依赖）

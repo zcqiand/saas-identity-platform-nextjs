@@ -5,7 +5,7 @@ import {
   menus,
   roleMenuGrants,
   ROLE_IDS,
-} from "@saas/identity-platform-msw";
+} from "../saas-identity-platform-shared/seeds/index.ts";
 
 console.log("apps.length=", apps.length);
 console.log("menus.length=", menus.length);

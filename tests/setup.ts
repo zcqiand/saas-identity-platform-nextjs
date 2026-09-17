@@ -12,7 +12,7 @@ import {
   apps,
   menus,
   roleMenuGrants,
-} from "../../saas-identity-platform-msw/src/fixtures/seed";
+} from "../../saas-identity-platform-shared/seeds";
 
 // === Mock React.use() to unwrap params synchronously ===
 // Next.js 15 把 params 改成 Promise<{...}>，client component 用 `use(params)` 解包。

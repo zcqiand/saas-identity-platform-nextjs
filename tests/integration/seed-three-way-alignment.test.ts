@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "../../..");
-const MSW_SEEDS = resolve(ROOT, "saas-identity-platform-msw/src/seeds");
+const MSW_SEEDS = resolve(ROOT, "saas-identity-platform-shared/seeds");
 const SHARED_SQL = resolve(
   ROOT,
   "saas-identity-platform-shared/sql/migrations",
