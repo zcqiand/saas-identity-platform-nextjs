@@ -47,7 +47,7 @@ vi.mock("@/api/endpoints/tenant-roles/tenant-roles", () => ({
   useTenantRolesListSysRoles: () => queryResult({ data: { items: ROLES } }),
 }));
 // legacy 死桩清空：页面 import 它 = 回归 = 列表空 = 红
-vi.mock("@/api/endpoints/endpoints", () => ({
+vi.mock("@/api/endpoints", () => ({
   useTenantUsersListUsers: () => queryResult({ data: { items: [] } }),
   useTenantRolesListRoles: () => queryResult({ data: { items: [] } }),
 }));

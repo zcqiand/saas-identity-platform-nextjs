@@ -10,12 +10,12 @@ import {
   useTenantApplicationsRemoveTenantApplication,
   useTenantApplicationsSubscribeTenantApplication,
   useTenantApplicationsUpdateTenantApplication,
-} from "@/api/endpoints/endpoints";
+} from "@/api/endpoints";
 import type {
   SubscribeTenantApplicationRequest,
   TenantApplication,
   UpdateTenantApplicationRequest,
-} from "@/api/endpoints/endpoints.schemas";
+} from "@/api/endpoints.schemas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {

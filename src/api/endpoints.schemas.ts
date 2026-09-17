@@ -77,7 +77,7 @@ export type {
   TenantRoleMenusClearSysRoleMenusParams,
   TenantRoleMenusListSysRoleMenusParams,
   TenantRoleMenusSetSysRoleMenusParams,
-} from "./title.schemas";
+} from "./endpoints/title.schemas";
 
 // ---- LoginRequest / LoginResponse legacy extensions ----
 //

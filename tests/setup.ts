@@ -59,9 +59,9 @@ process.env.JWT_TTL_SECONDS ??= "3600";
 // NEXT_PUBLIC_API_BASE_URL 测试期同源相对 URL 模式（msw/node setupServer 相对路径 handler 匹配）。
 process.env.NEXT_PUBLIC_API_BASE_URL ??= "";
 
-// === Mock local orval api-client (@/api/endpoints/endpoints) ===
+// === Mock local orval api-client (@/api/endpoints) ===
 // orval 生成的 endpoints.ts 模块同时含裸函数 + useXxx hooks。tests 需要 hooks 形态桩。
-vi.mock("@/api/endpoints/endpoints", () => ({
+vi.mock("@/api/endpoints", () => ({
   // --- Bare functions（兼容 useQuery({ queryFn }) 调用）---
   authLogin: async (body: { data: { username: string } }) => ({
     data: {

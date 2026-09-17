@@ -17,7 +17,7 @@ import { useTenantRolesListSysRoles } from "@/api/endpoints/tenant-roles/tenant-
 import type {
   CreateSysUserRequest,
   UpdateSysUserRequest,
-} from "@/api/endpoints/endpoints.schemas";
+} from "@/api/endpoints.schemas";
 
 // ADR-0029 待裁决：shared tsp 把 members list 200 定义为嵌套 TenantMemberView
 // {member,user,roles}，但 4 后端 + msw + contract-test（M96.F02.I10 仲裁）实际

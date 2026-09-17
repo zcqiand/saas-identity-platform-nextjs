@@ -22,17 +22,17 @@
 //  3. Legacy type aliases (re-typed against current schemas where possible)
 
 // ---- 1. orval v7 generated exports ----
-export * from "./admin-clients/admin-clients";
-export * from "./admin-tenants/admin-tenants";
-export * from "./auth/auth";
-export * from "./client-menus/client-menus";
-export * from "./clients/clients";
-export * from "./me/me";
-export * from "./oauth/oauth";
-export * from "./tenant-applications/tenant-applications";
-export * from "./tenant-members/tenant-members";
-export * from "./tenant-role-menus/tenant-role-menus";
-export * from "./tenant-roles/tenant-roles";
+export * from "./endpoints/admin-clients/admin-clients";
+export * from "./endpoints/admin-tenants/admin-tenants";
+export * from "./endpoints/auth/auth";
+export * from "./endpoints/client-menus/client-menus";
+export * from "./endpoints/clients/clients";
+export * from "./endpoints/me/me";
+export * from "./endpoints/oauth/oauth";
+export * from "./endpoints/tenant-applications/tenant-applications";
+export * from "./endpoints/tenant-members/tenant-members";
+export * from "./endpoints/tenant-role-menus/tenant-role-menus";
+export * from "./endpoints/tenant-roles/tenant-roles";
 
 // Note: `adminTenantsListTenants` is re-exported both by orval's
 // admin-tenants tag file and by our legacy stub below. TypeScript

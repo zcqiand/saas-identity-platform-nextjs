@@ -6,7 +6,7 @@ import { use, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 // 2026-09-11 E2E REQ-2026-005：barrel 死桩切真源（client-menus/admin-clients/tenant-role-menus）
 import { clientMenusListSysMenus } from "@/api/endpoints/client-menus/client-menus";
-import type { SysMenu } from "@/api/endpoints/endpoints.schemas";
+import type { SysMenu } from "@/api/endpoints.schemas";
 import { useAdminClientsListClients } from "@/api/endpoints/admin-clients/admin-clients";
 import { useAdminTenantsGetTenant } from "@/api/endpoints/admin-tenants/admin-tenants";
 import {

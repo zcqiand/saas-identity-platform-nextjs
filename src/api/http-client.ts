@@ -1,6 +1,6 @@
 // HTTP client — axios + 1:1 endpoint mapping via local orval codegen.
 //
-// 端点 1:1 映射由 src/api/endpoints/endpoints.ts（本地 orval 产物）提供
+// 端点 1:1 映射由 src/api/endpoints.ts（本地 orval 产物）提供
 //（orval 从 ../saas-identity-platform-shared/generated/openapi/openapi.yaml 生成，
 // 每个端点对应一个具名函数 + 一个 react-query hook）。
 // 本文件做两件事：

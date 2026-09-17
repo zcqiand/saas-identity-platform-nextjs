@@ -39,7 +39,7 @@ function mutStub() {
   };
 }
 
-vi.mock("@/api/endpoints/endpoints", () => ({
+vi.mock("@/api/endpoints", () => ({
   useAdminTenantsGetTenant: () => queryResult({ data: { name: "ACME Corp", tenantKey: "acme" } }),
   useTenantApplicationsListTenantApplications: () =>
     queryResult({ data: { items: state.apps } }),
