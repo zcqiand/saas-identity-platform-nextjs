@@ -1,27 +1,21 @@
 // 后端配置：env-driven 单 URL（ADR-0014）。
 //
-// 旧 4-backend 运行时切换（msw / aspnetcore / springboot / nextjs-self）+ localStorage
-// 持久化 + Module 单例 + Context 已废弃。改用：
+//   NEXT_PUBLIC_API_BASE_URL   后端 base URL（默认 "" = 同源本仓 /api/v1）
+//   NEXT_PUBLIC_API_MODE       显示标签（默认 "nextjs"），仅 UI 显示
 //
-//   NEXT_PUBLIC_API_BASE_URL   后端 base URL（默认 "http://localhost:5100" msw-http）
-//   NEXT_PUBLIC_API_MODE       显示标签（默认 "msw-http"），仅 UI 显示
-//
-// ADR-0012 v0.3.0：Service Worker 模式完全删除。dev 路径只走 msw-http
-//（独立 HTTP server，由 @saas/identity-platform-msw/src/server.ts 起在 :5100）；
-// *_ENABLE_MSW env 与 isMswEnabled() 函数一并删除。
+// 2026-09-17 msw 仓已删（剔除设计 Phase 4 提前）：dev 默认后端从 msw-http :5100
+// 切到同源本仓 API routes；msw 切换项与 prodBaseUrl 一并移除。
 //
 // 所有调用方从 `getBaseUrl()` / `getBackend()` 切到 `getApiBaseUrl()` / `getApiMode()`。
 
 import { env } from "./env";
 
-// === 2026-09-11 用户裁定：恢复 4 后端运行时切换（用户指令覆盖 ADR-0014 dev 单 URL）===
+// === 2026-09-11 用户裁定：恢复运行时切换（用户指令覆盖 ADR-0014 dev 单 URL）===
 // 切换器是 dev/local 诊断工具；2026-09-13 用户裁定补 prod 分流（同 react/vue）：
-// prod 构建下选择映射到 prod 域名（含 msw → saas-msw.xiangru.uk，2026-09-13 用户裁定）。
-// 端口表 = multi-repo-family §6。
+// prod 构建下选择映射到 prod 域名。端口表 = multi-repo-family §6。
 const IS_PROD_BUILD = process.env.NODE_ENV === "production";
 
 export const BACKENDS = [
-  { key: "msw", baseUrl: "http://localhost:5100", prodBaseUrl: "https://saas-msw.xiangru.uk" },
   { key: "nextjs", baseUrl: "http://localhost:5101", prodBaseUrl: "https://saas-nextjs.xiangru.uk" },
   { key: "aspnetcore", baseUrl: "http://localhost:5104", prodBaseUrl: "https://saas-aspnetcore.xiangru.uk" },
   { key: "springboot", baseUrl: "http://localhost:5105", prodBaseUrl: "https://saas-springboot.xiangru.uk" },
@@ -70,12 +64,12 @@ export function getApiBaseUrl(): string {
     const hit = SELECTABLE_BACKENDS.find((b) => b.key === selected);
     if (hit) return resolveBaseUrl(hit);
   }
-  // 用 ?? 而非 ||：prod 部署 saas.env NEXT_PUBLIC_API_BASE_URL="" 时
-  // 应走同源相对路径（nginx 反代到 127.0.0.1:8022 容器）,"" 不是 nullish
-  // 必须保留。dev 没设 env 时 fallback 到 msw-http :5100。
-  return env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5100";
+  // 用 ?? 而非 ||：NEXT_PUBLIC_API_BASE_URL="" 时应走同源相对路径
+  //（prod nginx 反代到容器 / dev 本仓 API routes），"" 不是 nullish 必须保留。
+  // dev 没设 env 时 fallback 同源（msw 剔除后无独立假后端可指）。
+  return env.NEXT_PUBLIC_API_BASE_URL ?? "";
 }
 
 export function getApiMode(): string {
-  return env.NEXT_PUBLIC_API_MODE ?? "msw-http";
+  return env.NEXT_PUBLIC_API_MODE ?? "nextjs";
 }
