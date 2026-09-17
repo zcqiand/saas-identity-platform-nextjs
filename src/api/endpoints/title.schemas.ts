@@ -170,12 +170,6 @@ export interface OAuthClientPublicInfo {
   status: number;
 }
 
-export interface OidcCallbackRequest {
-  code: string;
-  state: string;
-  clientId: string;
-}
-
 export interface ReorderSysMenuRequest {
   orderedMenuIds: string[];
 }

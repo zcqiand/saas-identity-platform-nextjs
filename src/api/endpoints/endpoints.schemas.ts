@@ -29,7 +29,6 @@ export type {
   LockedAccountResponse,
   OAuthClient,
   OAuthClientPublicInfo,
-  OidcCallbackRequest,
   ReorderSysMenuRequest,
   SetSysRoleMenusRequest,
   SetTenantMemberRolesRequest,

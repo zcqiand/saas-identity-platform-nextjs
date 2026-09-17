@@ -22,13 +22,9 @@ import type {
 } from 'axios';
 
 import type {
-  ErrorResponse,
   LoginRequest,
   LoginResponse,
-  OidcCallbackRequest,
-  SessionsLoginDefault,
-  TokenRequest,
-  TokenResponse
+  SessionsLoginDefault
 } from '../title.schemas';
 
 
@@ -141,116 +137,6 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
       > => {
 
       const mutationOptions = getSessionsLogoutMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    export const sessionsOidcCallback = (
-    oidcCallbackRequest: OidcCallbackRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<TokenResponse>> => {
-    
-    
-    return axios.post(
-      `/api/v1/auth/oidc/callback`,
-      oidcCallbackRequest,options
-    );
-  }
-
-
-
-export const getSessionsOidcCallbackMutationOptions = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sessionsOidcCallback>>, TError,{data: OidcCallbackRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof sessionsOidcCallback>>, TError,{data: OidcCallbackRequest}, TContext> => {
-
-const mutationKey = ['sessionsOidcCallback'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-      
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sessionsOidcCallback>>, {data: OidcCallbackRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  sessionsOidcCallback(data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SessionsOidcCallbackMutationResult = NonNullable<Awaited<ReturnType<typeof sessionsOidcCallback>>>
-    export type SessionsOidcCallbackMutationBody = OidcCallbackRequest
-    export type SessionsOidcCallbackMutationError = AxiosError<ErrorResponse>
-
-    export const useSessionsOidcCallback = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sessionsOidcCallback>>, TError,{data: OidcCallbackRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof sessionsOidcCallback>>,
-        TError,
-        {data: OidcCallbackRequest},
-        TContext
-      > => {
-
-      const mutationOptions = getSessionsOidcCallbackMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    export const sessionsRefreshToken = (
-    tokenRequest: TokenRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<TokenResponse>> => {
-    
-    
-    return axios.post(
-      `/api/v1/auth/refresh`,
-      tokenRequest,options
-    );
-  }
-
-
-
-export const getSessionsRefreshTokenMutationOptions = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sessionsRefreshToken>>, TError,{data: TokenRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof sessionsRefreshToken>>, TError,{data: TokenRequest}, TContext> => {
-
-const mutationKey = ['sessionsRefreshToken'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-      
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sessionsRefreshToken>>, {data: TokenRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  sessionsRefreshToken(data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SessionsRefreshTokenMutationResult = NonNullable<Awaited<ReturnType<typeof sessionsRefreshToken>>>
-    export type SessionsRefreshTokenMutationBody = TokenRequest
-    export type SessionsRefreshTokenMutationError = AxiosError<ErrorResponse>
-
-    export const useSessionsRefreshToken = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sessionsRefreshToken>>, TError,{data: TokenRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof sessionsRefreshToken>>,
-        TError,
-        {data: TokenRequest},
-        TContext
-      > => {
-
-      const mutationOptions = getSessionsRefreshTokenMutationOptions(options);
 
       return useMutation(mutationOptions, queryClient);
     }
