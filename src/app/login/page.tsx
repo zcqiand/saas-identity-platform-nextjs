@@ -22,6 +22,7 @@ import { useTenant } from "@/state/tenant-context";
 import { getApiMode, getSelectedBackend } from "@/api/backend-config";
 import { BackendBadge } from "@/components/app/backend-badge";
 import { useSessionsLogin } from "@/api/endpoints/auth/auth";
+import type { LoginResponse } from "@/api/endpoints.schemas";
 // 2026-09-11 ④（E2E REQ-2026-006）：补 OAuth 跳板分支，authorize 走真源
 // （此前 nextjs 缺 onSubmit 跳板分支——带 ?redirect_uri=&client_id= 登录后落
 //  /tenants 而非回跳 RP，react/vue 均有此分支，parity 分歧由 E2E 抓出）
@@ -113,12 +114,10 @@ export default function LoginPage() {
       const res = await loginMut.mutateAsync({
         data: { username, password, clientId: loginClientId },
       });
-      const data = res.data as {
-        accessToken?: string;
-        refreshToken?: string;
-        user?: { id?: string; email?: string };
-        availableTenants?: { tenantId?: string }[];
-      } | undefined;
+      // Phase C5：响应类型直用生成 LoginResponse（契约 required：user/
+      // availableTenants/userId/clientId；accessToken/refreshToken optional），
+      // 不再手写结构 shim。运行时字段缺失按「缺 token」分支拒绝。
+      const data: LoginResponse | undefined = res.data;
       if (!data?.accessToken || !data.refreshToken) {
         toast.error("登录响应缺少 token，请联系管理员");
         return;
