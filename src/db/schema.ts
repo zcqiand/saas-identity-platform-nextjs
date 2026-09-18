@@ -1,86 +1,7 @@
-import { pgTable, index, uniqueIndex, foreignKey, uuid, varchar, boolean, smallint, timestamp, serial, text, bigint, integer, unique, primaryKey } from "drizzle-orm/pg-core"
+import { pgTable, serial, text, bigint, index, uniqueIndex, foreignKey, uuid, varchar, timestamp, boolean, smallint, integer, unique, primaryKey } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 
-
-export const sysRole = pgTable("sys_role", {
-	id: uuid().default(sql`uuid_generate_v4()`).primaryKey().notNull(),
-	tenantId: uuid("tenant_id").notNull(),
-	clientId: varchar("client_id", { length: 64 }).notNull(),
-	roleCode: varchar("role_code", { length: 64 }).notNull(),
-	roleName: varchar("role_name", { length: 64 }).notNull(),
-	description: varchar({ length: 255 }),
-	isPreset: boolean("is_preset").default(false).notNull(),
-	status: smallint().default(1).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-}, (table) => {
-	return {
-		idxSysRoleTenantClient: index("idx_sys_role_tenant_client").using("btree", table.tenantId.asc().nullsLast().op("text_ops"), table.clientId.asc().nullsLast().op("uuid_ops")),
-		ukTenantClientRoleCode: uniqueIndex("uk_tenant_client_role_code").using("btree", table.tenantId.asc().nullsLast().op("uuid_ops"), table.clientId.asc().nullsLast().op("uuid_ops"), table.roleCode.asc().nullsLast().op("uuid_ops")),
-		sysRoleTenantIdTenantIdFk: foreignKey({
-			columns: [table.tenantId],
-			foreignColumns: [tenant.id],
-			name: "sys_role_tenant_id_tenant_id_fk"
-		}).onDelete("cascade"),
-		sysRoleClientIdOauthClientClientIdFk: foreignKey({
-			columns: [table.clientId],
-			foreignColumns: [oauthClient.clientId],
-			name: "sys_role_client_id_oauth_client_client_id_fk"
-		}).onDelete("cascade"),
-	}
-});
-
-export const tenantMember = pgTable("tenant_member", {
-	id: uuid().default(sql`uuid_generate_v4()`).primaryKey().notNull(),
-	tenantId: uuid("tenant_id").notNull(),
-	userId: uuid("user_id").notNull(),
-	memberName: varchar("member_name", { length: 64 }),
-	isOwner: boolean("is_owner").default(false).notNull(),
-	status: smallint().default(1).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-}, (table) => {
-	return {
-		idxTenantMemberTenantId: index("idx_tenant_member_tenant_id").using("btree", table.tenantId.asc().nullsLast().op("uuid_ops")),
-		idxTenantMemberUserId: index("idx_tenant_member_user_id").using("btree", table.userId.asc().nullsLast().op("uuid_ops")),
-		ukTenantUser: uniqueIndex("uk_tenant_user").using("btree", table.tenantId.asc().nullsLast().op("uuid_ops"), table.userId.asc().nullsLast().op("uuid_ops")),
-		tenantMemberTenantIdTenantIdFk: foreignKey({
-			columns: [table.tenantId],
-			foreignColumns: [tenant.id],
-			name: "tenant_member_tenant_id_tenant_id_fk"
-		}).onDelete("cascade"),
-		tenantMemberUserIdSysUserIdFk: foreignKey({
-			columns: [table.userId],
-			foreignColumns: [sysUser.id],
-			name: "tenant_member_user_id_sys_user_id_fk"
-		}).onDelete("cascade"),
-	}
-});
-
-export const tenantApplication = pgTable("tenant_application", {
-	id: uuid().default(sql`uuid_generate_v4()`).primaryKey().notNull(),
-	tenantId: uuid("tenant_id").notNull(),
-	clientId: varchar("client_id", { length: 64 }).notNull(),
-	status: smallint().default(1).notNull(),
-	expireTime: timestamp("expire_time", { withTimezone: true, mode: 'string' }),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-}, (table) => {
-	return {
-		idxTenantApplicationClientId: index("idx_tenant_application_client_id").using("btree", table.clientId.asc().nullsLast().op("text_ops")),
-		ukTenantClient: uniqueIndex("uk_tenant_client").using("btree", table.tenantId.asc().nullsLast().op("text_ops"), table.clientId.asc().nullsLast().op("text_ops")),
-		tenantApplicationTenantIdTenantIdFk: foreignKey({
-			columns: [table.tenantId],
-			foreignColumns: [tenant.id],
-			name: "tenant_application_tenant_id_tenant_id_fk"
-		}).onDelete("cascade"),
-		tenantApplicationClientIdOauthClientClientIdFk: foreignKey({
-			columns: [table.clientId],
-			foreignColumns: [oauthClient.clientId],
-			name: "tenant_application_client_id_oauth_client_client_id_fk"
-		}).onDelete("cascade"),
-	}
-});
 
 export const drizzleMigrations = pgTable("__drizzle_migrations", {
 	id: serial().primaryKey().notNull(),
@@ -121,6 +42,25 @@ export const oauthAccessToken = pgTable("oauth_access_token", {
 			foreignColumns: [tenant.id],
 			name: "oauth_access_token_tenant_id_tenant_id_fk"
 		}).onDelete("set null"),
+	}
+});
+
+export const sysUser = pgTable("sys_user", {
+	id: uuid().default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	username: varchar({ length: 64 }).notNull(),
+	password: varchar({ length: 255 }).notNull(),
+	email: varchar({ length: 128 }),
+	mobile: varchar({ length: 32 }),
+	status: smallint().default(1).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	failedAttempts: integer("failed_attempts").default(0).notNull(),
+	lockedUntil: timestamp("locked_until", { withTimezone: true, mode: 'string' }),
+}, (table) => {
+	return {
+		ukSysUserEmail: uniqueIndex("uk_sys_user_email").using("btree", table.email.asc().nullsLast().op("text_ops")),
+		ukSysUserMobile: uniqueIndex("uk_sys_user_mobile").using("btree", table.mobile.asc().nullsLast().op("text_ops")),
+		ukSysUserUsername: uniqueIndex("uk_sys_user_username").using("btree", table.username.asc().nullsLast().op("text_ops")),
 	}
 });
 
@@ -222,22 +162,82 @@ export const sysMenu = pgTable("sys_menu", {
 	}
 });
 
-export const sysUser = pgTable("sys_user", {
+export const sysRole = pgTable("sys_role", {
 	id: uuid().default(sql`uuid_generate_v4()`).primaryKey().notNull(),
-	username: varchar({ length: 64 }).notNull(),
-	password: varchar({ length: 255 }).notNull(),
-	email: varchar({ length: 128 }),
-	mobile: varchar({ length: 32 }),
+	tenantId: uuid("tenant_id").notNull(),
+	clientId: varchar("client_id", { length: 64 }).notNull(),
+	roleCode: varchar("role_code", { length: 64 }).notNull(),
+	roleName: varchar("role_name", { length: 64 }).notNull(),
+	description: varchar({ length: 255 }),
+	isPreset: boolean("is_preset").default(false).notNull(),
 	status: smallint().default(1).notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	failedAttempts: integer("failed_attempts").default(0).notNull(),
-	lockedUntil: timestamp("locked_until", { withTimezone: true, mode: 'string' }),
 }, (table) => {
 	return {
-		ukSysUserEmail: uniqueIndex("uk_sys_user_email").using("btree", table.email.asc().nullsLast().op("text_ops")),
-		ukSysUserMobile: uniqueIndex("uk_sys_user_mobile").using("btree", table.mobile.asc().nullsLast().op("text_ops")),
-		ukSysUserUsername: uniqueIndex("uk_sys_user_username").using("btree", table.username.asc().nullsLast().op("text_ops")),
+		idxSysRoleTenantClient: index("idx_sys_role_tenant_client").using("btree", table.tenantId.asc().nullsLast().op("text_ops"), table.clientId.asc().nullsLast().op("uuid_ops")),
+		ukTenantClientRoleCode: uniqueIndex("uk_tenant_client_role_code").using("btree", table.tenantId.asc().nullsLast().op("uuid_ops"), table.clientId.asc().nullsLast().op("uuid_ops"), table.roleCode.asc().nullsLast().op("uuid_ops")),
+		sysRoleTenantIdTenantIdFk: foreignKey({
+			columns: [table.tenantId],
+			foreignColumns: [tenant.id],
+			name: "sys_role_tenant_id_tenant_id_fk"
+		}).onDelete("cascade"),
+		sysRoleClientIdOauthClientClientIdFk: foreignKey({
+			columns: [table.clientId],
+			foreignColumns: [oauthClient.clientId],
+			name: "sys_role_client_id_oauth_client_client_id_fk"
+		}).onDelete("cascade"),
+	}
+});
+
+export const tenantMember = pgTable("tenant_member", {
+	id: uuid().default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	tenantId: uuid("tenant_id").notNull(),
+	userId: uuid("user_id").notNull(),
+	memberName: varchar("member_name", { length: 64 }),
+	isOwner: boolean("is_owner").default(false).notNull(),
+	status: smallint().default(1).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => {
+	return {
+		idxTenantMemberTenantId: index("idx_tenant_member_tenant_id").using("btree", table.tenantId.asc().nullsLast().op("uuid_ops")),
+		idxTenantMemberUserId: index("idx_tenant_member_user_id").using("btree", table.userId.asc().nullsLast().op("uuid_ops")),
+		ukTenantUser: uniqueIndex("uk_tenant_user").using("btree", table.tenantId.asc().nullsLast().op("uuid_ops"), table.userId.asc().nullsLast().op("uuid_ops")),
+		tenantMemberTenantIdTenantIdFk: foreignKey({
+			columns: [table.tenantId],
+			foreignColumns: [tenant.id],
+			name: "tenant_member_tenant_id_tenant_id_fk"
+		}).onDelete("cascade"),
+		tenantMemberUserIdSysUserIdFk: foreignKey({
+			columns: [table.userId],
+			foreignColumns: [sysUser.id],
+			name: "tenant_member_user_id_sys_user_id_fk"
+		}).onDelete("cascade"),
+	}
+});
+
+export const tenantApplication = pgTable("tenant_application", {
+	id: uuid().default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	tenantId: uuid("tenant_id").notNull(),
+	clientId: varchar("client_id", { length: 64 }).notNull(),
+	status: smallint().default(1).notNull(),
+	expireTime: timestamp("expire_time", { withTimezone: true, mode: 'string' }),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => {
+	return {
+		idxTenantApplicationClientId: index("idx_tenant_application_client_id").using("btree", table.clientId.asc().nullsLast().op("text_ops")),
+		ukTenantClient: uniqueIndex("uk_tenant_client").using("btree", table.tenantId.asc().nullsLast().op("text_ops"), table.clientId.asc().nullsLast().op("text_ops")),
+		tenantApplicationTenantIdTenantIdFk: foreignKey({
+			columns: [table.tenantId],
+			foreignColumns: [tenant.id],
+			name: "tenant_application_tenant_id_tenant_id_fk"
+		}).onDelete("cascade"),
+		tenantApplicationClientIdOauthClientClientIdFk: foreignKey({
+			columns: [table.clientId],
+			foreignColumns: [oauthClient.clientId],
+			name: "tenant_application_client_id_oauth_client_client_id_fk"
+		}).onDelete("cascade"),
 	}
 });
 
@@ -274,26 +274,6 @@ export const tenant = pgTable("tenant", {
 	}
 });
 
-export const tenantMemberRole = pgTable("tenant_member_role", {
-	memberId: uuid("member_id").notNull(),
-	roleId: uuid("role_id").notNull(),
-}, (table) => {
-	return {
-		idxTenantMemberRoleRoleId: index("idx_tenant_member_role_role_id").using("btree", table.roleId.asc().nullsLast().op("uuid_ops")),
-		tenantMemberRoleMemberIdTenantMemberIdFk: foreignKey({
-			columns: [table.memberId],
-			foreignColumns: [tenantMember.id],
-			name: "tenant_member_role_member_id_tenant_member_id_fk"
-		}).onDelete("cascade"),
-		tenantMemberRoleRoleIdSysRoleIdFk: foreignKey({
-			columns: [table.roleId],
-			foreignColumns: [sysRole.id],
-			name: "tenant_member_role_role_id_sys_role_id_fk"
-		}).onDelete("cascade"),
-		tenantMemberRoleMemberIdRoleIdPk: primaryKey({ columns: [table.memberId, table.roleId], name: "tenant_member_role_member_id_role_id_pk"}),
-	}
-});
-
 export const sysRoleMenu = pgTable("sys_role_menu", {
 	roleId: uuid("role_id").notNull(),
 	menuId: uuid("menu_id").notNull(),
@@ -311,5 +291,25 @@ export const sysRoleMenu = pgTable("sys_role_menu", {
 			name: "sys_role_menu_menu_id_sys_menu_id_fk"
 		}).onDelete("cascade"),
 		sysRoleMenuRoleIdMenuIdPk: primaryKey({ columns: [table.roleId, table.menuId], name: "sys_role_menu_role_id_menu_id_pk"}),
+	}
+});
+
+export const tenantMemberRole = pgTable("tenant_member_role", {
+	memberId: uuid("member_id").notNull(),
+	roleId: uuid("role_id").notNull(),
+}, (table) => {
+	return {
+		idxTenantMemberRoleRoleId: index("idx_tenant_member_role_role_id").using("btree", table.roleId.asc().nullsLast().op("uuid_ops")),
+		tenantMemberRoleMemberIdTenantMemberIdFk: foreignKey({
+			columns: [table.memberId],
+			foreignColumns: [tenantMember.id],
+			name: "tenant_member_role_member_id_tenant_member_id_fk"
+		}).onDelete("cascade"),
+		tenantMemberRoleRoleIdSysRoleIdFk: foreignKey({
+			columns: [table.roleId],
+			foreignColumns: [sysRole.id],
+			name: "tenant_member_role_role_id_sys_role_id_fk"
+		}).onDelete("cascade"),
+		tenantMemberRoleMemberIdRoleIdPk: primaryKey({ columns: [table.memberId, table.roleId], name: "tenant_member_role_member_id_role_id_pk"}),
 	}
 });
