@@ -31,7 +31,10 @@ const LoginBody = z.object({
   username: z.string().min(1).max(64),
   password: z.string().min(1).max(128),
   tenantCode: z.string().uuid().optional(),
-  clientId: z.string().optional(),
+  // Task 3.7 fail-fast（ADR-0019）：TSP LoginRequest.clientId 本就 required
+  // （tsp/routes/sessions.tsp），此前 zod .optional() 是单侧放宽 —— 缺失经
+  // safeParse 400 拒绝，不再 ?? "login" / ?? "" 兜底漏进签发与响应。
+  clientId: z.string().min(1).max(128),
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -151,7 +154,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const accessToken = await signToken({ sub: user.id, tenant_id: tRow.id });
   const refreshToken = generateRefreshToken(user.id);
   oauthStore.putRefresh(refreshToken, {
-    clientId: parsed.data.clientId ?? "login",
+    clientId: parsed.data.clientId,
     userId: user.id,
     tenantId: tRow.id,
     scope: "openid",
@@ -176,7 +179,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       status: "active",
       joinedAt: new Date(r.joinedAt).toISOString(),
     })),
-    clientId: parsed.data.clientId ?? "",
+    clientId: parsed.data.clientId,
     accessToken,
     refreshToken,
     tokenType: "Bearer",

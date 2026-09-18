@@ -101,7 +101,13 @@ describe("M01.F04.I03 + M01.F04.I02 /api/v1/auth/login", () => {
     });
 
     const res = await POST(
-      makeReq({ username: "alice", password: "secret-pw" }) as never,
+      makeReq({
+        username: "alice",
+        password: "secret-pw",
+        // Task 3.7：clientId 契约 required —— happy path 同步带真实 clientId，
+        // 响应回显 = 请求值（不再断言 "" 兜底）。
+        clientId: "lab-management",
+      }) as never,
     );
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -124,7 +130,8 @@ describe("M01.F04.I03 + M01.F04.I02 /api/v1/auth/login", () => {
       // toISOString 序列化：毫秒精度 + Z 后缀（msw oracle 同形）
       joinedAt: "2026-01-01T00:00:00.000Z",
     });
-    expect(json.clientId).toBe("");
+    // Task 3.7：clientId 缺失在解析层 400；合法请求回显请求值（不再是 "" 兜底）
+    expect(json.clientId).toBe("lab-management");
   });
 
   it("M01.F04.I03 returns 401 UNAUTHORIZED for wrong password", async () => {
@@ -145,7 +152,7 @@ describe("M01.F04.I03 + M01.F04.I02 /api/v1/auth/login", () => {
     });
 
     const res = await POST(
-      makeReq({ username: "alice", password: "wrong-pw" }) as never,
+      makeReq({ username: "alice", password: "wrong-pw", clientId: "lab-management" }) as never,
     );
     expect(res.status).toBe(401);
     const json = await res.json();
@@ -166,14 +173,62 @@ describe("M01.F04.I03 + M01.F04.I02 /api/v1/auth/login", () => {
     });
 
     for (let i = 0; i < 5; i++) {
-      await POST(makeReq({ username: "bob", password: "x" }) as never);
+      await POST(makeReq({ username: "bob", password: "x", clientId: "lab-management" }) as never);
     }
-    const res = await POST(makeReq({ username: "bob", password: "x" }) as never);
+    const res = await POST(
+      makeReq({ username: "bob", password: "x", clientId: "lab-management" }) as never,
+    );
     expect(res.status).toBe(429);
     const json = await res.json();
     expect(json.code).toBe("ACCOUNT_LOCKED");
     // 同上：全程失败路径，不写任何 audit 事件
     expect(dbMock.insert, "lockout 路径不得写 audit_events").not.toHaveBeenCalled();
+  });
+
+  it("M01.F04.I03 缺 clientId → 400 且不签发 token（Task 3.7 fail-fast，TSP LoginRequest.clientId required）", async () => {
+    // 与 happy path 同一套 mock（凭证有效），唯独 body 缺 clientId：
+    // 契约（tsp/routes/sessions.tsp LoginRequest.clientId: string 必填）下缺失必须 400，
+    // 不得回落 "" / "login" 字面量继续走签发（ADR-0019 身份字段禁兜底）。
+    const tenantUuid = "00000000-0000-0000-0000-000000000111";
+    dbMock.select.mockReturnValueOnce({
+      from: () => ({
+        where: () => ({
+          limit: () =>
+            Promise.resolve([
+              {
+                id: "user-id-1",
+                status: 1,
+                password: "plain:secret-pw",
+                createdAt: "2026-01-01T00:00:00Z",
+                updatedAt: "2026-01-01T00:00:00Z",
+              },
+            ]),
+        }),
+      }),
+    });
+    // memberRows 查询桩：缺 clientId 当前会穿透到租户解析（红=没在解析层拦住），
+    // 给空结果让它走 403 分支而非 mock 崩溃 —— 断言目标是 400。
+    dbMock.select.mockReturnValueOnce({
+      from: () => ({
+        innerJoin: () => ({
+          where: () => ({
+            orderBy: () => ({
+              limit: () => Promise.resolve([]),
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const res = await POST(
+      makeReq({ username: "alice", password: "secret-pw" }) as never,
+    );
+    expect(res.status, "缺 clientId 必须在解析层 400 拒绝").toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe("BAD_REQUEST");
+    // 400 分支直接返回 —— 不触达用户查询之外的任何链路，更不签发 token
+    expect(json.accessToken).toBeUndefined();
+    expect(json.refreshToken).toBeUndefined();
   });
 
   it("M01.F04.I03 returns 400 BAD_REQUEST for invalid body", async () => {
