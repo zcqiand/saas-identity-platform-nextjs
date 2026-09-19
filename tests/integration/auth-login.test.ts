@@ -231,6 +231,77 @@ describe("M01.F04.I03 + M01.F04.I02 /api/v1/auth/login", () => {
     expect(json.refreshToken).toBeUndefined();
   });
 
+  it("项 5.11：超长 clientId（>128，TSP 无 @maxLength）必须放行 —— 本仓不得单侧收紧契约", async () => {
+    // TSP sessions.tsp LoginRequest.clientId: string（无 @maxLength）——契约合法的
+    // 超长 clientId 在 nextjs 被 .max(128) 400 = 单侧收紧（3.B 审查 IMPORTANT，用户裁
+    // 2026-09-19：删本地收紧对齐契约）。红-first：修前此输入在解析层 400。
+    const tenantUuid = "00000000-0000-0000-0000-000000000111";
+    const longClientId = "c".repeat(200);
+    // 前序用例（缺 clientId / invalid body）在解析层就 400，留有未消费的
+    // mockReturnValueOnce 桩；clearAllMocks 不清实现队列 —— 显式 reset 再桩。
+    dbMock.select.mockReset();
+    // 与 happy path 同一套 mock 桩（1-5 顺序见首个用例）
+    dbMock.select.mockReturnValueOnce({
+      from: () => ({
+        where: () => ({
+          limit: () =>
+            Promise.resolve([
+              {
+                id: "user-id-1",
+                status: 1,
+                password: "plain:secret-pw",
+                createdAt: "2026-01-01T00:00:00Z",
+                updatedAt: "2026-01-01T00:00:00Z",
+              },
+            ]),
+        }),
+      }),
+    });
+    dbMock.select.mockReturnValueOnce({
+      from: () => ({
+        innerJoin: () => ({
+          where: () => ({
+            orderBy: () => ({
+              limit: () => Promise.resolve([{ tenantId: tenantUuid }]),
+            }),
+          }),
+        }),
+      }),
+    });
+    dbMock.select.mockReturnValueOnce({
+      from: () => ({
+        where: () => ({
+          limit: () => Promise.resolve([{ id: tenantUuid, status: 1 }]),
+        }),
+      }),
+    });
+    dbMock.select.mockReturnValueOnce({
+      from: () => ({
+        innerJoin: () => ({
+          where: () => Promise.resolve([]),
+        }),
+      }),
+    });
+    dbMock.select.mockReturnValueOnce({
+      from: () => ({
+        innerJoin: () => ({
+          where: () => Promise.resolve([]),
+        }),
+      }),
+    });
+
+    const res = await POST(
+      makeReq({
+        username: "alice",
+        password: "secret-pw",
+        clientId: longClientId,
+      }) as never,
+    );
+    expect(res.status, "契约无 @maxLength，超长 clientId 不得被本仓 400").toBe(200);
+    const json = await res.json();
+    expect(json.clientId).toBe(longClientId);
+  });
+
   it("M01.F04.I03 returns 400 BAD_REQUEST for invalid body", async () => {
     const res = await POST(makeReq({}) as never);
     expect(res.status).toBe(400);

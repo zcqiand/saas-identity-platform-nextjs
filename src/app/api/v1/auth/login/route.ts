@@ -34,7 +34,9 @@ const LoginBody = z.object({
   // Task 3.7 fail-fast（ADR-0019）：TSP LoginRequest.clientId 本就 required
   // （tsp/routes/sessions.tsp），此前 zod .optional() 是单侧放宽 —— 缺失经
   // safeParse 400 拒绝，不再 ?? "login" / ?? "" 兜底漏进签发与响应。
-  clientId: z.string().min(1).max(128),
+  // 项 5.11（用户裁 2026-09-19）：TSP clientId 无 @maxLength —— 不加 .max(128)
+  // 单侧收紧（3.B 审查 IMPORTANT），契约合法的超长输入必须放行。
+  clientId: z.string().min(1),
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
