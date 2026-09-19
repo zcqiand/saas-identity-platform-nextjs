@@ -1,23 +1,25 @@
 {
   "schema": 2,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "2026-09-12/13 四方 live 一致性收敛提交（17d9765）：ADR-0032 扁平成员视图（member-roles.ts roleIds 真 join）+ roles 列表 created_at asc 排序 + login 空订阅退化不过滤 + 菜单域 clientId code 归一",
-  "last_session_at": "2026-09-13",
-  "last_session_summary": "6 code-review blocker（本仓 PASS 无阻塞）；route 修复全入库；四方终验 222/240（唯一失败=本仓 dev server 30s 瞬时超时，单跑即过）",
+  "current_task": "2026-09-19 family-leftovers wave 收口（Task 6）：--all 三轮判读完成，本仓 canonical 绿（R1）；R2/R3 红为环境注入副作用",
+  "last_session_at": "2026-09-19",
+  "last_session_summary": "无代码改动：R1 --all 绿；R2/R3 L4.db.drift 红 = --all 单值 DATABASE_URL=lab_test 误连（pull-schema 拉 lab 表），非本仓代码红，schema.ts 两次误改写均已还原",
   "done": [
     "成员域扁平 TenantMemberUserView + src/lib/member-roles.ts 入库",
     "roles 列表 orderBy created_at asc, id asc（此前 DESC 与 oracle 分叉）",
     "login availableTenants 空订阅退化不过滤；me 三端点 ADR-0032 形态",
-    "deploy 脚本 + .env.example 同步；门禁全绿"
+    "deploy 脚本 + .env.example 同步；门禁全绿",
+    "Task 6 收口：--all 三轮判读，canonical 绿（R1）；R2/R3 环境类红定性 + 树还原"
   ],
   "next": [
-    "dev server 冷编译慢（login 3-15s 常态），跑 live 前先预热或接受 30s 超时偶发（本次终验唯一失败即此类）"
+    "无代码欠账；剩余项见 docs/superpowers/plans/2026-09-18-family-leftovers-remediation.md"
   ],
   "open_questions": [
     "评审非阻塞项：clientId ?? '' 是否改 fail-fast（ADR-0019 口径，未动）"
   ],
   "dont": [
-    "route handler 顶层禁止 requireEnv（Docker build 崩）；必须惰性求值"
+    "route handler 顶层禁止 requireEnv（Docker build 崩）；必须惰性求值",
+    "L4.db.drift 门认 DATABASE_URL：--all 场景误连 lab_test 会用 lab 表改写 src/db/schema.ts（Task 6 两次实证，已 git checkout 还原）"
   ],
   "active_branch": "master"
 }
