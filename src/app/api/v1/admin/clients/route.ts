@@ -31,13 +31,17 @@ const GRANT_TYPES = [
 ] as const;
 
 const CreateAppBody = z.object({
-  clientId: z.string().min(2).max(128),
-  clientName: z.string().min(2).max(128),
+  // 5.59 A-1：删超契约 min/max 贴契约（CreateOAuthClientRequest.clientId 无约束；min1 保底，5.11 先例）
+  clientId: z.string().min(1),
+  // 5.59 A-1：删超契约 min/max 贴契约（CreateOAuthClientRequest.clientName 无约束；min1 保底）
+  clientName: z.string().min(1),
   clientSecret: z.string().optional(),
   // 9/7 SSOT pivot：CreateOAuthClientRequest 的 grantTypes / redirectUris / scopes
   // 全部是逗号分隔字符串（DB 列是 varchar / text），不是数组。
+  // 本地防御性收紧，超出 TSP 契约（5.59 C-3 人裁 2026-09-20 维持现状）
   redirectUris: z.string().min(1),
   scopes: z.string().optional(),
+  // 本地防御性收紧，超出 TSP 契约（5.59 C-3 人裁 2026-09-20 维持现状）
   grantTypes: z.string().min(1),
   autoApprove: z.boolean().optional(),
   accessTokenValidity: z.number().int().optional(),

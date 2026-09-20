@@ -15,6 +15,7 @@ import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-g
 
 const UpdateMenuBody = z.object({
   parentId: z.string().uuid().optional().nullable(),
+  // 本地防御性收紧，超出 TSP 契约（5.59 C-3 人裁 2026-09-20 维持现状）
   title: z.string().min(2).max(64).optional(),
   path: z.string().optional().nullable(),
   icon: z.string().optional().nullable(),

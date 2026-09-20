@@ -15,7 +15,8 @@ import { oauthClient, tenantApplication } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const SubscribeBody = z.object({
-  clientId: z.string().min(1).max(64),
+  // 5.59 A-1：删超契约 max64 贴契约（SubscribeTenantApplicationRequest.clientId 无约束；min1 保底）
+  clientId: z.string().min(1),
   expireTime: z.string().optional(),
 });
 

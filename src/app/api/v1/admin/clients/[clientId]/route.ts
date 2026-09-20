@@ -24,7 +24,8 @@ const GRANT_TYPES = [
 ] as const;
 
 const UpdateAppBody = z.object({
-  clientName: z.string().min(2).max(128).optional(),
+  // 5.59 A-1：删超契约 min/max 贴契约（UpdateOAuthClientRequest.clientName 无约束；min1 保底）
+  clientName: z.string().min(1).optional(),
   // 9/7 SSOT pivot：UpdateOAuthClientRequest 的 grantTypes / redirectUris / scopes
   // 全部是逗号分隔字符串，不是数组。
   redirectUris: z.string().optional(),

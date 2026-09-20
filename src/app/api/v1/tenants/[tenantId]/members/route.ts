@@ -25,10 +25,13 @@ import { getMemberRoleIdsBatch, MEMBER_STATUS_TO_SMALLINT, smallintToMemberStatu
 const PAGE_DEFAULT = 20;
 const PAGE_MAX = 100;
 
-// M01.F04.I03 createUser body（对齐 TypeSpec CreateUserRequest）
+// M01.F04.I03 createUser body（对齐 TypeSpec CreateUserRequest；
+// 5.59 T16：username min2→min1 归位，此前 min 与契约 @minLength(1) 漂移）
+// password min8/max256 对齐契约 @minLength(8) @maxLength(256)（5.59 D-2 双边收紧）
 const CreateUserBody = z.object({
-  username: z.string().min(2).max(64),
+  username: z.string().min(1).max(64),
   email: z.string().email(),
+  // 本地防御性收紧，超出 TSP 契约（5.59 C-3 人裁 2026-09-20 维持现状）
   mobile: z.string().max(32).optional(),
   password: z.string().min(8).max(256),
 });

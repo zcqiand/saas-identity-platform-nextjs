@@ -31,11 +31,13 @@ import { generateAuthCode } from "@/lib/oauth-store";
 import { claimsFromAuthHeader } from "@/lib/jwt";
 
 const AuthorizeCodeRequest = z.object({
-  clientId: z.string().min(1).max(128),
+  // 5.59 A-1/B-1：删超契约 max 贴契约（AuthorizeCodeRequest.clientId 无约束；min1 保底）
+  clientId: z.string().min(1),
   redirectUri: z.string().min(1).max(2048),
   responseType: z.string().min(1).max(64),
-  scope: z.string().min(1).max(512),
-  state: z.string().min(1).max(512),
+  // 5.59 B-1：删超契约 max 贴契约（scope?/state 无约束；min1 保底）
+  scope: z.string().min(1),
+  state: z.string().min(1),
 });
 
 function unauthorized(message: string): NextResponse {

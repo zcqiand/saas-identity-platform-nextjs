@@ -17,9 +17,11 @@ import { sysRole } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 const CreateRoleBody = z.object({
-  clientId: z.string().min(1).max(128),
+  // 5.59 A-1：删超契约 max 贴契约（CreateSysRoleRequest.clientId 无约束；min1 保底）
+  clientId: z.string().min(1),
   roleCode: z.string().min(1).max(64),
   roleName: z.string().min(1).max(64),
+  // 本地防御性收紧，超出 TSP 契约（5.59 C-3 人裁 2026-09-20 维持现状）
   description: z.string().max(255).optional(),
   isPreset: z.boolean().optional(),
 });

@@ -33,11 +33,13 @@ import { signToken } from "@/lib/jwt";
 
 const TokenRequest = z.object({
   grantType: z.enum(["authorization_code", "refresh_token"]),
-  code: z.string().min(1).max(512).optional(),
-  refreshToken: z.string().min(1).max(512).optional(),
-  clientId: z.string().min(1).max(128),
+  // 5.59 B-1：删超契约 max 贴契约（TokenRequest.code?/refreshToken?/clientId/redirectUri? 均无约束；min1 保底）
+  // R1 双轨残差（authorize @maxLength(500) vs token 无）按 5.59 人裁不扩修，仅记账。
+  code: z.string().min(1).optional(),
+  refreshToken: z.string().min(1).optional(),
+  clientId: z.string().min(1),
   clientSecret: z.string().optional(),
-  redirectUri: z.string().min(1).max(2048).optional(),
+  redirectUri: z.string().min(1).optional(),
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
