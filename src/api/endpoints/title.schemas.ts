@@ -69,6 +69,10 @@ export interface CreateSysUserRequest {
    * @maxLength 64
    */
   username: string;
+  /**
+   * @minLength 8
+   * @maxLength 256
+   */
   password: string;
   email?: string;
   mobile?: string;
