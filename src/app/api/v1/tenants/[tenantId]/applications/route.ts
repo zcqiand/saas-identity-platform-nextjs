@@ -85,10 +85,15 @@ export async function POST(
     const dup = await db
       .select({ id: tenantApplication.id })
       .from(tenantApplication)
-      .where(and(eq(tenantApplication.tenantId, tenantId), eq(tenantApplication.clientId, clientId)))
+      .where(
+        and(eq(tenantApplication.tenantId, tenantId), eq(tenantApplication.clientId, clientId)),
+      )
       .limit(1);
     if (dup[0]) {
-      return NextResponse.json({ code: "CONFLICT", message: "already subscribed" }, { status: 409 });
+      return NextResponse.json(
+        { code: "CONFLICT", message: "already subscribed" },
+        { status: 409 },
+      );
     }
     const inserted = await db
       .insert(tenantApplication)

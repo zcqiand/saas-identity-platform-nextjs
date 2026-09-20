@@ -77,10 +77,7 @@ function flattenVisible<T extends TreeNode>(
 }
 
 /** 收集所有节点 id（用于"全展开"默认） */
-function collectAllIds<T extends TreeNode>(
-  nodes: T[],
-  getRowId: (n: T) => string,
-): Set<string> {
+function collectAllIds<T extends TreeNode>(nodes: T[], getRowId: (n: T) => string): Set<string> {
   const out = new Set<string>();
   function walk(arr: T[]) {
     for (const n of arr) {
@@ -161,8 +158,8 @@ export function TreeTable<T extends TreeNode>({
   onExpandedChange,
 }: TreeTableProps<T>) {
   // 非受控：默认全展开（"all"）。受控时由父级管理 expanded。
-  const [internalExpanded, setInternalExpanded] = useState<Set<string>>(
-    () => (defaultExpanded === "all" ? collectAllIds(nodes, getRowId) : new Set(defaultExpanded)),
+  const [internalExpanded, setInternalExpanded] = useState<Set<string>>(() =>
+    defaultExpanded === "all" ? collectAllIds(nodes, getRowId) : new Set(defaultExpanded),
   );
   const isControlled = controlledExpanded !== undefined;
   const expanded = isControlled ? controlledExpanded : internalExpanded;

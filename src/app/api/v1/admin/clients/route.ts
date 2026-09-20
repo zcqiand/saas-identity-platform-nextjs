@@ -79,9 +79,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       PAGE_MAX,
       Math.max(1, Number(url.searchParams.get("pageSize") ?? PAGE_DEFAULT)),
     );
-    const totalResult = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(oauthClient);
+    const totalResult = await db.select({ count: sql<number>`count(*)::int` }).from(oauthClient);
     const total = totalResult[0]?.count ?? 0;
     const items = await db
       .select(appFields)

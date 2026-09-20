@@ -121,7 +121,7 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
   // 否则 Select 显示 placeholder 且 onChange 找不到项。fallback 也走 clientId。
   const selectedAppCode = initialAppId || selectedApp.id || allApps[0]?.clientId || "";
   const currentApp = allApps.find((a) => a.clientId === selectedAppCode) ?? allApps[0];
-  const selectedAppId = selectedAppCode;  // 后续 menusQ/mutation 统一用 slug（后端已兼容 Guid↔code）
+  const selectedAppId = selectedAppCode; // 后续 menusQ/mutation 统一用 slug（后端已兼容 Guid↔code）
 
   const menusQ = useClientMenusListSysMenus(selectedAppId);
   const createMut = useClientMenusCreateSysMenu();
@@ -142,7 +142,8 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
   const rowsForSelect = useMemo(() => flattenVisibleForSelect(menuTree), [menuTree]);
 
   async function onCreate(values: Record<string, unknown>) {
-    const parentId = values.parentId && values.parentId !== "" ? String(values.parentId) : undefined;
+    const parentId =
+      values.parentId && values.parentId !== "" ? String(values.parentId) : undefined;
     try {
       await createMut.mutateAsync({
         clientId: selectedAppId,
@@ -189,7 +190,8 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
 
   async function onMove(values: Record<string, unknown>) {
     if (!moveTarget) return;
-    const parentId = values.parentId && values.parentId !== "" ? String(values.parentId) : undefined;
+    const parentId =
+      values.parentId && values.parentId !== "" ? String(values.parentId) : undefined;
     try {
       await moveMut.mutateAsync({
         clientId: selectedAppId,
@@ -222,7 +224,8 @@ export default function MenuTreePage({ params }: { params: Promise<{ clientId: s
         title="菜单管理"
         description={
           <>
-            当前应用 <span className="font-semibold text-slate-700">{currentApp?.clientName ?? "—"}</span>{" "}
+            当前应用{" "}
+            <span className="font-semibold text-slate-700">{currentApp?.clientName ?? "—"}</span>{" "}
             <span className="font-mono text-xs text-slate-500">({currentApp?.clientId})</span>
           </>
         }

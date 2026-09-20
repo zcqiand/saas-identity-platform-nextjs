@@ -4,22 +4,14 @@
 
 import { useState } from "react";
 import { Check } from "lucide-react";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   adminTenantsCreateTenant,
   adminTenantsDeleteTenant,
   adminTenantsListTenants,
   adminTenantsUpdateTenant,
 } from "@/api/endpoints/admin-tenants/admin-tenants";
-import type {
-  CreateTenantRequest,
-  Tenant,
-  UpdateTenantRequest,
-} from "@/api/endpoints.schemas";
+import type { CreateTenantRequest, Tenant, UpdateTenantRequest } from "@/api/endpoints.schemas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -109,8 +101,7 @@ export default function TenantListPage() {
             管理 SaaS 平台上的所有租户账号
             {selectedTenant && (
               <span className="ml-3 text-slate-500 text-xs">
-                · 已选中{" "}
-                <span className="font-medium text-slate-700">{selectedTenant.name}</span>
+                · 已选中 <span className="font-medium text-slate-700">{selectedTenant.name}</span>
                 <code className="ml-1 font-mono">({selectedTenant.id.slice(0, 8)})</code>
               </span>
             )}
@@ -158,7 +149,10 @@ export default function TenantListPage() {
                     >
                       <TableCell>
                         {isSelected && (
-                          <Check className="h-4 w-4 text-blue-600" data-testid="tenant-selected-mark" />
+                          <Check
+                            className="h-4 w-4 text-blue-600"
+                            data-testid="tenant-selected-mark"
+                          />
                         )}
                       </TableCell>
                       <TableCell className="font-mono text-xs">{t.tenantKey}</TableCell>

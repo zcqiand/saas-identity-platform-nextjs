@@ -19,7 +19,7 @@ import {
 // 测试环境下没有 React Server Components context，vi.mock('react') 用真实 + use override。
 vi.mock("react", async () => {
   const actual = await vi.importActual<typeof import("react")>("react");
-  return { ...actual, use: <T,>(p: T) => p };
+  return { ...actual, use: <T>(p: T) => p };
 });
 
 // === Helpers ===
@@ -41,7 +41,16 @@ function queryStub<T>(data: T) {
 function mutationStub() {
   return {
     mutate: () => {},
-    mutateAsync: async (vars: { data: any; id?: string; tenantId?: string; clientId?: string; roleId?: string; menuId?: string; keyId?: string; userId?: string }) => ({
+    mutateAsync: async (vars: {
+      data: any;
+      id?: string;
+      tenantId?: string;
+      clientId?: string;
+      roleId?: string;
+      menuId?: string;
+      keyId?: string;
+      userId?: string;
+    }) => ({
       data: { id: vars?.id ?? "new-id", ...(vars?.data ?? {}) },
     }),
     isPending: false,
@@ -76,37 +85,55 @@ vi.mock("@/api/endpoints", () => ({
   authLogout: async () => ({ data: undefined }),
   adminTenantsListTenants: async () => ({ data: page(tenants) }),
   adminTenantsCreateTenant: async (body: any) => ({ data: { id: "new-tenant", ...body } }),
-  adminTenantsGetTenant: async (id: string) => ({ data: { id, code: "acme", name: "ACME", status: "active" } }),
+  adminTenantsGetTenant: async (id: string) => ({
+    data: { id, code: "acme", name: "ACME", status: "active" },
+  }),
   adminTenantsUpdateTenant: async (id: string, body: any) => ({ data: { id, ...body } }),
   adminTenantsDeleteTenant: async () => ({ data: undefined }),
 
   tenantUsersListUsers: async () => ({ data: page(users) }),
   tenantUsersCreateUser: async (_t: string, body: any) => ({ data: { id: "new-user", ...body } }),
   tenantUsersGetUser: async () => ({ data: users[0] }),
-  tenantUsersUpdateUser: async (_t: string, userId: string, body: any) => ({ data: { id: userId, ...body } }),
+  tenantUsersUpdateUser: async (_t: string, userId: string, body: any) => ({
+    data: { id: userId, ...body },
+  }),
   tenantUsersDeleteUser: async () => ({ data: undefined }),
 
   tenantRolesListRoles: async () => ({ data: page(roles) }),
   tenantRolesCreateRole: async (_t: string, body: any) => ({ data: { id: "new-role", ...body } }),
   tenantRolesGetRole: async () => ({ data: roles[0] }),
-  tenantRolesUpdateRole: async (_t: string, roleId: string, body: any) => ({ data: { id: roleId, ...body } }),
+  tenantRolesUpdateRole: async (_t: string, roleId: string, body: any) => ({
+    data: { id: roleId, ...body },
+  }),
   tenantRolesDeleteRole: async () => ({ data: undefined }),
   tenantRolesSetPermissions: async () => ({ data: undefined }),
 
-  tenantApiKeysCreateApiKey: async (_t: string, body: any) => ({ data: { id: "new-key", prefix: "sk_live", status: "active", ...body } }),
-  tenantApiKeysRevokeApiKey: async (_t: string, keyId: string) => ({ data: { id: keyId, status: "revoked" } }),
-  tenantApiKeysRotateApiKey: async () => ({ data: { id: "rotated-key", prefix: "sk_live", status: "active" } }),
+  tenantApiKeysCreateApiKey: async (_t: string, body: any) => ({
+    data: { id: "new-key", prefix: "sk_live", status: "active", ...body },
+  }),
+  tenantApiKeysRevokeApiKey: async (_t: string, keyId: string) => ({
+    data: { id: keyId, status: "revoked" },
+  }),
+  tenantApiKeysRotateApiKey: async () => ({
+    data: { id: "rotated-key", prefix: "sk_live", status: "active" },
+  }),
 
   adminClientsListApps: async () => ({ data: page(apps) }),
   adminClientsCreateApp: async (body: any) => ({ data: { id: "new-app", ...body } }),
   adminClientsGetApp: async (id: string) => ({ data: apps.find((a) => a.id === id) ?? apps[0] }),
-  adminClientsUpdateApp: async (clientId: string, body: any) => ({ data: { id: clientId, ...body } }),
+  adminClientsUpdateApp: async (clientId: string, body: any) => ({
+    data: { id: clientId, ...body },
+  }),
   adminClientsDeleteApp: async () => ({ data: undefined }),
   adminClientsSetAppStatus: async () => ({ data: undefined }),
 
-  clientMenusListMenus: async (clientId: string) => ({ data: menus.filter((m) => m.clientId === clientId) }),
+  clientMenusListMenus: async (clientId: string) => ({
+    data: menus.filter((m) => m.clientId === clientId),
+  }),
   clientMenusCreateMenu: async (_a: string, body: any) => ({ data: { id: "new-menu", ...body } }),
-  clientMenusGetMenu: async (_a: string, menuId: string) => ({ data: menus.find((m) => m.id === menuId) ?? menus[0] }),
+  clientMenusGetMenu: async (_a: string, menuId: string) => ({
+    data: menus.find((m) => m.id === menuId) ?? menus[0],
+  }),
   clientMenusUpdateMenu: async () => ({ data: undefined }),
   clientMenusDeleteMenu: async () => ({ data: undefined }),
   clientMenusMoveMenu: async () => ({ data: undefined }),
@@ -133,11 +160,7 @@ vi.mock("@/api/endpoints", () => ({
       createdAt: new Date().toISOString(),
     },
   }),
-  tenantApplicationsUpdateTenantApplication: async (
-    _t: string,
-    clientId: string,
-    body: any,
-  ) => ({
+  tenantApplicationsUpdateTenantApplication: async (_t: string, clientId: string, body: any) => ({
     data: {
       id: "ta-1",
       tenantId: _t,
@@ -221,7 +244,9 @@ vi.mock("@/api/endpoints/admin-tenants/admin-tenants", () => ({
   useAdminTenantsGetTenant: (_id?: string) => queryStub({ data: tenants[0] }),
   adminTenantsListTenants: async () => ({ data: page(tenants) }),
   adminTenantsCreateTenant: async (body: any) => ({ data: { id: "new-tenant", ...body } }),
-  adminTenantsGetTenant: async (id: string) => ({ data: { id, tenantKey: "acme", name: "ACME", status: "active" } }),
+  adminTenantsGetTenant: async (id: string) => ({
+    data: { id, tenantKey: "acme", name: "ACME", status: "active" },
+  }),
   adminTenantsUpdateTenant: async (id: string, body: any) => ({ data: { id, ...body } }),
   adminTenantsDeleteTenant: async () => ({ data: undefined }),
 }));

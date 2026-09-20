@@ -62,10 +62,7 @@ export async function PATCH(
     await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const parsed = PatchRoleBody.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
-      return NextResponse.json(
-        { code: "BAD_REQUEST", message: "Invalid body" },
-        { status: 400 },
-      );
+      return NextResponse.json({ code: "BAD_REQUEST", message: "Invalid body" }, { status: 400 });
     }
     const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
     if (parsed.data.roleName !== undefined) patch.roleName = parsed.data.roleName;

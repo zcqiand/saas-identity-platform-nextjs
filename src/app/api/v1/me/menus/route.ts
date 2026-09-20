@@ -22,7 +22,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and, asc, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { oauthClient, sysMenu, tenantMember, tenantMemberRole, sysRole, sysRoleMenu } from "@/db/schema";
+import {
+  oauthClient,
+  sysMenu,
+  tenantMember,
+  tenantMemberRole,
+  sysRole,
+  sysRoleMenu,
+} from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
 
 type MenuRow = {
@@ -111,10 +118,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       let cur = byId.get(id);
       while (cur && !included.has(cur.id)) {
         included.add(cur.id);
-        cur =
-          cur.parentId && cur.parentId !== ROOT_PARENT_ID
-            ? byId.get(cur.parentId)
-            : undefined;
+        cur = cur.parentId && cur.parentId !== ROOT_PARENT_ID ? byId.get(cur.parentId) : undefined;
       }
     }
 

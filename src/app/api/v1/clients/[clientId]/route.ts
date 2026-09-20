@@ -12,10 +12,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { oauthClient } from "@/db/schema";
 
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ clientId: string }> },
-) {
+export async function GET(_req: Request, { params }: { params: Promise<{ clientId: string }> }) {
   const { clientId } = await params;
   const rows = await db
     .select({

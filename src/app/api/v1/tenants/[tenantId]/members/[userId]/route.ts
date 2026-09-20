@@ -15,7 +15,11 @@ import { z } from "zod";
 import { db } from "@/db";
 import { sysUser, tenantMember } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
-import { getMemberRoleIds, MEMBER_STATUS_TO_SMALLINT, smallintToMemberStatus } from "@/lib/member-roles";
+import {
+  getMemberRoleIds,
+  MEMBER_STATUS_TO_SMALLINT,
+  smallintToMemberStatus,
+} from "@/lib/member-roles";
 
 const UpdateUserBody = z.object({
   email: z.string().email().optional(),
@@ -106,13 +110,14 @@ export async function PATCH(
           status: MEMBER_STATUS_TO_SMALLINT[parsed.data.status],
           updatedAt: new Date().toISOString(),
         })
-        .where(
-          and(eq(tenantMember.tenantId, tenantId), eq(tenantMember.userId, userId)),
-        );
+        .where(and(eq(tenantMember.tenantId, tenantId), eq(tenantMember.userId, userId)));
     }
     const after = await findMember(tenantId, userId);
     if (!after) {
-      return NextResponse.json({ code: "NOT_FOUND", message: "User not found after update" }, { status: 404 });
+      return NextResponse.json(
+        { code: "NOT_FOUND", message: "User not found after update" },
+        { status: 404 },
+      );
     }
     return NextResponse.json(toDto(after, await getMemberRoleIds(after.id, tenantId)));
   } catch (e) {

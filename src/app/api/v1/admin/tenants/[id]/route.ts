@@ -40,11 +40,7 @@ function statusFromSmallint(n: number): "active" | "suspended" {
 }
 
 async function getTenantById(id: string) {
-  const rows = await db
-    .select(tenantFields)
-    .from(tenant)
-    .where(eq(tenant.id, id))
-    .limit(1);
+  const rows = await db.select(tenantFields).from(tenant).where(eq(tenant.id, id)).limit(1);
   return rows[0];
 }
 
@@ -57,10 +53,7 @@ export async function GET(
     const { id } = await params;
     const t = await getTenantById(id);
     if (!t) {
-      return NextResponse.json(
-        { code: "NOT_FOUND", message: "Tenant not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ code: "NOT_FOUND", message: "Tenant not found" }, { status: 404 });
     }
     return NextResponse.json({ ...t, status: statusFromSmallint(t.status) });
   } catch (e) {
@@ -86,10 +79,7 @@ export async function PATCH(
     }
     const existing = await getTenantById(id);
     if (!existing) {
-      return NextResponse.json(
-        { code: "NOT_FOUND", message: "Tenant not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ code: "NOT_FOUND", message: "Tenant not found" }, { status: 404 });
     }
 
     const { name, tenantKey, status } = parsed.data;
@@ -138,10 +128,7 @@ export async function DELETE(
     const { id } = await params;
     const existing = await getTenantById(id);
     if (!existing) {
-      return NextResponse.json(
-        { code: "NOT_FOUND", message: "Tenant not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ code: "NOT_FOUND", message: "Tenant not found" }, { status: 404 });
     }
     await db.delete(tenant).where(eq(tenant.id, id));
     return new NextResponse(null, { status: 204 });

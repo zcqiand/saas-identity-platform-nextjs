@@ -56,9 +56,7 @@ export async function verifyPathTenant(
   }
 
   if (tokenTenantId !== pathTenantId) {
-    throw new TenantGuardError(
-      `tenant_id mismatch: path=${pathTenantId} token=${tokenTenantId}`,
-    );
+    throw new TenantGuardError(`tenant_id mismatch: path=${pathTenantId} token=${tokenTenantId}`);
   }
 
   return claims;
@@ -67,16 +65,18 @@ export async function verifyPathTenant(
 /** 把 TenantGuardError 转成 Response（供 Route Handler catch 用） */
 export function tenantGuardErrorToResponse(e: unknown): Response | null {
   if (e instanceof TenantGuardError) {
-    return new Response(
-      JSON.stringify({ code: "UNAUTHORIZED", message: e.message }),
-      { status: e.status, headers: { "content-type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ code: "UNAUTHORIZED", message: e.message }), {
+      status: e.status,
+      headers: { "content-type": "application/json" },
+    });
   }
   return null;
 }
 
 /** 同上但包成 NextResponse（Route Handler 返回类型兼容） */
-export function tenantGuardErrorToNextResponse(e: unknown): import("next/server").NextResponse | null {
+export function tenantGuardErrorToNextResponse(
+  e: unknown,
+): import("next/server").NextResponse | null {
   const r = tenantGuardErrorToResponse(e);
   if (!r) return null;
   // Route Handler catch 块把 Response 当 NextResponse 用是合法的（Next 内部同构）；

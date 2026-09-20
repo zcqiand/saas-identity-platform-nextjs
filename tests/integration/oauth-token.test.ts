@@ -141,7 +141,10 @@ describe("M04.F03.I02 /api/v1/oauth/token (authorization_code + refresh_token)",
 
   it("M04.F03.I02 code 过期 → 400 INVALID_GRANT 且删行", async () => {
     mockClientFound();
-    mockCodeRow({ code: "saas-code-expired", expiresAt: new Date(Date.now() - 1000).toISOString() });
+    mockCodeRow({
+      code: "saas-code-expired",
+      expiresAt: new Date(Date.now() - 1000).toISOString(),
+    });
     const res = await POST(
       makeReq({
         ...baseBody,
@@ -232,9 +235,7 @@ describe("M04.F03.I02 /api/v1/oauth/token (authorization_code + refresh_token)",
 
   it("M04.F03.I02 returns 400 UNSUPPORTED_GRANT_TYPE for unknown grant", async () => {
     mockClientFound();
-    const res = await POST(
-      makeReq({ ...baseBody, grantType: "password" }) as never,
-    );
+    const res = await POST(makeReq({ ...baseBody, grantType: "password" }) as never);
     // Zod enum 拦截，INVALID_REQUEST
     expect(res.status).toBe(400);
     const json = await res.json();

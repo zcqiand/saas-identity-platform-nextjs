@@ -10,13 +10,7 @@
 import { useMemo, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  KeyRound,
-  ScrollText,
-  LogOut,
-  ChevronRight,
-  Home,
-} from "lucide-react";
+import { KeyRound, ScrollText, LogOut, ChevronRight, Home } from "lucide-react";
 import { SidebarNav } from "./sidebar-nav";
 import { buildNavItems } from "./nav-items";
 import { TenantSwitcher } from "@/components/tenant-switcher";

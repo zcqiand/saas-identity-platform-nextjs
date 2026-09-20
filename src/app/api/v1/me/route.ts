@@ -39,10 +39,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     const user = userRows[0];
     if (!user) {
-      return NextResponse.json(
-        { code: "NOT_FOUND", message: "User not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ code: "NOT_FOUND", message: "User not found" }, { status: 404 });
     }
 
     // 拉所有 active memberships（status=1）

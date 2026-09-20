@@ -13,10 +13,7 @@ import "server-only";
  * 给一个 row 打上 updatedAt = now()，返回同一对象（便于链式）。
  * 用法：`const updated = setUpdatedAt(row); await db.update(...).set(updated).where(...)`
  */
-export function setUpdatedAt<T extends Record<string, unknown>>(
-  row: T,
-  now: Date = new Date(),
-): T {
+export function setUpdatedAt<T extends Record<string, unknown>>(row: T, now: Date = new Date()): T {
   return { ...row, updatedAt: now };
 }
 

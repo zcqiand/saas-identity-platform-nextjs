@@ -70,10 +70,7 @@ export async function GET(
     // sys_menu.client_id 存 code 形态值 —— 用解析行的 client_id 列值查询
     const resolved = await resolveClientRow(clientIdParam);
     if (!resolved) {
-      return NextResponse.json(
-        { code: "NOT_FOUND", message: "App not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ code: "NOT_FOUND", message: "App not found" }, { status: 404 });
     }
     const clientId = resolved.clientId;
     const items = await db
@@ -104,10 +101,7 @@ export async function POST(
     const { clientId: clientIdParam } = await params;
     const resolved = await resolveClientRow(clientIdParam);
     if (!resolved) {
-      return NextResponse.json(
-        { code: "NOT_FOUND", message: "App not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ code: "NOT_FOUND", message: "App not found" }, { status: 404 });
     }
     const parsed = CreateMenuBody.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
@@ -145,10 +139,7 @@ export async function POST(
     const guardResp = tenantGuardErrorToNextResponse(e);
     if (guardResp) return guardResp;
     if ((e as { code?: string })?.code === "23505") {
-      return NextResponse.json(
-        { code: "CONFLICT", message: "Menu conflict" },
-        { status: 409 },
-      );
+      return NextResponse.json({ code: "CONFLICT", message: "Menu conflict" }, { status: 409 });
     }
     throw e;
   }

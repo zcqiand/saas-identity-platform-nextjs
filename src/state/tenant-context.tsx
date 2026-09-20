@@ -8,14 +8,7 @@
 // 默认值 = null（首次加载未登录）。路由守卫（RequireAuth）据此
 // 决定是否重定向到 /login。
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 
 export interface AuthUser {
   id: string;

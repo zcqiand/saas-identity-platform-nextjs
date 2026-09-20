@@ -53,23 +53,17 @@ describe("middleware CORS /api/v1/* (v0.7.40)", () => {
         }),
       );
       expect(res.status).toBe(204);
-      expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
-        "https://lab-nextjs.xiangru.uk",
-      );
+      expect(res.headers.get("Access-Control-Allow-Origin")).toBe("https://lab-nextjs.xiangru.uk");
       expect(res.headers.get("Vary")).toBe("Origin");
       expect(res.headers.get("Access-Control-Allow-Credentials")).toBe("true");
       expect(res.headers.get("Access-Control-Allow-Methods")).toContain("GET");
-      expect(res.headers.get("Access-Control-Allow-Headers")).toContain(
-        "Authorization",
-      );
+      expect(res.headers.get("Access-Control-Allow-Headers")).toContain("Authorization");
       expect(res.headers.get("Access-Control-Max-Age")).toBe("86400");
     });
 
     it("non-allowlisted origin → 204 但无 Allow-Origin（浏览器层拦）", async () => {
       process.env.SAAS_CORS_ALLOWED_ORIGINS = ALLOWLIST;
-      const res = await middleware(
-        makeReq({ method: "OPTIONS", origin: "https://evil.example" }),
-      );
+      const res = await middleware(makeReq({ method: "OPTIONS", origin: "https://evil.example" }));
       expect(res.status).toBe(204);
       expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
       expect(res.headers.get("Access-Control-Allow-Credentials")).toBeNull();
@@ -104,21 +98,15 @@ describe("middleware CORS /api/v1/* (v0.7.40)", () => {
           origin: "https://lab-nextjs.xiangru.uk",
         }),
       );
-      expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
-        "https://lab-nextjs.xiangru.uk",
-      );
+      expect(res.headers.get("Access-Control-Allow-Origin")).toBe("https://lab-nextjs.xiangru.uk");
       expect(res.headers.get("Vary")).toBe("Origin");
       expect(res.headers.get("Access-Control-Allow-Credentials")).toBe("true");
-      expect(res.headers.get("Access-Control-Expose-Headers")).toContain(
-        "Authorization",
-      );
+      expect(res.headers.get("Access-Control-Expose-Headers")).toContain("Authorization");
     });
 
     it("非 allowlisted origin GET → 透传但不挂 CORS 头（浏览器层拦）", async () => {
       process.env.SAAS_CORS_ALLOWED_ORIGINS = ALLOWLIST;
-      const res = await middleware(
-        makeReq({ method: "GET", origin: "https://evil.example" }),
-      );
+      const res = await middleware(makeReq({ method: "GET", origin: "https://evil.example" }));
       expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
     });
 
@@ -141,9 +129,7 @@ describe("middleware CORS /api/v1/* (v0.7.40)", () => {
           path: "/api/v1/apps/lab-management",
         }),
       );
-      expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
-        "https://lab-nextjs.xiangru.uk",
-      );
+      expect(res.headers.get("Access-Control-Allow-Origin")).toBe("https://lab-nextjs.xiangru.uk");
     });
   });
 });

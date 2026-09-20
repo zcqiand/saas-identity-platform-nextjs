@@ -16,15 +16,25 @@ import { env } from "./env";
 const IS_PROD_BUILD = process.env.NODE_ENV === "production";
 
 export const BACKENDS = [
-  { key: "nextjs", baseUrl: "http://localhost:5101", prodBaseUrl: "https://saas-nextjs.xiangru.uk" },
-  { key: "aspnetcore", baseUrl: "http://localhost:5104", prodBaseUrl: "https://saas-aspnetcore.xiangru.uk" },
-  { key: "springboot", baseUrl: "http://localhost:5105", prodBaseUrl: "https://saas-springboot.xiangru.uk" },
+  {
+    key: "nextjs",
+    baseUrl: "http://localhost:5101",
+    prodBaseUrl: "https://saas-nextjs.xiangru.uk",
+  },
+  {
+    key: "aspnetcore",
+    baseUrl: "http://localhost:5104",
+    prodBaseUrl: "https://saas-aspnetcore.xiangru.uk",
+  },
+  {
+    key: "springboot",
+    baseUrl: "http://localhost:5105",
+    prodBaseUrl: "https://saas-springboot.xiangru.uk",
+  },
 ] as const;
 
 /** prod 可选后端：剔除无 prodBaseUrl 的项（当前四项都有 prod 部署）。 */
-export const SELECTABLE_BACKENDS = BACKENDS.filter(
-  (b) => !IS_PROD_BUILD || b.prodBaseUrl !== null,
-);
+export const SELECTABLE_BACKENDS = BACKENDS.filter((b) => !IS_PROD_BUILD || b.prodBaseUrl !== null);
 
 function resolveBaseUrl(b: (typeof BACKENDS)[number]): string {
   return (IS_PROD_BUILD && b.prodBaseUrl) || b.baseUrl;

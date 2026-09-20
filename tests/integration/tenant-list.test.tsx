@@ -11,7 +11,9 @@ describe("M00.F01 租户管理（平台 admin）", () => {
         <TenantListPage />
       </TestProviders>,
     );
-    const btn = screen.getAllByRole("button").find((b) => b.getAttribute("data-fn") === "M00.F01.I02");
+    const btn = screen
+      .getAllByRole("button")
+      .find((b) => b.getAttribute("data-fn") === "M00.F01.I02");
     expect(btn).toBeTruthy();
     const rows = await screen.findAllByTestId("tenant-row");
     expect(rows.length).toBeGreaterThan(0);

@@ -56,10 +56,7 @@ export async function PATCH(
       .where(eq(oauthClient.clientId, clientId))
       .returning(appFields);
     if (!updated) {
-      return NextResponse.json(
-        { code: "NOT_FOUND", message: "App not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ code: "NOT_FOUND", message: "App not found" }, { status: 404 });
     }
     // status 透传 smallint 数字（契约对齐 msw oracle）
     return NextResponse.json(updated);

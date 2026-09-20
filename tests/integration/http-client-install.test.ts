@@ -10,9 +10,8 @@ import { installHttpClient } from "@/api/http-client";
 
 function requestInterceptorCount(): number {
   // axios InterceptorManager 暴露内部 handlers 数组（vitest 环境无类型，运行时存在）
-  return (axios.interceptors.request as unknown as { handlers: unknown[] }).handlers.filter(
-    Boolean,
-  ).length;
+  return (axios.interceptors.request as unknown as { handlers: unknown[] }).handlers.filter(Boolean)
+    .length;
 }
 
 describe("installHttpClient 幂等", () => {
@@ -35,9 +34,11 @@ describe("installHttpClient 幂等", () => {
     installHttpClient(() => "stale-token");
     installHttpClient(() => "fresh-token");
     // axios eject 只把 handler 槽位置 null 不压缩数组，取最后一个非空（链尾收尾者）
-    const handlers = (axios.interceptors.request as unknown as {
-      handlers: Array<{ fulfilled: (c: never) => Promise<unknown> } | null>;
-    }).handlers.filter(Boolean)!;
+    const handlers = (
+      axios.interceptors.request as unknown as {
+        handlers: Array<{ fulfilled: (c: never) => Promise<unknown> } | null>;
+      }
+    ).handlers.filter(Boolean)!;
     const last = handlers[handlers.length - 1]!;
     const config = (await last.fulfilled({
       headers: new axios.AxiosHeaders(),

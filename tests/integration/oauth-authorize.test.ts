@@ -70,9 +70,7 @@ function mockClientAndUser(opts: { redirectCsv?: string; userRows?: unknown[] } 
       from: () => ({
         where: () => ({
           limit: () =>
-            Promise.resolve([
-              { id: "app-row-id", redirectUris: opts.redirectCsv ?? REDIRECT_CSV },
-            ]),
+            Promise.resolve([{ id: "app-row-id", redirectUris: opts.redirectCsv ?? REDIRECT_CSV }]),
         }),
       }),
     })
@@ -119,7 +117,10 @@ describe("M04.F03.I01 /api/v1/oauth/authorize", () => {
   it("M04.F03.I01 body 多带 tenantId（contract-test/lab 消费端形状）→ 200，body tenantId 被忽略不拒收", async () => {
     mockClientAndUser();
     const res = await POST(
-      makeReq({ ...loginPageBody, tenantId: "00000000-0000-0000-0000-000000000999" }, `Bearer ${await bearerToken()}`) as never,
+      makeReq(
+        { ...loginPageBody, tenantId: "00000000-0000-0000-0000-000000000999" },
+        `Bearer ${await bearerToken()}`,
+      ) as never,
     );
     expect(res.status).toBe(200);
   });
@@ -159,7 +160,10 @@ describe("M04.F03.I01 /api/v1/oauth/authorize", () => {
 
   it("M04.F03.I01 Bearer sub 不在 sys_user → 401（msw oracle『session user not found』同款）", async () => {
     mockClientAndUser({ userRows: [] });
-    const token = await signTestToken({ sub: "00000000-0000-0000-0000-b00000000999", tenant_id: TENANT_ID });
+    const token = await signTestToken({
+      sub: "00000000-0000-0000-0000-b00000000999",
+      tenant_id: TENANT_ID,
+    });
     const res = await POST(makeReq(loginPageBody, `Bearer ${token}`) as never);
     expect(res.status).toBe(401);
   });
@@ -173,7 +177,10 @@ describe("M04.F03.I01 /api/v1/oauth/authorize", () => {
 
   it("M04.F03.I01 responseType != 'code' → 400 UNSUPPORTED_RESPONSE_TYPE", async () => {
     const res = await POST(
-      makeReq({ ...loginPageBody, responseType: "token" }, `Bearer ${await bearerToken()}`) as never,
+      makeReq(
+        { ...loginPageBody, responseType: "token" },
+        `Bearer ${await bearerToken()}`,
+      ) as never,
     );
     expect(res.status).toBe(400);
     const json = await res.json();
@@ -197,7 +204,10 @@ describe("M04.F03.I01 /api/v1/oauth/authorize", () => {
   it("M04.F03.I01 redirectUri 不在白名单 → 400 INVALID_REDIRECT_URI", async () => {
     mockClientAndUser();
     const res = await POST(
-      makeReq({ ...loginPageBody, redirectUri: "https://evil.example.com/cb" }, `Bearer ${await bearerToken()}`) as never,
+      makeReq(
+        { ...loginPageBody, redirectUri: "https://evil.example.com/cb" },
+        `Bearer ${await bearerToken()}`,
+      ) as never,
     );
     expect(res.status).toBe(400);
     const json = await res.json();
@@ -208,7 +218,10 @@ describe("M04.F03.I01 /api/v1/oauth/authorize", () => {
     mockClientAndUser();
     // 'http://localhost:5201/call' 是 '/callback' 条目的前缀子串——旧 text.includes 误放行
     const res = await POST(
-      makeReq({ ...loginPageBody, redirectUri: "http://localhost:5201/call" }, `Bearer ${await bearerToken()}`) as never,
+      makeReq(
+        { ...loginPageBody, redirectUri: "http://localhost:5201/call" },
+        `Bearer ${await bearerToken()}`,
+      ) as never,
     );
     expect(res.status).toBe(400);
     const json = await res.json();

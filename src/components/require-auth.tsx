@@ -39,10 +39,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
       //   旧 ?redirect=…（token 直传）；新 RFC 6749 授权码 ?code=…&redirect_uri=…
       // （登录页 oauthReturn 分支负责把 code+state 带回 redirect_uri）。
       // 只认旧范式会把已登录用户的授权码回跳抢去 /tenants，code 永远回不到 RP。
-      const sp =
-        typeof window !== "undefined"
-          ? new URLSearchParams(window.location.search)
-          : null;
+      const sp = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
       const hasSsoReturn =
         !!sp && (!!sp.get("redirect") || (!!sp.get("code") && !!sp.get("redirect_uri")));
       // 2026-09-11 ④（E2E REQ-2026-006）：OAuth 跳板范式（?redirect_uri=&client_id= 无 code）

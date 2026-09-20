@@ -61,10 +61,7 @@ export async function PATCH(
     }
     const existing = await getMenuById(menuId);
     if (!existing) {
-      return NextResponse.json(
-        { code: "NOT_FOUND", message: "Menu not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ code: "NOT_FOUND", message: "Menu not found" }, { status: 404 });
     }
     const [updated] = await db
       .update(sysMenu)

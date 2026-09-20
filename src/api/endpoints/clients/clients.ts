@@ -4,9 +4,7 @@
  * (title)
  * OpenAPI spec version: 0.0.0
  */
-import {
-  useQuery
-} from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -16,106 +14,120 @@ import type {
   QueryKey,
   UndefinedInitialDataOptions,
   UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
+  UseQueryResult,
+} from "@tanstack/react-query";
 
-import axios from 'axios';
-import type {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+import axios from "axios";
+import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
-import type {
-  ErrorResponse,
-  OAuthClientPublicInfo
-} from '../title.schemas';
-
-
-
-
+import type { ErrorResponse, OAuthClientPublicInfo } from "../title.schemas";
 
 export const clientsGetClient = (
-    clientId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<OAuthClientPublicInfo>> => {
-    
-    
-    return axios.get(
-      `/api/v1/clients/${clientId}`,options
-    );
-  }
+  clientId: string,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<OAuthClientPublicInfo>> => {
+  return axios.get(`/api/v1/clients/${clientId}`, options);
+};
 
+export const getClientsGetClientQueryKey = (clientId?: string) => {
+  return [`/api/v1/clients/${clientId}`] as const;
+};
 
-
-
-export const getClientsGetClientQueryKey = (clientId?: string,) => {
-    return [
-    `/api/v1/clients/${clientId}`
-    ] as const;
-    }
-
-    
-export const getClientsGetClientQueryOptions = <TData = Awaited<ReturnType<typeof clientsGetClient>>, TError = AxiosError<ErrorResponse>>(clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsGetClient>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getClientsGetClientQueryOptions = <
+  TData = Awaited<ReturnType<typeof clientsGetClient>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsGetClient>>, TError, TData>>;
+    axios?: AxiosRequestConfig;
+  },
 ) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getClientsGetClientQueryKey(clientId);
 
-  const queryKey =  queryOptions?.queryKey ?? getClientsGetClientQueryKey(clientId);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof clientsGetClient>>> = ({ signal }) =>
+    clientsGetClient(clientId, { signal, ...axiosOptions });
 
-  
+  return { queryKey, queryFn, enabled: !!clientId, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof clientsGetClient>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof clientsGetClient>>> = ({ signal }) => clientsGetClient(clientId, { signal, ...axiosOptions });
+export type ClientsGetClientQueryResult = NonNullable<Awaited<ReturnType<typeof clientsGetClient>>>;
+export type ClientsGetClientQueryError = AxiosError<ErrorResponse>;
 
-      
-
-      
-
-   return  { queryKey, queryFn, enabled: !!(clientId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof clientsGetClient>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type ClientsGetClientQueryResult = NonNullable<Awaited<ReturnType<typeof clientsGetClient>>>
-export type ClientsGetClientQueryError = AxiosError<ErrorResponse>
-
-
-export function useClientsGetClient<TData = Awaited<ReturnType<typeof clientsGetClient>>, TError = AxiosError<ErrorResponse>>(
- clientId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsGetClient>>, TError, TData>> & Pick<
+export function useClientsGetClient<
+  TData = Awaited<ReturnType<typeof clientsGetClient>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsGetClient>>, TError, TData>> &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof clientsGetClient>>,
           TError,
           Awaited<ReturnType<typeof clientsGetClient>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useClientsGetClient<TData = Awaited<ReturnType<typeof clientsGetClient>>, TError = AxiosError<ErrorResponse>>(
- clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsGetClient>>, TError, TData>> & Pick<
+        >,
+        "initialData"
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useClientsGetClient<
+  TData = Awaited<ReturnType<typeof clientsGetClient>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsGetClient>>, TError, TData>> &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof clientsGetClient>>,
           TError,
           Awaited<ReturnType<typeof clientsGetClient>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useClientsGetClient<TData = Awaited<ReturnType<typeof clientsGetClient>>, TError = AxiosError<ErrorResponse>>(
- clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsGetClient>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        "initialData"
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useClientsGetClient<
+  TData = Awaited<ReturnType<typeof clientsGetClient>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsGetClient>>, TError, TData>>;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-export function useClientsGetClient<TData = Awaited<ReturnType<typeof clientsGetClient>>, TError = AxiosError<ErrorResponse>>(
- clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsGetClient>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useClientsGetClient<
+  TData = Awaited<ReturnType<typeof clientsGetClient>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsGetClient>>, TError, TData>>;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getClientsGetClientQueryOptions(clientId, options);
 
-  const queryOptions = getClientsGetClientQueryOptions(clientId,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey ;
+  query.queryKey = queryOptions.queryKey;
 
   return query;
 }
-
-
-
-

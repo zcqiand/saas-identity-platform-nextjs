@@ -8,9 +8,30 @@ import { TestProviders } from "../state-helpers";
 import UserListPage from "../../src/app/tenants/[tenantId]/members/page";
 
 const USERS = [
-  { id: "u1", tenantId: "t1", username: "alice", email: "alice@acme.io", status: "active", roleIds: ["r1"] },
-  { id: "u2", tenantId: "t1", username: "bob", email: "bob@acme.io", status: "active", roleIds: ["r2"] },
-  { id: "u3", tenantId: "t1", username: "carol", email: "carol@acme.io", status: "invited", roleIds: [] },
+  {
+    id: "u1",
+    tenantId: "t1",
+    username: "alice",
+    email: "alice@acme.io",
+    status: "active",
+    roleIds: ["r1"],
+  },
+  {
+    id: "u2",
+    tenantId: "t1",
+    username: "bob",
+    email: "bob@acme.io",
+    status: "active",
+    roleIds: ["r2"],
+  },
+  {
+    id: "u3",
+    tenantId: "t1",
+    username: "carol",
+    email: "carol@acme.io",
+    status: "invited",
+    roleIds: [],
+  },
 ];
 const ROLES = [
   { id: "r1", code: "admin", name: "租户管理员" },
@@ -77,7 +98,9 @@ describe("M01.F01 用户管理（tenant-scoped）", () => {
         <UserListPage params={params} />
       </TestProviders>,
     );
-    const btn = screen.getAllByRole("button").find((b) => b.getAttribute("data-fn") === "M01.F04.I03");
+    const btn = screen
+      .getAllByRole("button")
+      .find((b) => b.getAttribute("data-fn") === "M01.F04.I03");
     expect(btn).toBeTruthy();
   });
 });

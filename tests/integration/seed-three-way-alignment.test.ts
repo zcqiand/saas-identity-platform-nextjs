@@ -15,14 +15,8 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "../../..");
 const MSW_SEEDS = resolve(ROOT, "saas-identity-platform-shared/seeds");
-const SHARED_SQL = resolve(
-  ROOT,
-  "saas-identity-platform-shared/sql/migrations",
-);
-const SHARED_TSP_DIR = resolve(
-  ROOT,
-  "saas-identity-platform-shared/tsp/models",
-);
+const SHARED_SQL = resolve(ROOT, "saas-identity-platform-shared/sql/migrations");
+const SHARED_TSP_DIR = resolve(ROOT, "saas-identity-platform-shared/tsp/models");
 const SHARED_SQL_AVAILABLE = existsSync(SHARED_SQL);
 const SHARED_TSP_AVAILABLE = existsSync(SHARED_TSP_DIR);
 
@@ -31,13 +25,13 @@ function loadSeed(name: string): unknown[] {
 }
 
 describe("seed 三方对齐 — msw fixture count == manifest 期望", () => {
-  const manifest = JSON.parse(
-    readFileSync(resolve(MSW_SEEDS, "manifest.json"), "utf-8"),
-  );
-  const cases: { file: string; expected: number }[] = (manifest.tables as Array<{
-    file: string;
-    count: number;
-  }>).map((t) => ({ file: t.file, expected: t.count }));
+  const manifest = JSON.parse(readFileSync(resolve(MSW_SEEDS, "manifest.json"), "utf-8"));
+  const cases: { file: string; expected: number }[] = (
+    manifest.tables as Array<{
+      file: string;
+      count: number;
+    }>
+  ).map((t) => ({ file: t.file, expected: t.count }));
 
   for (const { file, expected } of cases) {
     it(`${file} msw fixture 长度 == manifest.count (${expected})`, () => {
@@ -69,13 +63,9 @@ describe("shared SQL 9 enum 全部注册(V001-V008)", () => {
 
   for (const { enum: enumName, file } of expected) {
     it(`${enumName} 在 ${file}.sql 里 CREATE TYPE`, () => {
-      const files = readdirSync(SHARED_SQL).filter((f) =>
-        f.startsWith(file),
-      );
+      const files = readdirSync(SHARED_SQL).filter((f) => f.startsWith(file));
       expect(files.length, `${file} 至少 1 个 SQL 文件`).toBeGreaterThanOrEqual(1);
-      const sqlAll = files
-        .map((f) => readFileSync(join(SHARED_SQL, f), "utf-8"))
-        .join("\n");
+      const sqlAll = files.map((f) => readFileSync(join(SHARED_SQL, f), "utf-8")).join("\n");
       expect(sqlAll).toContain(`CREATE TYPE ${enumName}`);
     });
   }
@@ -90,17 +80,23 @@ describe("users.role_ids 三方一致", () => {
     }
   });
 
-  it.skip("shared SQL V008 加 ADD COLUMN role_ids — shared sql/migrations 路径已废", () => { /* skip if !SHARED_SQL_AVAILABLE */ });
+  it.skip("shared SQL V008 加 ADD COLUMN role_ids — shared sql/migrations 路径已废", () => {
+    /* skip if !SHARED_SQL_AVAILABLE */
+  });
 
   // 原 "shared SQL V008 加 ADD COLUMN role_ids" 测试已删（路径已废）
 
-  it.skip("nextjs Drizzle schema roleIds 字段 — schema 9/7 后无 roleIds 列", () => { /* skip */ });
+  it.skip("nextjs Drizzle schema roleIds 字段 — schema 9/7 后无 roleIds 列", () => {
+    /* skip */
+  });
 
   // 原 "nextjs Drizzle schema.ts:128 有 roleIds 字段" 测试已删（schema 9/7 后无 roleIds 列）
 });
 
 describe("role_menu_grants.tenantId 三方一致", () => {
-  it.skip("shared TypeSpec 路径已废，整段 skip", () => { /* skip if !SHARED_TSP_AVAILABLE */ });
+  it.skip("shared TypeSpec 路径已废，整段 skip", () => {
+    /* skip if !SHARED_TSP_AVAILABLE */
+  });
   it("msw sys_role_menu.json 3 条都带 tenantId", () => {
     const grants = loadSeed("sys_role_menu.json") as Array<{
       tenantId?: string;

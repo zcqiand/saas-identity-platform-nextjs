@@ -4,12 +4,12 @@
  * (title)
  * OpenAPI spec version: 0.0.0
  */
-export type AuthorizeCodeRequestResponseType = typeof AuthorizeCodeRequestResponseType[keyof typeof AuthorizeCodeRequestResponseType];
-
+export type AuthorizeCodeRequestResponseType =
+  (typeof AuthorizeCodeRequestResponseType)[keyof typeof AuthorizeCodeRequestResponseType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const AuthorizeCodeRequestResponseType = {
-  code: 'code',
+  code: "code",
 } as const;
 
 export interface AuthorizeCodeRequest {
@@ -112,7 +112,7 @@ export interface EffectiveMenuNode {
   children: EffectiveMenuNode[];
 }
 
-export type ErrorResponseDetails = {[key: string]: unknown};
+export type ErrorResponseDetails = { [key: string]: unknown };
 
 export interface ErrorResponse {
   code: string;
@@ -220,14 +220,13 @@ export interface SysMenu {
   createdAt: string;
 }
 
-export type SysMenuType = typeof SysMenuType[keyof typeof SysMenuType];
-
+export type SysMenuType = (typeof SysMenuType)[keyof typeof SysMenuType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const SysMenuType = {
-  directory: 'directory',
-  menu: 'menu',
-  button: 'button',
+  directory: "directory",
+  menu: "menu",
+  button: "button",
 } as const;
 
 export interface SysRole {
@@ -267,14 +266,13 @@ export interface SysUser {
   updatedAt: string;
 }
 
-export type SysUserStatus = typeof SysUserStatus[keyof typeof SysUserStatus];
-
+export type SysUserStatus = (typeof SysUserStatus)[keyof typeof SysUserStatus];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const SysUserStatus = {
-  active: 'active',
-  invited: 'invited',
-  disabled: 'disabled',
+  active: "active",
+  invited: "invited",
+  disabled: "disabled",
 } as const;
 
 export interface Tenant {
@@ -314,15 +312,14 @@ export interface TenantMember {
   updatedAt: string;
 }
 
-export type TenantMemberStatus = typeof TenantMemberStatus[keyof typeof TenantMemberStatus];
-
+export type TenantMemberStatus = (typeof TenantMemberStatus)[keyof typeof TenantMemberStatus];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const TenantMemberStatus = {
-  active: 'active',
-  invited: 'invited',
-  suspended: 'suspended',
-  disabled: 'disabled',
+  active: "active",
+  invited: "invited",
+  suspended: "suspended",
+  disabled: "disabled",
 } as const;
 
 export interface TenantMemberUserView {
@@ -355,22 +352,21 @@ export interface TenantMembership {
   joinedAt: string;
 }
 
-export type TenantStatus = typeof TenantStatus[keyof typeof TenantStatus];
-
+export type TenantStatus = (typeof TenantStatus)[keyof typeof TenantStatus];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const TenantStatus = {
-  active: 'active',
-  suspended: 'suspended',
+  active: "active",
+  suspended: "suspended",
 } as const;
 
-export type TokenRequestGrantType = typeof TokenRequestGrantType[keyof typeof TokenRequestGrantType];
-
+export type TokenRequestGrantType =
+  (typeof TokenRequestGrantType)[keyof typeof TokenRequestGrantType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const TokenRequestGrantType = {
-  authorization_code: 'authorization_code',
-  refresh_token: 'refresh_token',
+  authorization_code: "authorization_code",
+  refresh_token: "refresh_token",
 } as const;
 
 export interface TokenRequest {
@@ -447,8 +443,8 @@ export interface UpdateTenantRequest {
 }
 
 export type AdminClientsListClientsParams = {
-page?: number;
-pageSize?: number;
+  page?: number;
+  pageSize?: number;
 };
 
 export type AdminClientsListClients200 = {
@@ -463,8 +459,8 @@ export type AdminClientsSetClientStatusBody = {
 };
 
 export type AdminTenantsListTenantsParams = {
-page?: number;
-pageSize?: number;
+  page?: number;
+  pageSize?: number;
 };
 
 export type AdminTenantsListTenants200 = {
@@ -481,17 +477,17 @@ export type ClientMenusMoveSysMenuBody = {
 };
 
 export type MeGetMyMenusParams = {
-clientId?: string;
+  clientId?: string;
 };
 
-export type MeGetMyMenus200 = {[key: string]: EffectiveMenuNode[]};
+export type MeGetMyMenus200 = { [key: string]: EffectiveMenuNode[] };
 
 export type MeListMyTenantsParams = {
-clientId?: string;
+  clientId?: string;
 };
 
 export type MeSwitchTenantParams = {
-clientId?: string;
+  clientId?: string;
 };
 
 export type OAuthAuthorize200 = {
@@ -500,8 +496,8 @@ export type OAuthAuthorize200 = {
 };
 
 export type TenantApplicationsListTenantApplicationsParams = {
-page?: number;
-pageSize?: number;
+  page?: number;
+  pageSize?: number;
 };
 
 export type TenantApplicationsListTenantApplications200 = {
@@ -512,9 +508,9 @@ export type TenantApplicationsListTenantApplications200 = {
 };
 
 export type TenantMembersListTenantUsersParams = {
-page?: number;
-pageSize?: number;
-status?: TenantMemberStatus;
+  page?: number;
+  pageSize?: number;
+  status?: TenantMemberStatus;
 };
 
 export type TenantMembersListTenantUsers200 = {
@@ -534,9 +530,9 @@ export type TenantMembersChangeTenantUserStatusBody = {
 };
 
 export type TenantRolesListSysRolesParams = {
-clientId?: string;
-page?: number;
-pageSize?: number;
+  clientId?: string;
+  page?: number;
+  pageSize?: number;
 };
 
 export type TenantRolesListSysRoles200 = {
@@ -547,14 +543,13 @@ export type TenantRolesListSysRoles200 = {
 };
 
 export type TenantRoleMenusListSysRoleMenusParams = {
-clientId?: string;
+  clientId?: string;
 };
 
 export type TenantRoleMenusSetSysRoleMenusParams = {
-clientId?: string;
+  clientId?: string;
 };
 
 export type TenantRoleMenusClearSysRoleMenusParams = {
-clientId?: string;
+  clientId?: string;
 };
-

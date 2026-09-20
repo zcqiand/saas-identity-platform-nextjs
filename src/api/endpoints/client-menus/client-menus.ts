@@ -4,10 +4,7 @@
  * (title)
  * OpenAPI spec version: 0.0.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -20,15 +17,11 @@ import type {
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
+  UseQueryResult,
+} from "@tanstack/react-query";
 
-import axios from 'axios';
-import type {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+import axios from "axios";
+import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
 import type {
   ClientMenusMoveSysMenuBody,
@@ -36,468 +29,626 @@ import type {
   ErrorResponse,
   ReorderSysMenuRequest,
   SysMenu,
-  UpdateSysMenuRequest
-} from '../title.schemas';
-
-
-
-
+  UpdateSysMenuRequest,
+} from "../title.schemas";
 
 export const clientMenusListSysMenus = (
-    clientId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SysMenu[]>> => {
-    
-    
-    return axios.get(
-      `/api/v1/clients/${clientId}/menus`,options
-    );
-  }
+  clientId: string,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<SysMenu[]>> => {
+  return axios.get(`/api/v1/clients/${clientId}/menus`, options);
+};
 
+export const getClientMenusListSysMenusQueryKey = (clientId?: string) => {
+  return [`/api/v1/clients/${clientId}/menus`] as const;
+};
 
-
-
-export const getClientMenusListSysMenusQueryKey = (clientId?: string,) => {
-    return [
-    `/api/v1/clients/${clientId}/menus`
-    ] as const;
-    }
-
-    
-export const getClientMenusListSysMenusQueryOptions = <TData = Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError = AxiosError<ErrorResponse>>(clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getClientMenusListSysMenusQueryOptions = <
+  TData = Awaited<ReturnType<typeof clientMenusListSysMenus>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError, TData>
+    >;
+    axios?: AxiosRequestConfig;
+  },
 ) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getClientMenusListSysMenusQueryKey(clientId);
 
-  const queryKey =  queryOptions?.queryKey ?? getClientMenusListSysMenusQueryKey(clientId);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof clientMenusListSysMenus>>> = ({
+    signal,
+  }) => clientMenusListSysMenus(clientId, { signal, ...axiosOptions });
 
-  
+  return { queryKey, queryFn, enabled: !!clientId, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof clientMenusListSysMenus>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof clientMenusListSysMenus>>> = ({ signal }) => clientMenusListSysMenus(clientId, { signal, ...axiosOptions });
+export type ClientMenusListSysMenusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof clientMenusListSysMenus>>
+>;
+export type ClientMenusListSysMenusQueryError = AxiosError<ErrorResponse>;
 
-      
-
-      
-
-   return  { queryKey, queryFn, enabled: !!(clientId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type ClientMenusListSysMenusQueryResult = NonNullable<Awaited<ReturnType<typeof clientMenusListSysMenus>>>
-export type ClientMenusListSysMenusQueryError = AxiosError<ErrorResponse>
-
-
-export function useClientMenusListSysMenus<TData = Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError = AxiosError<ErrorResponse>>(
- clientId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError, TData>> & Pick<
+export function useClientMenusListSysMenus<
+  TData = Awaited<ReturnType<typeof clientMenusListSysMenus>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError, TData>
+    > &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof clientMenusListSysMenus>>,
           TError,
           Awaited<ReturnType<typeof clientMenusListSysMenus>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useClientMenusListSysMenus<TData = Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError = AxiosError<ErrorResponse>>(
- clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError, TData>> & Pick<
+        >,
+        "initialData"
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useClientMenusListSysMenus<
+  TData = Awaited<ReturnType<typeof clientMenusListSysMenus>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError, TData>
+    > &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof clientMenusListSysMenus>>,
           TError,
           Awaited<ReturnType<typeof clientMenusListSysMenus>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useClientMenusListSysMenus<TData = Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError = AxiosError<ErrorResponse>>(
- clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        "initialData"
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useClientMenusListSysMenus<
+  TData = Awaited<ReturnType<typeof clientMenusListSysMenus>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError, TData>
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-export function useClientMenusListSysMenus<TData = Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError = AxiosError<ErrorResponse>>(
- clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useClientMenusListSysMenus<
+  TData = Awaited<ReturnType<typeof clientMenusListSysMenus>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof clientMenusListSysMenus>>, TError, TData>
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getClientMenusListSysMenusQueryOptions(clientId, options);
 
-  const queryOptions = getClientMenusListSysMenusQueryOptions(clientId,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey ;
+  query.queryKey = queryOptions.queryKey;
 
   return query;
 }
-
-
-
 
 export const clientMenusCreateSysMenu = (
-    clientId: string,
-    createSysMenuRequest: CreateSysMenuRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SysMenu>> => {
-    
-    
-    return axios.post(
-      `/api/v1/clients/${clientId}/menus`,
-      createSysMenuRequest,options
-    );
-  }
+  clientId: string,
+  createSysMenuRequest: CreateSysMenuRequest,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<SysMenu>> => {
+  return axios.post(`/api/v1/clients/${clientId}/menus`, createSysMenuRequest, options);
+};
 
+export const getClientMenusCreateSysMenuMutationOptions = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clientMenusCreateSysMenu>>,
+    TError,
+    { clientId: string; data: CreateSysMenuRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clientMenusCreateSysMenu>>,
+  TError,
+  { clientId: string; data: CreateSysMenuRequest },
+  TContext
+> => {
+  const mutationKey = ["clientMenusCreateSysMenu"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clientMenusCreateSysMenu>>,
+    { clientId: string; data: CreateSysMenuRequest }
+  > = (props) => {
+    const { clientId, data } = props ?? {};
 
-export const getClientMenusCreateSysMenuMutationOptions = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientMenusCreateSysMenu>>, TError,{clientId: string;data: CreateSysMenuRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof clientMenusCreateSysMenu>>, TError,{clientId: string;data: CreateSysMenuRequest}, TContext> => {
+    return clientMenusCreateSysMenu(clientId, data, axiosOptions);
+  };
 
-const mutationKey = ['clientMenusCreateSysMenu'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+  return { mutationFn, ...mutationOptions };
+};
 
-      
+export type ClientMenusCreateSysMenuMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clientMenusCreateSysMenu>>
+>;
+export type ClientMenusCreateSysMenuMutationBody = CreateSysMenuRequest;
+export type ClientMenusCreateSysMenuMutationError = AxiosError<ErrorResponse>;
 
+export const useClientMenusCreateSysMenu = <TError = AxiosError<ErrorResponse>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof clientMenusCreateSysMenu>>,
+      TError,
+      { clientId: string; data: CreateSysMenuRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof clientMenusCreateSysMenu>>,
+  TError,
+  { clientId: string; data: CreateSysMenuRequest },
+  TContext
+> => {
+  const mutationOptions = getClientMenusCreateSysMenuMutationOptions(options);
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clientMenusCreateSysMenu>>, {clientId: string;data: CreateSysMenuRequest}> = (props) => {
-          const {clientId,data} = props ?? {};
+  return useMutation(mutationOptions, queryClient);
+};
+export const clientMenusGetSysMenu = (
+  clientId: string,
+  menuId: string,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<SysMenu>> => {
+  return axios.get(`/api/v1/clients/${clientId}/menus/${menuId}`, options);
+};
 
-          return  clientMenusCreateSysMenu(clientId,data,axiosOptions)
-        }
+export const getClientMenusGetSysMenuQueryKey = (clientId?: string, menuId?: string) => {
+  return [`/api/v1/clients/${clientId}/menus/${menuId}`] as const;
+};
 
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type ClientMenusCreateSysMenuMutationResult = NonNullable<Awaited<ReturnType<typeof clientMenusCreateSysMenu>>>
-    export type ClientMenusCreateSysMenuMutationBody = CreateSysMenuRequest
-    export type ClientMenusCreateSysMenuMutationError = AxiosError<ErrorResponse>
-
-    export const useClientMenusCreateSysMenu = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientMenusCreateSysMenu>>, TError,{clientId: string;data: CreateSysMenuRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof clientMenusCreateSysMenu>>,
-        TError,
-        {clientId: string;data: CreateSysMenuRequest},
-        TContext
-      > => {
-
-      const mutationOptions = getClientMenusCreateSysMenuMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    export const clientMenusGetSysMenu = (
-    clientId: string,
-    menuId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SysMenu>> => {
-    
-    
-    return axios.get(
-      `/api/v1/clients/${clientId}/menus/${menuId}`,options
-    );
-  }
-
-
-
-
-export const getClientMenusGetSysMenuQueryKey = (clientId?: string,
-    menuId?: string,) => {
-    return [
-    `/api/v1/clients/${clientId}/menus/${menuId}`
-    ] as const;
-    }
-
-    
-export const getClientMenusGetSysMenuQueryOptions = <TData = Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError = AxiosError<ErrorResponse>>(clientId: string,
-    menuId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getClientMenusGetSysMenuQueryOptions = <
+  TData = Awaited<ReturnType<typeof clientMenusGetSysMenu>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  menuId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError, TData>
+    >;
+    axios?: AxiosRequestConfig;
+  },
 ) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getClientMenusGetSysMenuQueryKey(clientId, menuId);
 
-  const queryKey =  queryOptions?.queryKey ?? getClientMenusGetSysMenuQueryKey(clientId,menuId);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof clientMenusGetSysMenu>>> = ({ signal }) =>
+    clientMenusGetSysMenu(clientId, menuId, { signal, ...axiosOptions });
 
-  
+  return { queryKey, queryFn, enabled: !!(clientId && menuId), ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof clientMenusGetSysMenu>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof clientMenusGetSysMenu>>> = ({ signal }) => clientMenusGetSysMenu(clientId,menuId, { signal, ...axiosOptions });
+export type ClientMenusGetSysMenuQueryResult = NonNullable<
+  Awaited<ReturnType<typeof clientMenusGetSysMenu>>
+>;
+export type ClientMenusGetSysMenuQueryError = AxiosError<ErrorResponse>;
 
-      
-
-      
-
-   return  { queryKey, queryFn, enabled: !!(clientId && menuId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type ClientMenusGetSysMenuQueryResult = NonNullable<Awaited<ReturnType<typeof clientMenusGetSysMenu>>>
-export type ClientMenusGetSysMenuQueryError = AxiosError<ErrorResponse>
-
-
-export function useClientMenusGetSysMenu<TData = Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError = AxiosError<ErrorResponse>>(
- clientId: string,
-    menuId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError, TData>> & Pick<
+export function useClientMenusGetSysMenu<
+  TData = Awaited<ReturnType<typeof clientMenusGetSysMenu>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  menuId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError, TData>
+    > &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof clientMenusGetSysMenu>>,
           TError,
           Awaited<ReturnType<typeof clientMenusGetSysMenu>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useClientMenusGetSysMenu<TData = Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError = AxiosError<ErrorResponse>>(
- clientId: string,
-    menuId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError, TData>> & Pick<
+        >,
+        "initialData"
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useClientMenusGetSysMenu<
+  TData = Awaited<ReturnType<typeof clientMenusGetSysMenu>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  menuId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError, TData>
+    > &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof clientMenusGetSysMenu>>,
           TError,
           Awaited<ReturnType<typeof clientMenusGetSysMenu>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useClientMenusGetSysMenu<TData = Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError = AxiosError<ErrorResponse>>(
- clientId: string,
-    menuId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        "initialData"
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useClientMenusGetSysMenu<
+  TData = Awaited<ReturnType<typeof clientMenusGetSysMenu>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  menuId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError, TData>
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-export function useClientMenusGetSysMenu<TData = Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError = AxiosError<ErrorResponse>>(
- clientId: string,
-    menuId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useClientMenusGetSysMenu<
+  TData = Awaited<ReturnType<typeof clientMenusGetSysMenu>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  menuId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof clientMenusGetSysMenu>>, TError, TData>
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getClientMenusGetSysMenuQueryOptions(clientId, menuId, options);
 
-  const queryOptions = getClientMenusGetSysMenuQueryOptions(clientId,menuId,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey ;
+  query.queryKey = queryOptions.queryKey;
 
   return query;
 }
 
-
-
-
 export const clientMenusUpdateSysMenu = (
-    clientId: string,
-    menuId: string,
-    updateSysMenuRequest: UpdateSysMenuRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SysMenu>> => {
-    
-    
-    return axios.patch(
-      `/api/v1/clients/${clientId}/menus/${menuId}`,
-      updateSysMenuRequest,options
-    );
-  }
+  clientId: string,
+  menuId: string,
+  updateSysMenuRequest: UpdateSysMenuRequest,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<SysMenu>> => {
+  return axios.patch(`/api/v1/clients/${clientId}/menus/${menuId}`, updateSysMenuRequest, options);
+};
 
+export const getClientMenusUpdateSysMenuMutationOptions = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clientMenusUpdateSysMenu>>,
+    TError,
+    { clientId: string; menuId: string; data: UpdateSysMenuRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clientMenusUpdateSysMenu>>,
+  TError,
+  { clientId: string; menuId: string; data: UpdateSysMenuRequest },
+  TContext
+> => {
+  const mutationKey = ["clientMenusUpdateSysMenu"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clientMenusUpdateSysMenu>>,
+    { clientId: string; menuId: string; data: UpdateSysMenuRequest }
+  > = (props) => {
+    const { clientId, menuId, data } = props ?? {};
 
-export const getClientMenusUpdateSysMenuMutationOptions = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientMenusUpdateSysMenu>>, TError,{clientId: string;menuId: string;data: UpdateSysMenuRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof clientMenusUpdateSysMenu>>, TError,{clientId: string;menuId: string;data: UpdateSysMenuRequest}, TContext> => {
+    return clientMenusUpdateSysMenu(clientId, menuId, data, axiosOptions);
+  };
 
-const mutationKey = ['clientMenusUpdateSysMenu'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+  return { mutationFn, ...mutationOptions };
+};
 
-      
+export type ClientMenusUpdateSysMenuMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clientMenusUpdateSysMenu>>
+>;
+export type ClientMenusUpdateSysMenuMutationBody = UpdateSysMenuRequest;
+export type ClientMenusUpdateSysMenuMutationError = AxiosError<ErrorResponse>;
 
+export const useClientMenusUpdateSysMenu = <TError = AxiosError<ErrorResponse>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof clientMenusUpdateSysMenu>>,
+      TError,
+      { clientId: string; menuId: string; data: UpdateSysMenuRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof clientMenusUpdateSysMenu>>,
+  TError,
+  { clientId: string; menuId: string; data: UpdateSysMenuRequest },
+  TContext
+> => {
+  const mutationOptions = getClientMenusUpdateSysMenuMutationOptions(options);
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clientMenusUpdateSysMenu>>, {clientId: string;menuId: string;data: UpdateSysMenuRequest}> = (props) => {
-          const {clientId,menuId,data} = props ?? {};
+  return useMutation(mutationOptions, queryClient);
+};
+export const clientMenusDeleteSysMenu = (
+  clientId: string,
+  menuId: string,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<void>> => {
+  return axios.delete(`/api/v1/clients/${clientId}/menus/${menuId}`, options);
+};
 
-          return  clientMenusUpdateSysMenu(clientId,menuId,data,axiosOptions)
-        }
+export const getClientMenusDeleteSysMenuMutationOptions = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clientMenusDeleteSysMenu>>,
+    TError,
+    { clientId: string; menuId: string },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clientMenusDeleteSysMenu>>,
+  TError,
+  { clientId: string; menuId: string },
+  TContext
+> => {
+  const mutationKey = ["clientMenusDeleteSysMenu"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-        
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clientMenusDeleteSysMenu>>,
+    { clientId: string; menuId: string }
+  > = (props) => {
+    const { clientId, menuId } = props ?? {};
 
+    return clientMenusDeleteSysMenu(clientId, menuId, axiosOptions);
+  };
 
-  return  { mutationFn, ...mutationOptions }}
+  return { mutationFn, ...mutationOptions };
+};
 
-    export type ClientMenusUpdateSysMenuMutationResult = NonNullable<Awaited<ReturnType<typeof clientMenusUpdateSysMenu>>>
-    export type ClientMenusUpdateSysMenuMutationBody = UpdateSysMenuRequest
-    export type ClientMenusUpdateSysMenuMutationError = AxiosError<ErrorResponse>
+export type ClientMenusDeleteSysMenuMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clientMenusDeleteSysMenu>>
+>;
 
-    export const useClientMenusUpdateSysMenu = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientMenusUpdateSysMenu>>, TError,{clientId: string;menuId: string;data: UpdateSysMenuRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof clientMenusUpdateSysMenu>>,
-        TError,
-        {clientId: string;menuId: string;data: UpdateSysMenuRequest},
-        TContext
-      > => {
+export type ClientMenusDeleteSysMenuMutationError = AxiosError<ErrorResponse>;
 
-      const mutationOptions = getClientMenusUpdateSysMenuMutationOptions(options);
+export const useClientMenusDeleteSysMenu = <TError = AxiosError<ErrorResponse>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof clientMenusDeleteSysMenu>>,
+      TError,
+      { clientId: string; menuId: string },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof clientMenusDeleteSysMenu>>,
+  TError,
+  { clientId: string; menuId: string },
+  TContext
+> => {
+  const mutationOptions = getClientMenusDeleteSysMenuMutationOptions(options);
 
-      return useMutation(mutationOptions, queryClient);
-    }
-    export const clientMenusDeleteSysMenu = (
-    clientId: string,
-    menuId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    
-    
-    return axios.delete(
-      `/api/v1/clients/${clientId}/menus/${menuId}`,options
-    );
-  }
+  return useMutation(mutationOptions, queryClient);
+};
+export const clientMenusMoveSysMenu = (
+  clientId: string,
+  menuId: string,
+  clientMenusMoveSysMenuBody: ClientMenusMoveSysMenuBody,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<SysMenu>> => {
+  return axios.patch(
+    `/api/v1/clients/${clientId}/menus/${menuId}/parent`,
+    clientMenusMoveSysMenuBody,
+    options,
+  );
+};
 
+export const getClientMenusMoveSysMenuMutationOptions = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clientMenusMoveSysMenu>>,
+    TError,
+    { clientId: string; menuId: string; data: ClientMenusMoveSysMenuBody },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clientMenusMoveSysMenu>>,
+  TError,
+  { clientId: string; menuId: string; data: ClientMenusMoveSysMenuBody },
+  TContext
+> => {
+  const mutationKey = ["clientMenusMoveSysMenu"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clientMenusMoveSysMenu>>,
+    { clientId: string; menuId: string; data: ClientMenusMoveSysMenuBody }
+  > = (props) => {
+    const { clientId, menuId, data } = props ?? {};
 
-export const getClientMenusDeleteSysMenuMutationOptions = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientMenusDeleteSysMenu>>, TError,{clientId: string;menuId: string}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof clientMenusDeleteSysMenu>>, TError,{clientId: string;menuId: string}, TContext> => {
+    return clientMenusMoveSysMenu(clientId, menuId, data, axiosOptions);
+  };
 
-const mutationKey = ['clientMenusDeleteSysMenu'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+  return { mutationFn, ...mutationOptions };
+};
 
-      
+export type ClientMenusMoveSysMenuMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clientMenusMoveSysMenu>>
+>;
+export type ClientMenusMoveSysMenuMutationBody = ClientMenusMoveSysMenuBody;
+export type ClientMenusMoveSysMenuMutationError = AxiosError<ErrorResponse>;
 
+export const useClientMenusMoveSysMenu = <TError = AxiosError<ErrorResponse>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof clientMenusMoveSysMenu>>,
+      TError,
+      { clientId: string; menuId: string; data: ClientMenusMoveSysMenuBody },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof clientMenusMoveSysMenu>>,
+  TError,
+  { clientId: string; menuId: string; data: ClientMenusMoveSysMenuBody },
+  TContext
+> => {
+  const mutationOptions = getClientMenusMoveSysMenuMutationOptions(options);
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clientMenusDeleteSysMenu>>, {clientId: string;menuId: string}> = (props) => {
-          const {clientId,menuId} = props ?? {};
+  return useMutation(mutationOptions, queryClient);
+};
+export const clientMenusReorderSysMenus = (
+  clientId: string,
+  menuId: string,
+  reorderSysMenuRequest: ReorderSysMenuRequest,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<SysMenu[]>> => {
+  return axios.put(
+    `/api/v1/clients/${clientId}/menus/${menuId}/reorder`,
+    reorderSysMenuRequest,
+    options,
+  );
+};
 
-          return  clientMenusDeleteSysMenu(clientId,menuId,axiosOptions)
-        }
+export const getClientMenusReorderSysMenusMutationOptions = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clientMenusReorderSysMenus>>,
+    TError,
+    { clientId: string; menuId: string; data: ReorderSysMenuRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clientMenusReorderSysMenus>>,
+  TError,
+  { clientId: string; menuId: string; data: ReorderSysMenuRequest },
+  TContext
+> => {
+  const mutationKey = ["clientMenusReorderSysMenus"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-        
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clientMenusReorderSysMenus>>,
+    { clientId: string; menuId: string; data: ReorderSysMenuRequest }
+  > = (props) => {
+    const { clientId, menuId, data } = props ?? {};
 
+    return clientMenusReorderSysMenus(clientId, menuId, data, axiosOptions);
+  };
 
-  return  { mutationFn, ...mutationOptions }}
+  return { mutationFn, ...mutationOptions };
+};
 
-    export type ClientMenusDeleteSysMenuMutationResult = NonNullable<Awaited<ReturnType<typeof clientMenusDeleteSysMenu>>>
-    
-    export type ClientMenusDeleteSysMenuMutationError = AxiosError<ErrorResponse>
+export type ClientMenusReorderSysMenusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clientMenusReorderSysMenus>>
+>;
+export type ClientMenusReorderSysMenusMutationBody = ReorderSysMenuRequest;
+export type ClientMenusReorderSysMenusMutationError = AxiosError<ErrorResponse>;
 
-    export const useClientMenusDeleteSysMenu = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientMenusDeleteSysMenu>>, TError,{clientId: string;menuId: string}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof clientMenusDeleteSysMenu>>,
-        TError,
-        {clientId: string;menuId: string},
-        TContext
-      > => {
+export const useClientMenusReorderSysMenus = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof clientMenusReorderSysMenus>>,
+      TError,
+      { clientId: string; menuId: string; data: ReorderSysMenuRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof clientMenusReorderSysMenus>>,
+  TError,
+  { clientId: string; menuId: string; data: ReorderSysMenuRequest },
+  TContext
+> => {
+  const mutationOptions = getClientMenusReorderSysMenusMutationOptions(options);
 
-      const mutationOptions = getClientMenusDeleteSysMenuMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    export const clientMenusMoveSysMenu = (
-    clientId: string,
-    menuId: string,
-    clientMenusMoveSysMenuBody: ClientMenusMoveSysMenuBody, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SysMenu>> => {
-    
-    
-    return axios.patch(
-      `/api/v1/clients/${clientId}/menus/${menuId}/parent`,
-      clientMenusMoveSysMenuBody,options
-    );
-  }
-
-
-
-export const getClientMenusMoveSysMenuMutationOptions = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientMenusMoveSysMenu>>, TError,{clientId: string;menuId: string;data: ClientMenusMoveSysMenuBody}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof clientMenusMoveSysMenu>>, TError,{clientId: string;menuId: string;data: ClientMenusMoveSysMenuBody}, TContext> => {
-
-const mutationKey = ['clientMenusMoveSysMenu'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-      
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clientMenusMoveSysMenu>>, {clientId: string;menuId: string;data: ClientMenusMoveSysMenuBody}> = (props) => {
-          const {clientId,menuId,data} = props ?? {};
-
-          return  clientMenusMoveSysMenu(clientId,menuId,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type ClientMenusMoveSysMenuMutationResult = NonNullable<Awaited<ReturnType<typeof clientMenusMoveSysMenu>>>
-    export type ClientMenusMoveSysMenuMutationBody = ClientMenusMoveSysMenuBody
-    export type ClientMenusMoveSysMenuMutationError = AxiosError<ErrorResponse>
-
-    export const useClientMenusMoveSysMenu = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientMenusMoveSysMenu>>, TError,{clientId: string;menuId: string;data: ClientMenusMoveSysMenuBody}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof clientMenusMoveSysMenu>>,
-        TError,
-        {clientId: string;menuId: string;data: ClientMenusMoveSysMenuBody},
-        TContext
-      > => {
-
-      const mutationOptions = getClientMenusMoveSysMenuMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    export const clientMenusReorderSysMenus = (
-    clientId: string,
-    menuId: string,
-    reorderSysMenuRequest: ReorderSysMenuRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SysMenu[]>> => {
-    
-    
-    return axios.put(
-      `/api/v1/clients/${clientId}/menus/${menuId}/reorder`,
-      reorderSysMenuRequest,options
-    );
-  }
-
-
-
-export const getClientMenusReorderSysMenusMutationOptions = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientMenusReorderSysMenus>>, TError,{clientId: string;menuId: string;data: ReorderSysMenuRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof clientMenusReorderSysMenus>>, TError,{clientId: string;menuId: string;data: ReorderSysMenuRequest}, TContext> => {
-
-const mutationKey = ['clientMenusReorderSysMenus'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-      
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clientMenusReorderSysMenus>>, {clientId: string;menuId: string;data: ReorderSysMenuRequest}> = (props) => {
-          const {clientId,menuId,data} = props ?? {};
-
-          return  clientMenusReorderSysMenus(clientId,menuId,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type ClientMenusReorderSysMenusMutationResult = NonNullable<Awaited<ReturnType<typeof clientMenusReorderSysMenus>>>
-    export type ClientMenusReorderSysMenusMutationBody = ReorderSysMenuRequest
-    export type ClientMenusReorderSysMenusMutationError = AxiosError<ErrorResponse>
-
-    export const useClientMenusReorderSysMenus = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientMenusReorderSysMenus>>, TError,{clientId: string;menuId: string;data: ReorderSysMenuRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof clientMenusReorderSysMenus>>,
-        TError,
-        {clientId: string;menuId: string;data: ReorderSysMenuRequest},
-        TContext
-      > => {
-
-      const mutationOptions = getClientMenusReorderSysMenusMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    
+  return useMutation(mutationOptions, queryClient);
+};

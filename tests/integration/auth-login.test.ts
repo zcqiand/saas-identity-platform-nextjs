@@ -220,9 +220,7 @@ describe("M01.F04.I03 + M01.F04.I02 /api/v1/auth/login", () => {
       }),
     });
 
-    const res = await POST(
-      makeReq({ username: "alice", password: "secret-pw" }) as never,
-    );
+    const res = await POST(makeReq({ username: "alice", password: "secret-pw" }) as never);
     expect(res.status, "缺 clientId 必须在解析层 400 拒绝").toBe(400);
     const json = await res.json();
     expect(json.code).toBe("BAD_REQUEST");

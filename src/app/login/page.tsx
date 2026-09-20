@@ -49,10 +49,7 @@ export default function LoginPage() {
   // 把切换器留在 msw/springboot 时，authorize 领的 code 落在别家后端内存里，
   // lab RP 拿去自己配对的 saas 换 token 必 INVALID_GRANT「code 不存在或已被使用」。
   // 拦截器只在 config.baseURL 为空时才覆盖，这里显式给值即绕开切换器。
-  const idpAxios = useMemo(
-    () => ({ axios: { baseURL: window.location.origin } }),
-    [],
-  );
+  const idpAxios = useMemo(() => ({ axios: { baseURL: window.location.origin } }), []);
   const loginMut = useSessionsLogin(idpAxios);
   const authorizeMut = useOAuthAuthorize(idpAxios);
 
@@ -192,8 +189,8 @@ export default function LoginPage() {
           : apiErr.status === 401
             ? "用户名或密码错误"
             : apiErr.status === 0
-              // 显示实际请求目标（选择器可切，env 标签会误导）：未选择 = env 默认
-              ? `后端不可达（${getSelectedBackend() || `${apiMode}·env 默认`}）：${apiErr.message}`
+              ? // 显示实际请求目标（选择器可切，env 标签会误导）：未选择 = env 默认
+                `后端不可达（${getSelectedBackend() || `${apiMode}·env 默认`}）：${apiErr.message}`
               : apiErr.message;
       toast.error(msg);
     } finally {

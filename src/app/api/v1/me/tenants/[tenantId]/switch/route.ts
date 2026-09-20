@@ -30,9 +30,7 @@ export async function POST(
   const m = await db
     .select()
     .from(tenantMember)
-    .where(
-      and(eq(tenantMember.userId, claims.sub), eq(tenantMember.tenantId, tenantId)),
-    )
+    .where(and(eq(tenantMember.userId, claims.sub), eq(tenantMember.tenantId, tenantId)))
     .limit(1);
   if (!m[0] || m[0].status !== 1) {
     return NextResponse.json(

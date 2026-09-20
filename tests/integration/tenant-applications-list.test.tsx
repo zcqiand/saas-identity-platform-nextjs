@@ -9,7 +9,14 @@ import TenantApplicationsListPage from "../../src/app/tenants/[tenantId]/applica
 const { state } = vi.hoisted(() => ({
   state: {
     apps: [
-      { id: "t1", tenantId: "abc", clientId: "lab-management", status: 1, expireTime: "2027-01-01T00:00:00Z", createdAt: "2026-01-20T08:00:00Z" },
+      {
+        id: "t1",
+        tenantId: "abc",
+        clientId: "lab-management",
+        status: 1,
+        expireTime: "2027-01-01T00:00:00Z",
+        createdAt: "2026-01-20T08:00:00Z",
+      },
       { id: "t2", tenantId: "abc", clientId: "erp", status: 0, createdAt: "2026-02-14T09:30:00Z" },
     ],
     clients: [
@@ -41,8 +48,7 @@ function mutStub() {
 
 vi.mock("@/api/endpoints", () => ({
   useAdminTenantsGetTenant: () => queryResult({ data: { name: "ACME Corp", tenantKey: "acme" } }),
-  useTenantApplicationsListTenantApplications: () =>
-    queryResult({ data: { items: state.apps } }),
+  useTenantApplicationsListTenantApplications: () => queryResult({ data: { items: state.apps } }),
   useTenantApplicationsSubscribeTenantApplication: () => mutStub(),
   useTenantApplicationsUpdateTenantApplication: () => mutStub(),
   useTenantApplicationsRemoveTenantApplication: () => mutStub(),
@@ -52,7 +58,14 @@ vi.mock("@/api/endpoints", () => ({
 describe("M00.F05 租户应用", () => {
   beforeEach(() => {
     state.apps = [
-      { id: "t1", tenantId: "abc", clientId: "lab-management", status: 1, expireTime: "2027-01-01T00:00:00Z", createdAt: "2026-01-20T08:00:00Z" },
+      {
+        id: "t1",
+        tenantId: "abc",
+        clientId: "lab-management",
+        status: 1,
+        expireTime: "2027-01-01T00:00:00Z",
+        createdAt: "2026-01-20T08:00:00Z",
+      },
       { id: "t2", tenantId: "abc", clientId: "erp", status: 0, createdAt: "2026-02-14T09:30:00Z" },
     ];
   });
@@ -67,9 +80,7 @@ describe("M00.F05 租户应用", () => {
       </TestProviders>,
     );
     expect(
-      screen
-        .getAllByRole("button")
-        .find((b) => b.getAttribute("data-fn") === "M00.F05.I02"),
+      screen.getAllByRole("button").find((b) => b.getAttribute("data-fn") === "M00.F05.I02"),
     ).toBeTruthy();
   });
 

@@ -15,7 +15,9 @@ import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-g
 
 function normalizeStatus(v: unknown): number {
   if (typeof v === "number") return v;
-  const s = String(v ?? "").trim().toLowerCase();
+  const s = String(v ?? "")
+    .trim()
+    .toLowerCase();
   if (["0", "pending"].includes(s)) return 0;
   if (["1", "active", "enabled"].includes(s)) return 1;
   if (["2", "disabled"].includes(s)) return 2;
@@ -34,7 +36,10 @@ export async function PATCH(
     if (body.status !== undefined) {
       const status = normalizeStatus(body.status);
       if (Number.isNaN(status)) {
-        return NextResponse.json({ code: "BAD_REQUEST", message: "invalid status" }, { status: 400 });
+        return NextResponse.json(
+          { code: "BAD_REQUEST", message: "invalid status" },
+          { status: 400 },
+        );
       }
       updates.status = status;
     }
@@ -44,10 +49,15 @@ export async function PATCH(
     const updated = await db
       .update(tenantApplication)
       .set(updates)
-      .where(and(eq(tenantApplication.tenantId, tenantId), eq(tenantApplication.clientId, clientId)))
+      .where(
+        and(eq(tenantApplication.tenantId, tenantId), eq(tenantApplication.clientId, clientId)),
+      )
       .returning();
     if (!updated[0]) {
-      return NextResponse.json({ code: "NOT_FOUND", message: "Subscription not found" }, { status: 404 });
+      return NextResponse.json(
+        { code: "NOT_FOUND", message: "Subscription not found" },
+        { status: 404 },
+      );
     }
     return NextResponse.json(updated[0]);
   } catch (e) {
@@ -66,10 +76,15 @@ export async function DELETE(
     await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const deleted = await db
       .delete(tenantApplication)
-      .where(and(eq(tenantApplication.tenantId, tenantId), eq(tenantApplication.clientId, clientId)))
+      .where(
+        and(eq(tenantApplication.tenantId, tenantId), eq(tenantApplication.clientId, clientId)),
+      )
       .returning({ id: tenantApplication.id });
     if (!deleted[0]) {
-      return NextResponse.json({ code: "NOT_FOUND", message: "Subscription not found" }, { status: 404 });
+      return NextResponse.json(
+        { code: "NOT_FOUND", message: "Subscription not found" },
+        { status: 404 },
+      );
     }
     return new NextResponse(null, { status: 204 });
   } catch (e) {

@@ -32,7 +32,11 @@ describe("侧边栏层级：一级=功能模块，二级=功能", () => {
   it("权限点（fnId）与功能的对应关系不变", () => {
     const byFn = new Map(items.map((i) => [i.fnId, i]));
     const m = (id: string) => byFn.get(id);
-    expect(m("M00.F01.I01")).toMatchObject({ label: "租户维护", group: "租户管理", to: "/tenants" });
+    expect(m("M00.F01.I01")).toMatchObject({
+      label: "租户维护",
+      group: "租户管理",
+      to: "/tenants",
+    });
     expect(m("M00.F02.I01")).toMatchObject({ label: "租户成员", group: "租户管理" });
     expect(m("M00.F03.I01")).toMatchObject({ label: "租户角色", group: "租户管理" });
     expect(m("M00.F05.I01")).toMatchObject({ label: "租户应用", group: "租户管理" });

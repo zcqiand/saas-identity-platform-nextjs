@@ -10,7 +10,11 @@ import { z } from "zod";
 import { db } from "@/db";
 import { tenantMember, sysUser } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
-import { getMemberRoleIds, MEMBER_STATUS_TO_SMALLINT, smallintToMemberStatus } from "@/lib/member-roles";
+import {
+  getMemberRoleIds,
+  MEMBER_STATUS_TO_SMALLINT,
+  smallintToMemberStatus,
+} from "@/lib/member-roles";
 
 const Body = z.object({
   status: z.enum(["active", "invited", "suspended", "disabled"]),
@@ -25,10 +29,7 @@ export async function PATCH(
     await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const parsed = Body.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
-      return NextResponse.json(
-        { code: "BAD_REQUEST", message: "Invalid body" },
-        { status: 400 },
-      );
+      return NextResponse.json({ code: "BAD_REQUEST", message: "Invalid body" }, { status: 400 });
     }
     // seed 约定（ADR-0032）：1=active 2=invited 3=suspended 0=disabled
     const statusNum = MEMBER_STATUS_TO_SMALLINT[parsed.data.status];

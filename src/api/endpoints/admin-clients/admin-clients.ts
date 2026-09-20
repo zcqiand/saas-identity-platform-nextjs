@@ -4,10 +4,7 @@
  * (title)
  * OpenAPI spec version: 0.0.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -20,15 +17,11 @@ import type {
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
+  UseQueryResult,
+} from "@tanstack/react-query";
 
-import axios from 'axios';
-import type {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+import axios from "axios";
+import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
 import type {
   AdminClientsListClients200,
@@ -37,402 +30,543 @@ import type {
   CreateOAuthClientRequest,
   ErrorResponse,
   OAuthClient,
-  UpdateOAuthClientRequest
-} from '../title.schemas';
-
-
-
-
+  UpdateOAuthClientRequest,
+} from "../title.schemas";
 
 export const adminClientsListClients = (
-    params?: AdminClientsListClientsParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<AdminClientsListClients200>> => {
-    
-    
-    return axios.get(
-      `/api/v1/admin/clients`,{
+  params?: AdminClientsListClientsParams,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<AdminClientsListClients200>> => {
+  return axios.get(`/api/v1/admin/clients`, {
     ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+    params: { ...params, ...options?.params },
+  });
+};
 
+export const getAdminClientsListClientsQueryKey = (params?: AdminClientsListClientsParams) => {
+  return [`/api/v1/admin/clients`, ...(params ? [params] : [])] as const;
+};
 
-
-
-export const getAdminClientsListClientsQueryKey = (params?: AdminClientsListClientsParams,) => {
-    return [
-    `/api/v1/admin/clients`, ...(params ? [params]: [])
-    ] as const;
-    }
-
-    
-export const getAdminClientsListClientsQueryOptions = <TData = Awaited<ReturnType<typeof adminClientsListClients>>, TError = AxiosError<ErrorResponse>>(params?: AdminClientsListClientsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminClientsListClients>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getAdminClientsListClientsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminClientsListClients>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  params?: AdminClientsListClientsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof adminClientsListClients>>, TError, TData>
+    >;
+    axios?: AxiosRequestConfig;
+  },
 ) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getAdminClientsListClientsQueryKey(params);
 
-  const queryKey =  queryOptions?.queryKey ?? getAdminClientsListClientsQueryKey(params);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof adminClientsListClients>>> = ({
+    signal,
+  }) => adminClientsListClients(params, { signal, ...axiosOptions });
 
-  
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminClientsListClients>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminClientsListClients>>> = ({ signal }) => adminClientsListClients(params, { signal, ...axiosOptions });
+export type AdminClientsListClientsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminClientsListClients>>
+>;
+export type AdminClientsListClientsQueryError = AxiosError<ErrorResponse>;
 
-      
-
-      
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminClientsListClients>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type AdminClientsListClientsQueryResult = NonNullable<Awaited<ReturnType<typeof adminClientsListClients>>>
-export type AdminClientsListClientsQueryError = AxiosError<ErrorResponse>
-
-
-export function useAdminClientsListClients<TData = Awaited<ReturnType<typeof adminClientsListClients>>, TError = AxiosError<ErrorResponse>>(
- params: undefined |  AdminClientsListClientsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminClientsListClients>>, TError, TData>> & Pick<
+export function useAdminClientsListClients<
+  TData = Awaited<ReturnType<typeof adminClientsListClients>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  params: undefined | AdminClientsListClientsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof adminClientsListClients>>, TError, TData>
+    > &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof adminClientsListClients>>,
           TError,
           Awaited<ReturnType<typeof adminClientsListClients>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useAdminClientsListClients<TData = Awaited<ReturnType<typeof adminClientsListClients>>, TError = AxiosError<ErrorResponse>>(
- params?: AdminClientsListClientsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminClientsListClients>>, TError, TData>> & Pick<
+        >,
+        "initialData"
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useAdminClientsListClients<
+  TData = Awaited<ReturnType<typeof adminClientsListClients>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  params?: AdminClientsListClientsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof adminClientsListClients>>, TError, TData>
+    > &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof adminClientsListClients>>,
           TError,
           Awaited<ReturnType<typeof adminClientsListClients>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useAdminClientsListClients<TData = Awaited<ReturnType<typeof adminClientsListClients>>, TError = AxiosError<ErrorResponse>>(
- params?: AdminClientsListClientsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminClientsListClients>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        "initialData"
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useAdminClientsListClients<
+  TData = Awaited<ReturnType<typeof adminClientsListClients>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  params?: AdminClientsListClientsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof adminClientsListClients>>, TError, TData>
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-export function useAdminClientsListClients<TData = Awaited<ReturnType<typeof adminClientsListClients>>, TError = AxiosError<ErrorResponse>>(
- params?: AdminClientsListClientsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminClientsListClients>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useAdminClientsListClients<
+  TData = Awaited<ReturnType<typeof adminClientsListClients>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  params?: AdminClientsListClientsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof adminClientsListClients>>, TError, TData>
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getAdminClientsListClientsQueryOptions(params, options);
 
-  const queryOptions = getAdminClientsListClientsQueryOptions(params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey ;
+  query.queryKey = queryOptions.queryKey;
 
   return query;
 }
-
-
-
 
 export const adminClientsCreateClient = (
-    createOAuthClientRequest: CreateOAuthClientRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<OAuthClient>> => {
-    
-    
-    return axios.post(
-      `/api/v1/admin/clients`,
-      createOAuthClientRequest,options
-    );
-  }
+  createOAuthClientRequest: CreateOAuthClientRequest,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<OAuthClient>> => {
+  return axios.post(`/api/v1/admin/clients`, createOAuthClientRequest, options);
+};
 
+export const getAdminClientsCreateClientMutationOptions = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminClientsCreateClient>>,
+    TError,
+    { data: CreateOAuthClientRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminClientsCreateClient>>,
+  TError,
+  { data: CreateOAuthClientRequest },
+  TContext
+> => {
+  const mutationKey = ["adminClientsCreateClient"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminClientsCreateClient>>,
+    { data: CreateOAuthClientRequest }
+  > = (props) => {
+    const { data } = props ?? {};
 
-export const getAdminClientsCreateClientMutationOptions = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminClientsCreateClient>>, TError,{data: CreateOAuthClientRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof adminClientsCreateClient>>, TError,{data: CreateOAuthClientRequest}, TContext> => {
+    return adminClientsCreateClient(data, axiosOptions);
+  };
 
-const mutationKey = ['adminClientsCreateClient'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+  return { mutationFn, ...mutationOptions };
+};
 
-      
+export type AdminClientsCreateClientMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminClientsCreateClient>>
+>;
+export type AdminClientsCreateClientMutationBody = CreateOAuthClientRequest;
+export type AdminClientsCreateClientMutationError = AxiosError<ErrorResponse>;
 
+export const useAdminClientsCreateClient = <TError = AxiosError<ErrorResponse>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof adminClientsCreateClient>>,
+      TError,
+      { data: CreateOAuthClientRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof adminClientsCreateClient>>,
+  TError,
+  { data: CreateOAuthClientRequest },
+  TContext
+> => {
+  const mutationOptions = getAdminClientsCreateClientMutationOptions(options);
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminClientsCreateClient>>, {data: CreateOAuthClientRequest}> = (props) => {
-          const {data} = props ?? {};
+  return useMutation(mutationOptions, queryClient);
+};
+export const adminClientsGetClient = (
+  clientId: string,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<OAuthClient>> => {
+  return axios.get(`/api/v1/admin/clients/${clientId}`, options);
+};
 
-          return  adminClientsCreateClient(data,axiosOptions)
-        }
+export const getAdminClientsGetClientQueryKey = (clientId?: string) => {
+  return [`/api/v1/admin/clients/${clientId}`] as const;
+};
 
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AdminClientsCreateClientMutationResult = NonNullable<Awaited<ReturnType<typeof adminClientsCreateClient>>>
-    export type AdminClientsCreateClientMutationBody = CreateOAuthClientRequest
-    export type AdminClientsCreateClientMutationError = AxiosError<ErrorResponse>
-
-    export const useAdminClientsCreateClient = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminClientsCreateClient>>, TError,{data: CreateOAuthClientRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof adminClientsCreateClient>>,
-        TError,
-        {data: CreateOAuthClientRequest},
-        TContext
-      > => {
-
-      const mutationOptions = getAdminClientsCreateClientMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    export const adminClientsGetClient = (
-    clientId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<OAuthClient>> => {
-    
-    
-    return axios.get(
-      `/api/v1/admin/clients/${clientId}`,options
-    );
-  }
-
-
-
-
-export const getAdminClientsGetClientQueryKey = (clientId?: string,) => {
-    return [
-    `/api/v1/admin/clients/${clientId}`
-    ] as const;
-    }
-
-    
-export const getAdminClientsGetClientQueryOptions = <TData = Awaited<ReturnType<typeof adminClientsGetClient>>, TError = AxiosError<ErrorResponse>>(clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminClientsGetClient>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getAdminClientsGetClientQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminClientsGetClient>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof adminClientsGetClient>>, TError, TData>
+    >;
+    axios?: AxiosRequestConfig;
+  },
 ) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getAdminClientsGetClientQueryKey(clientId);
 
-  const queryKey =  queryOptions?.queryKey ?? getAdminClientsGetClientQueryKey(clientId);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof adminClientsGetClient>>> = ({ signal }) =>
+    adminClientsGetClient(clientId, { signal, ...axiosOptions });
 
-  
+  return { queryKey, queryFn, enabled: !!clientId, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminClientsGetClient>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminClientsGetClient>>> = ({ signal }) => adminClientsGetClient(clientId, { signal, ...axiosOptions });
+export type AdminClientsGetClientQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminClientsGetClient>>
+>;
+export type AdminClientsGetClientQueryError = AxiosError<ErrorResponse>;
 
-      
-
-      
-
-   return  { queryKey, queryFn, enabled: !!(clientId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminClientsGetClient>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type AdminClientsGetClientQueryResult = NonNullable<Awaited<ReturnType<typeof adminClientsGetClient>>>
-export type AdminClientsGetClientQueryError = AxiosError<ErrorResponse>
-
-
-export function useAdminClientsGetClient<TData = Awaited<ReturnType<typeof adminClientsGetClient>>, TError = AxiosError<ErrorResponse>>(
- clientId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminClientsGetClient>>, TError, TData>> & Pick<
+export function useAdminClientsGetClient<
+  TData = Awaited<ReturnType<typeof adminClientsGetClient>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof adminClientsGetClient>>, TError, TData>
+    > &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof adminClientsGetClient>>,
           TError,
           Awaited<ReturnType<typeof adminClientsGetClient>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useAdminClientsGetClient<TData = Awaited<ReturnType<typeof adminClientsGetClient>>, TError = AxiosError<ErrorResponse>>(
- clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminClientsGetClient>>, TError, TData>> & Pick<
+        >,
+        "initialData"
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useAdminClientsGetClient<
+  TData = Awaited<ReturnType<typeof adminClientsGetClient>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof adminClientsGetClient>>, TError, TData>
+    > &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof adminClientsGetClient>>,
           TError,
           Awaited<ReturnType<typeof adminClientsGetClient>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useAdminClientsGetClient<TData = Awaited<ReturnType<typeof adminClientsGetClient>>, TError = AxiosError<ErrorResponse>>(
- clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminClientsGetClient>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        "initialData"
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useAdminClientsGetClient<
+  TData = Awaited<ReturnType<typeof adminClientsGetClient>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof adminClientsGetClient>>, TError, TData>
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-export function useAdminClientsGetClient<TData = Awaited<ReturnType<typeof adminClientsGetClient>>, TError = AxiosError<ErrorResponse>>(
- clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminClientsGetClient>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useAdminClientsGetClient<
+  TData = Awaited<ReturnType<typeof adminClientsGetClient>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  clientId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof adminClientsGetClient>>, TError, TData>
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getAdminClientsGetClientQueryOptions(clientId, options);
 
-  const queryOptions = getAdminClientsGetClientQueryOptions(clientId,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey ;
+  query.queryKey = queryOptions.queryKey;
 
   return query;
 }
 
-
-
-
 export const adminClientsUpdateClient = (
-    clientId: string,
-    updateOAuthClientRequest: UpdateOAuthClientRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<OAuthClient>> => {
-    
-    
-    return axios.patch(
-      `/api/v1/admin/clients/${clientId}`,
-      updateOAuthClientRequest,options
-    );
-  }
+  clientId: string,
+  updateOAuthClientRequest: UpdateOAuthClientRequest,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<OAuthClient>> => {
+  return axios.patch(`/api/v1/admin/clients/${clientId}`, updateOAuthClientRequest, options);
+};
 
+export const getAdminClientsUpdateClientMutationOptions = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminClientsUpdateClient>>,
+    TError,
+    { clientId: string; data: UpdateOAuthClientRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminClientsUpdateClient>>,
+  TError,
+  { clientId: string; data: UpdateOAuthClientRequest },
+  TContext
+> => {
+  const mutationKey = ["adminClientsUpdateClient"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminClientsUpdateClient>>,
+    { clientId: string; data: UpdateOAuthClientRequest }
+  > = (props) => {
+    const { clientId, data } = props ?? {};
 
-export const getAdminClientsUpdateClientMutationOptions = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminClientsUpdateClient>>, TError,{clientId: string;data: UpdateOAuthClientRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof adminClientsUpdateClient>>, TError,{clientId: string;data: UpdateOAuthClientRequest}, TContext> => {
+    return adminClientsUpdateClient(clientId, data, axiosOptions);
+  };
 
-const mutationKey = ['adminClientsUpdateClient'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+  return { mutationFn, ...mutationOptions };
+};
 
-      
+export type AdminClientsUpdateClientMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminClientsUpdateClient>>
+>;
+export type AdminClientsUpdateClientMutationBody = UpdateOAuthClientRequest;
+export type AdminClientsUpdateClientMutationError = AxiosError<ErrorResponse>;
 
+export const useAdminClientsUpdateClient = <TError = AxiosError<ErrorResponse>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof adminClientsUpdateClient>>,
+      TError,
+      { clientId: string; data: UpdateOAuthClientRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof adminClientsUpdateClient>>,
+  TError,
+  { clientId: string; data: UpdateOAuthClientRequest },
+  TContext
+> => {
+  const mutationOptions = getAdminClientsUpdateClientMutationOptions(options);
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminClientsUpdateClient>>, {clientId: string;data: UpdateOAuthClientRequest}> = (props) => {
-          const {clientId,data} = props ?? {};
+  return useMutation(mutationOptions, queryClient);
+};
+export const adminClientsDeleteClient = (
+  clientId: string,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<void>> => {
+  return axios.delete(`/api/v1/admin/clients/${clientId}`, options);
+};
 
-          return  adminClientsUpdateClient(clientId,data,axiosOptions)
-        }
+export const getAdminClientsDeleteClientMutationOptions = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminClientsDeleteClient>>,
+    TError,
+    { clientId: string },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminClientsDeleteClient>>,
+  TError,
+  { clientId: string },
+  TContext
+> => {
+  const mutationKey = ["adminClientsDeleteClient"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-        
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminClientsDeleteClient>>,
+    { clientId: string }
+  > = (props) => {
+    const { clientId } = props ?? {};
 
+    return adminClientsDeleteClient(clientId, axiosOptions);
+  };
 
-  return  { mutationFn, ...mutationOptions }}
+  return { mutationFn, ...mutationOptions };
+};
 
-    export type AdminClientsUpdateClientMutationResult = NonNullable<Awaited<ReturnType<typeof adminClientsUpdateClient>>>
-    export type AdminClientsUpdateClientMutationBody = UpdateOAuthClientRequest
-    export type AdminClientsUpdateClientMutationError = AxiosError<ErrorResponse>
+export type AdminClientsDeleteClientMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminClientsDeleteClient>>
+>;
 
-    export const useAdminClientsUpdateClient = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminClientsUpdateClient>>, TError,{clientId: string;data: UpdateOAuthClientRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof adminClientsUpdateClient>>,
-        TError,
-        {clientId: string;data: UpdateOAuthClientRequest},
-        TContext
-      > => {
+export type AdminClientsDeleteClientMutationError = AxiosError<ErrorResponse>;
 
-      const mutationOptions = getAdminClientsUpdateClientMutationOptions(options);
+export const useAdminClientsDeleteClient = <TError = AxiosError<ErrorResponse>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof adminClientsDeleteClient>>,
+      TError,
+      { clientId: string },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof adminClientsDeleteClient>>,
+  TError,
+  { clientId: string },
+  TContext
+> => {
+  const mutationOptions = getAdminClientsDeleteClientMutationOptions(options);
 
-      return useMutation(mutationOptions, queryClient);
-    }
-    export const adminClientsDeleteClient = (
-    clientId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    
-    
-    return axios.delete(
-      `/api/v1/admin/clients/${clientId}`,options
-    );
-  }
+  return useMutation(mutationOptions, queryClient);
+};
+export const adminClientsSetClientStatus = (
+  clientId: string,
+  adminClientsSetClientStatusBody: AdminClientsSetClientStatusBody,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<OAuthClient>> => {
+  return axios.patch(
+    `/api/v1/admin/clients/${clientId}/status`,
+    adminClientsSetClientStatusBody,
+    options,
+  );
+};
 
+export const getAdminClientsSetClientStatusMutationOptions = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminClientsSetClientStatus>>,
+    TError,
+    { clientId: string; data: AdminClientsSetClientStatusBody },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminClientsSetClientStatus>>,
+  TError,
+  { clientId: string; data: AdminClientsSetClientStatusBody },
+  TContext
+> => {
+  const mutationKey = ["adminClientsSetClientStatus"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminClientsSetClientStatus>>,
+    { clientId: string; data: AdminClientsSetClientStatusBody }
+  > = (props) => {
+    const { clientId, data } = props ?? {};
 
-export const getAdminClientsDeleteClientMutationOptions = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminClientsDeleteClient>>, TError,{clientId: string}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof adminClientsDeleteClient>>, TError,{clientId: string}, TContext> => {
+    return adminClientsSetClientStatus(clientId, data, axiosOptions);
+  };
 
-const mutationKey = ['adminClientsDeleteClient'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+  return { mutationFn, ...mutationOptions };
+};
 
-      
+export type AdminClientsSetClientStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminClientsSetClientStatus>>
+>;
+export type AdminClientsSetClientStatusMutationBody = AdminClientsSetClientStatusBody;
+export type AdminClientsSetClientStatusMutationError = AxiosError<ErrorResponse>;
 
+export const useAdminClientsSetClientStatus = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof adminClientsSetClientStatus>>,
+      TError,
+      { clientId: string; data: AdminClientsSetClientStatusBody },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof adminClientsSetClientStatus>>,
+  TError,
+  { clientId: string; data: AdminClientsSetClientStatusBody },
+  TContext
+> => {
+  const mutationOptions = getAdminClientsSetClientStatusMutationOptions(options);
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminClientsDeleteClient>>, {clientId: string}> = (props) => {
-          const {clientId} = props ?? {};
-
-          return  adminClientsDeleteClient(clientId,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AdminClientsDeleteClientMutationResult = NonNullable<Awaited<ReturnType<typeof adminClientsDeleteClient>>>
-    
-    export type AdminClientsDeleteClientMutationError = AxiosError<ErrorResponse>
-
-    export const useAdminClientsDeleteClient = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminClientsDeleteClient>>, TError,{clientId: string}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof adminClientsDeleteClient>>,
-        TError,
-        {clientId: string},
-        TContext
-      > => {
-
-      const mutationOptions = getAdminClientsDeleteClientMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    export const adminClientsSetClientStatus = (
-    clientId: string,
-    adminClientsSetClientStatusBody: AdminClientsSetClientStatusBody, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<OAuthClient>> => {
-    
-    
-    return axios.patch(
-      `/api/v1/admin/clients/${clientId}/status`,
-      adminClientsSetClientStatusBody,options
-    );
-  }
-
-
-
-export const getAdminClientsSetClientStatusMutationOptions = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminClientsSetClientStatus>>, TError,{clientId: string;data: AdminClientsSetClientStatusBody}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof adminClientsSetClientStatus>>, TError,{clientId: string;data: AdminClientsSetClientStatusBody}, TContext> => {
-
-const mutationKey = ['adminClientsSetClientStatus'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-      
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminClientsSetClientStatus>>, {clientId: string;data: AdminClientsSetClientStatusBody}> = (props) => {
-          const {clientId,data} = props ?? {};
-
-          return  adminClientsSetClientStatus(clientId,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AdminClientsSetClientStatusMutationResult = NonNullable<Awaited<ReturnType<typeof adminClientsSetClientStatus>>>
-    export type AdminClientsSetClientStatusMutationBody = AdminClientsSetClientStatusBody
-    export type AdminClientsSetClientStatusMutationError = AxiosError<ErrorResponse>
-
-    export const useAdminClientsSetClientStatus = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminClientsSetClientStatus>>, TError,{clientId: string;data: AdminClientsSetClientStatusBody}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof adminClientsSetClientStatus>>,
-        TError,
-        {clientId: string;data: AdminClientsSetClientStatusBody},
-        TContext
-      > => {
-
-      const mutationOptions = getAdminClientsSetClientStatusMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    
+  return useMutation(mutationOptions, queryClient);
+};

@@ -89,7 +89,9 @@ export function TenantSwitcher() {
             >
               <Building2 className="h-4 w-4 mr-2 text-slate-500" />
               <div className="flex flex-col">
-                <span className="font-medium">{nameById.get(m.tenantId) ?? m.tenantId.slice(0, 8)}</span>
+                <span className="font-medium">
+                  {nameById.get(m.tenantId) ?? m.tenantId.slice(0, 8)}
+                </span>
                 <span className="text-xs text-slate-500 font-mono">
                   {tenantKeyById.get(m.tenantId) ?? ""}
                 </span>

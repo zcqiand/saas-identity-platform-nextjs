@@ -26,7 +26,11 @@ export default function RoleMenuGrantPage({
 }) {
   const { tenantId, roleId } = use(params);
   const appsQ = useAdminClientsListClients();
-  const apps = (appsQ.data?.data?.items ?? []) as Array<{ id: string; clientId: string; clientName: string }>;
+  const apps = (appsQ.data?.data?.items ?? []) as Array<{
+    id: string;
+    clientId: string;
+    clientName: string;
+  }>;
   // getTenant via orval-generated useAdminTenantsGetTenant hook（ADR-0012 运行时 import 清零）。
   // 异步取租户名，加载中/失败显示 fallback。
   const tenantQ = useAdminTenantsGetTenant(tenantId, {
@@ -74,7 +78,8 @@ export default function RoleMenuGrantPage({
       await saveMut.mutateAsync({
         tenantId,
         roleId,
-        data: { menuIds: Array.from(granted) }, params: { clientId: "" } as never,
+        data: { menuIds: Array.from(granted) },
+        params: { clientId: "" } as never,
       });
       grantQ.refetch();
       toast.success("菜单授权已保存");
@@ -89,11 +94,8 @@ export default function RoleMenuGrantPage({
         title="角色菜单授权"
         description={
           <>
-            租户{" "}
-            <span className="font-semibold text-slate-700">
-              {tenantLabel}
-            </span>{" "}
-            / 角色 <span className="font-mono text-xs">{roleId.slice(0, 8) || "—"}</span>
+            租户 <span className="font-semibold text-slate-700">{tenantLabel}</span> / 角色{" "}
+            <span className="font-mono text-xs">{roleId.slice(0, 8) || "—"}</span>
           </>
         }
         actions={
@@ -101,11 +103,7 @@ export default function RoleMenuGrantPage({
             <Button variant="outline" data-fn="M00.F04.I04" onClick={clearAll}>
               清空
             </Button>
-            <Button
-              data-fn="M00.F04.I03"
-              disabled={saveMut.isPending}
-              onClick={save}
-            >
+            <Button data-fn="M00.F04.I03" disabled={saveMut.isPending} onClick={save}>
               {saveMut.isPending ? "保存中…" : `保存 (${granted.size})`}
             </Button>
           </div>
@@ -118,9 +116,7 @@ export default function RoleMenuGrantPage({
             <CardTitle>
               {g.appName}
               <span className="ml-2 text-xs font-mono text-slate-500">({g.appCode})</span>
-              <span className="ml-2 text-xs font-mono text-slate-500">
-                {g.menus.length} 项
-              </span>
+              <span className="ml-2 text-xs font-mono text-slate-500">{g.menus.length} 项</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">

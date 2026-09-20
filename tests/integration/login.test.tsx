@@ -16,9 +16,7 @@ const { sessionsLoginMock, loginHookOptions } = vi.hoisted(() => ({
   loginHookOptions: { current: undefined as unknown },
 }));
 vi.mock("../../src/api/endpoints/auth/auth", async (importOriginal) => {
-  const actual = await importOriginal<
-    typeof import("../../src/api/endpoints/auth/auth")
-  >();
+  const actual = await importOriginal<typeof import("../../src/api/endpoints/auth/auth")>();
   return {
     ...actual,
     useSessionsLogin: (options?: unknown) => {
@@ -33,9 +31,7 @@ const { authorizeMock, authorizeHookOptions } = vi.hoisted(() => ({
   authorizeHookOptions: { current: undefined as unknown },
 }));
 vi.mock("../../src/api/endpoints/oauth/oauth", async (importOriginal) => {
-  const actual = await importOriginal<
-    typeof import("../../src/api/endpoints/oauth/oauth")
-  >();
+  const actual = await importOriginal<typeof import("../../src/api/endpoints/oauth/oauth")>();
   return {
     ...actual,
     useOAuthAuthorize: (options?: unknown) => {
@@ -118,7 +114,9 @@ afterEach(() => {
 describe("M01.F04.I03 账号密码登录", () => {
   it("渲染登录表单，挂 data-fn=M01.F04.I03 的提交按钮", () => {
     renderLogin();
-    const btn = screen.getAllByRole("button").find((b) => b.getAttribute("data-fn") === "M01.F04.I03");
+    const btn = screen
+      .getAllByRole("button")
+      .find((b) => b.getAttribute("data-fn") === "M01.F04.I03");
     expect(btn).toBeTruthy();
   });
 
@@ -163,9 +161,7 @@ describe("M01.F04.I03 账号密码登录", () => {
   });
 
   it("错密码（401）-> toast 显示用户名或密码错误", async () => {
-    sessionsLoginMock.mockRejectedValue(
-      new ApiError(401, null, "invalid credentials"),
-    );
+    sessionsLoginMock.mockRejectedValue(new ApiError(401, null, "invalid credentials"));
     renderLogin();
     await fillAndSubmit();
     await waitFor(() => expect(toastError).toHaveBeenCalled());

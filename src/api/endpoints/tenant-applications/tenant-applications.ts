@@ -4,10 +4,7 @@
  * (title)
  * OpenAPI spec version: 0.0.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -20,15 +17,11 @@ import type {
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
+  UseQueryResult,
+} from "@tanstack/react-query";
 
-import axios from 'axios';
-import type {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+import axios from "axios";
+import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
 import type {
   ErrorResponse,
@@ -36,272 +29,399 @@ import type {
   TenantApplication,
   TenantApplicationsListTenantApplications200,
   TenantApplicationsListTenantApplicationsParams,
-  UpdateTenantApplicationRequest
-} from '../title.schemas';
-
-
-
-
+  UpdateTenantApplicationRequest,
+} from "../title.schemas";
 
 export const tenantApplicationsListTenantApplications = (
-    tenantId: string,
-    params?: TenantApplicationsListTenantApplicationsParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<TenantApplicationsListTenantApplications200>> => {
-    
-    
-    return axios.get(
-      `/api/v1/tenants/${tenantId}/applications`,{
+  tenantId: string,
+  params?: TenantApplicationsListTenantApplicationsParams,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<TenantApplicationsListTenantApplications200>> => {
+  return axios.get(`/api/v1/tenants/${tenantId}/applications`, {
     ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+    params: { ...params, ...options?.params },
+  });
+};
 
-
-
-
-export const getTenantApplicationsListTenantApplicationsQueryKey = (tenantId?: string,
-    params?: TenantApplicationsListTenantApplicationsParams,) => {
-    return [
-    `/api/v1/tenants/${tenantId}/applications`, ...(params ? [params]: [])
-    ] as const;
-    }
-
-    
-export const getTenantApplicationsListTenantApplicationsQueryOptions = <TData = Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>, TError = AxiosError<ErrorResponse>>(tenantId: string,
-    params?: TenantApplicationsListTenantApplicationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getTenantApplicationsListTenantApplicationsQueryKey = (
+  tenantId?: string,
+  params?: TenantApplicationsListTenantApplicationsParams,
 ) => {
+  return [`/api/v1/tenants/${tenantId}/applications`, ...(params ? [params] : [])] as const;
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getTenantApplicationsListTenantApplicationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  tenantId: string,
+  params?: TenantApplicationsListTenantApplicationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getTenantApplicationsListTenantApplicationsQueryKey(tenantId,params);
+  const queryKey =
+    queryOptions?.queryKey ?? getTenantApplicationsListTenantApplicationsQueryKey(tenantId, params);
 
-  
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>
+  > = ({ signal }) =>
+    tenantApplicationsListTenantApplications(tenantId, params, { signal, ...axiosOptions });
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>> = ({ signal }) => tenantApplicationsListTenantApplications(tenantId,params, { signal, ...axiosOptions });
+  return { queryKey, queryFn, enabled: !!tenantId, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-      
+export type TenantApplicationsListTenantApplicationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>
+>;
+export type TenantApplicationsListTenantApplicationsQueryError = AxiosError<ErrorResponse>;
 
-      
-
-   return  { queryKey, queryFn, enabled: !!(tenantId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type TenantApplicationsListTenantApplicationsQueryResult = NonNullable<Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>>
-export type TenantApplicationsListTenantApplicationsQueryError = AxiosError<ErrorResponse>
-
-
-export function useTenantApplicationsListTenantApplications<TData = Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>, TError = AxiosError<ErrorResponse>>(
- tenantId: string,
-    params: undefined |  TenantApplicationsListTenantApplicationsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>, TError, TData>> & Pick<
+export function useTenantApplicationsListTenantApplications<
+  TData = Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  tenantId: string,
+  params: undefined | TenantApplicationsListTenantApplicationsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>,
           TError,
           Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useTenantApplicationsListTenantApplications<TData = Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>, TError = AxiosError<ErrorResponse>>(
- tenantId: string,
-    params?: TenantApplicationsListTenantApplicationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>, TError, TData>> & Pick<
+        >,
+        "initialData"
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useTenantApplicationsListTenantApplications<
+  TData = Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  tenantId: string,
+  params?: TenantApplicationsListTenantApplicationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>,
           TError,
           Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useTenantApplicationsListTenantApplications<TData = Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>, TError = AxiosError<ErrorResponse>>(
- tenantId: string,
-    params?: TenantApplicationsListTenantApplicationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        "initialData"
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useTenantApplicationsListTenantApplications<
+  TData = Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  tenantId: string,
+  params?: TenantApplicationsListTenantApplicationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-export function useTenantApplicationsListTenantApplications<TData = Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>, TError = AxiosError<ErrorResponse>>(
- tenantId: string,
-    params?: TenantApplicationsListTenantApplicationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useTenantApplicationsListTenantApplications<
+  TData = Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>,
+  TError = AxiosError<ErrorResponse>,
+>(
+  tenantId: string,
+  params?: TenantApplicationsListTenantApplicationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof tenantApplicationsListTenantApplications>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getTenantApplicationsListTenantApplicationsQueryOptions(
+    tenantId,
+    params,
+    options,
+  );
 
-  const queryOptions = getTenantApplicationsListTenantApplicationsQueryOptions(tenantId,params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey ;
+  query.queryKey = queryOptions.queryKey;
 
   return query;
 }
 
-
-
-
 export const tenantApplicationsSubscribeTenantApplication = (
-    tenantId: string,
-    subscribeTenantApplicationRequest: SubscribeTenantApplicationRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<TenantApplication>> => {
-    
-    
-    return axios.post(
-      `/api/v1/tenants/${tenantId}/applications`,
-      subscribeTenantApplicationRequest,options
-    );
-  }
+  tenantId: string,
+  subscribeTenantApplicationRequest: SubscribeTenantApplicationRequest,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<TenantApplication>> => {
+  return axios.post(
+    `/api/v1/tenants/${tenantId}/applications`,
+    subscribeTenantApplicationRequest,
+    options,
+  );
+};
 
+export const getTenantApplicationsSubscribeTenantApplicationMutationOptions = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof tenantApplicationsSubscribeTenantApplication>>,
+    TError,
+    { tenantId: string; data: SubscribeTenantApplicationRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof tenantApplicationsSubscribeTenantApplication>>,
+  TError,
+  { tenantId: string; data: SubscribeTenantApplicationRequest },
+  TContext
+> => {
+  const mutationKey = ["tenantApplicationsSubscribeTenantApplication"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof tenantApplicationsSubscribeTenantApplication>>,
+    { tenantId: string; data: SubscribeTenantApplicationRequest }
+  > = (props) => {
+    const { tenantId, data } = props ?? {};
 
-export const getTenantApplicationsSubscribeTenantApplicationMutationOptions = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tenantApplicationsSubscribeTenantApplication>>, TError,{tenantId: string;data: SubscribeTenantApplicationRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof tenantApplicationsSubscribeTenantApplication>>, TError,{tenantId: string;data: SubscribeTenantApplicationRequest}, TContext> => {
+    return tenantApplicationsSubscribeTenantApplication(tenantId, data, axiosOptions);
+  };
 
-const mutationKey = ['tenantApplicationsSubscribeTenantApplication'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+  return { mutationFn, ...mutationOptions };
+};
 
-      
+export type TenantApplicationsSubscribeTenantApplicationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof tenantApplicationsSubscribeTenantApplication>>
+>;
+export type TenantApplicationsSubscribeTenantApplicationMutationBody =
+  SubscribeTenantApplicationRequest;
+export type TenantApplicationsSubscribeTenantApplicationMutationError = AxiosError<ErrorResponse>;
 
+export const useTenantApplicationsSubscribeTenantApplication = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof tenantApplicationsSubscribeTenantApplication>>,
+      TError,
+      { tenantId: string; data: SubscribeTenantApplicationRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof tenantApplicationsSubscribeTenantApplication>>,
+  TError,
+  { tenantId: string; data: SubscribeTenantApplicationRequest },
+  TContext
+> => {
+  const mutationOptions = getTenantApplicationsSubscribeTenantApplicationMutationOptions(options);
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof tenantApplicationsSubscribeTenantApplication>>, {tenantId: string;data: SubscribeTenantApplicationRequest}> = (props) => {
-          const {tenantId,data} = props ?? {};
+  return useMutation(mutationOptions, queryClient);
+};
+export const tenantApplicationsUpdateTenantApplication = (
+  tenantId: string,
+  clientId: string,
+  updateTenantApplicationRequest: UpdateTenantApplicationRequest,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<TenantApplication>> => {
+  return axios.patch(
+    `/api/v1/tenants/${tenantId}/applications/${clientId}`,
+    updateTenantApplicationRequest,
+    options,
+  );
+};
 
-          return  tenantApplicationsSubscribeTenantApplication(tenantId,data,axiosOptions)
-        }
+export const getTenantApplicationsUpdateTenantApplicationMutationOptions = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof tenantApplicationsUpdateTenantApplication>>,
+    TError,
+    { tenantId: string; clientId: string; data: UpdateTenantApplicationRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof tenantApplicationsUpdateTenantApplication>>,
+  TError,
+  { tenantId: string; clientId: string; data: UpdateTenantApplicationRequest },
+  TContext
+> => {
+  const mutationKey = ["tenantApplicationsUpdateTenantApplication"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-        
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof tenantApplicationsUpdateTenantApplication>>,
+    { tenantId: string; clientId: string; data: UpdateTenantApplicationRequest }
+  > = (props) => {
+    const { tenantId, clientId, data } = props ?? {};
 
+    return tenantApplicationsUpdateTenantApplication(tenantId, clientId, data, axiosOptions);
+  };
 
-  return  { mutationFn, ...mutationOptions }}
+  return { mutationFn, ...mutationOptions };
+};
 
-    export type TenantApplicationsSubscribeTenantApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof tenantApplicationsSubscribeTenantApplication>>>
-    export type TenantApplicationsSubscribeTenantApplicationMutationBody = SubscribeTenantApplicationRequest
-    export type TenantApplicationsSubscribeTenantApplicationMutationError = AxiosError<ErrorResponse>
+export type TenantApplicationsUpdateTenantApplicationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof tenantApplicationsUpdateTenantApplication>>
+>;
+export type TenantApplicationsUpdateTenantApplicationMutationBody = UpdateTenantApplicationRequest;
+export type TenantApplicationsUpdateTenantApplicationMutationError = AxiosError<ErrorResponse>;
 
-    export const useTenantApplicationsSubscribeTenantApplication = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tenantApplicationsSubscribeTenantApplication>>, TError,{tenantId: string;data: SubscribeTenantApplicationRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof tenantApplicationsSubscribeTenantApplication>>,
-        TError,
-        {tenantId: string;data: SubscribeTenantApplicationRequest},
-        TContext
-      > => {
+export const useTenantApplicationsUpdateTenantApplication = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof tenantApplicationsUpdateTenantApplication>>,
+      TError,
+      { tenantId: string; clientId: string; data: UpdateTenantApplicationRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof tenantApplicationsUpdateTenantApplication>>,
+  TError,
+  { tenantId: string; clientId: string; data: UpdateTenantApplicationRequest },
+  TContext
+> => {
+  const mutationOptions = getTenantApplicationsUpdateTenantApplicationMutationOptions(options);
 
-      const mutationOptions = getTenantApplicationsSubscribeTenantApplicationMutationOptions(options);
+  return useMutation(mutationOptions, queryClient);
+};
+export const tenantApplicationsRemoveTenantApplication = (
+  tenantId: string,
+  clientId: string,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<void>> => {
+  return axios.delete(`/api/v1/tenants/${tenantId}/applications/${clientId}`, options);
+};
 
-      return useMutation(mutationOptions, queryClient);
-    }
-    export const tenantApplicationsUpdateTenantApplication = (
-    tenantId: string,
-    clientId: string,
-    updateTenantApplicationRequest: UpdateTenantApplicationRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<TenantApplication>> => {
-    
-    
-    return axios.patch(
-      `/api/v1/tenants/${tenantId}/applications/${clientId}`,
-      updateTenantApplicationRequest,options
-    );
-  }
+export const getTenantApplicationsRemoveTenantApplicationMutationOptions = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof tenantApplicationsRemoveTenantApplication>>,
+    TError,
+    { tenantId: string; clientId: string },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof tenantApplicationsRemoveTenantApplication>>,
+  TError,
+  { tenantId: string; clientId: string },
+  TContext
+> => {
+  const mutationKey = ["tenantApplicationsRemoveTenantApplication"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof tenantApplicationsRemoveTenantApplication>>,
+    { tenantId: string; clientId: string }
+  > = (props) => {
+    const { tenantId, clientId } = props ?? {};
 
+    return tenantApplicationsRemoveTenantApplication(tenantId, clientId, axiosOptions);
+  };
 
-export const getTenantApplicationsUpdateTenantApplicationMutationOptions = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tenantApplicationsUpdateTenantApplication>>, TError,{tenantId: string;clientId: string;data: UpdateTenantApplicationRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof tenantApplicationsUpdateTenantApplication>>, TError,{tenantId: string;clientId: string;data: UpdateTenantApplicationRequest}, TContext> => {
+  return { mutationFn, ...mutationOptions };
+};
 
-const mutationKey = ['tenantApplicationsUpdateTenantApplication'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+export type TenantApplicationsRemoveTenantApplicationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof tenantApplicationsRemoveTenantApplication>>
+>;
 
-      
+export type TenantApplicationsRemoveTenantApplicationMutationError = AxiosError<ErrorResponse>;
 
+export const useTenantApplicationsRemoveTenantApplication = <
+  TError = AxiosError<ErrorResponse>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof tenantApplicationsRemoveTenantApplication>>,
+      TError,
+      { tenantId: string; clientId: string },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof tenantApplicationsRemoveTenantApplication>>,
+  TError,
+  { tenantId: string; clientId: string },
+  TContext
+> => {
+  const mutationOptions = getTenantApplicationsRemoveTenantApplicationMutationOptions(options);
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof tenantApplicationsUpdateTenantApplication>>, {tenantId: string;clientId: string;data: UpdateTenantApplicationRequest}> = (props) => {
-          const {tenantId,clientId,data} = props ?? {};
-
-          return  tenantApplicationsUpdateTenantApplication(tenantId,clientId,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type TenantApplicationsUpdateTenantApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof tenantApplicationsUpdateTenantApplication>>>
-    export type TenantApplicationsUpdateTenantApplicationMutationBody = UpdateTenantApplicationRequest
-    export type TenantApplicationsUpdateTenantApplicationMutationError = AxiosError<ErrorResponse>
-
-    export const useTenantApplicationsUpdateTenantApplication = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tenantApplicationsUpdateTenantApplication>>, TError,{tenantId: string;clientId: string;data: UpdateTenantApplicationRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof tenantApplicationsUpdateTenantApplication>>,
-        TError,
-        {tenantId: string;clientId: string;data: UpdateTenantApplicationRequest},
-        TContext
-      > => {
-
-      const mutationOptions = getTenantApplicationsUpdateTenantApplicationMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    export const tenantApplicationsRemoveTenantApplication = (
-    tenantId: string,
-    clientId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    
-    
-    return axios.delete(
-      `/api/v1/tenants/${tenantId}/applications/${clientId}`,options
-    );
-  }
-
-
-
-export const getTenantApplicationsRemoveTenantApplicationMutationOptions = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tenantApplicationsRemoveTenantApplication>>, TError,{tenantId: string;clientId: string}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof tenantApplicationsRemoveTenantApplication>>, TError,{tenantId: string;clientId: string}, TContext> => {
-
-const mutationKey = ['tenantApplicationsRemoveTenantApplication'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-      
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof tenantApplicationsRemoveTenantApplication>>, {tenantId: string;clientId: string}> = (props) => {
-          const {tenantId,clientId} = props ?? {};
-
-          return  tenantApplicationsRemoveTenantApplication(tenantId,clientId,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type TenantApplicationsRemoveTenantApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof tenantApplicationsRemoveTenantApplication>>>
-    
-    export type TenantApplicationsRemoveTenantApplicationMutationError = AxiosError<ErrorResponse>
-
-    export const useTenantApplicationsRemoveTenantApplication = <TError = AxiosError<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tenantApplicationsRemoveTenantApplication>>, TError,{tenantId: string;clientId: string}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof tenantApplicationsRemoveTenantApplication>>,
-        TError,
-        {tenantId: string;clientId: string},
-        TContext
-      > => {
-
-      const mutationOptions = getTenantApplicationsRemoveTenantApplicationMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    
+  return useMutation(mutationOptions, queryClient);
+};

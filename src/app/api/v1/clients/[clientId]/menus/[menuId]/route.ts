@@ -81,10 +81,7 @@ export async function GET(
     const { menuId } = await params;
     const menu = await getMenuById(menuId);
     if (!menu) {
-      return NextResponse.json(
-        { code: "NOT_FOUND", message: "Menu not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ code: "NOT_FOUND", message: "Menu not found" }, { status: 404 });
     }
     return NextResponse.json(toDto(menu));
   } catch (e) {
@@ -110,10 +107,7 @@ export async function PATCH(
     }
     const existing = await getMenuById(menuId);
     if (!existing) {
-      return NextResponse.json(
-        { code: "NOT_FOUND", message: "Menu not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ code: "NOT_FOUND", message: "Menu not found" }, { status: 404 });
     }
     const { parentId, title, path, icon, type, sortOrder, status } = parsed.data;
     const patch: Record<string, unknown> = {};
@@ -155,10 +149,7 @@ export async function DELETE(
     const { menuId } = await params;
     const existing = await getMenuById(menuId);
     if (!existing) {
-      return NextResponse.json(
-        { code: "NOT_FOUND", message: "Menu not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ code: "NOT_FOUND", message: "Menu not found" }, { status: 404 });
     }
     await db.delete(sysMenu).where(eq(sysMenu.id, menuId));
     return new NextResponse(null, { status: 204 });

@@ -13,11 +13,7 @@ import {
   useTenantRolesListSysRoles,
   useTenantRolesUpdateSysRole,
 } from "@/api/endpoints/tenant-roles/tenant-roles";
-import type {
-  CreateSysRoleRequest,
-  SysRole,
-  UpdateSysRoleRequest,
-} from "@/api/endpoints.schemas";
+import type { CreateSysRoleRequest, SysRole, UpdateSysRoleRequest } from "@/api/endpoints.schemas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -130,46 +126,46 @@ export default function RoleListPage({ params }: { params: Promise<{ tenantId: s
           ) : roles.length === 0 ? (
             <EmptyState title="还没有角色" description="新建第一个角色以分配权限" />
           ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Code</TableHead>
-                <TableHead>名称</TableHead>
-                <TableHead className="text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {roles.map((r) => (
-                <TableRow key={r.id} data-testid="role-row">
-                  <TableCell className="font-mono text-xs">{r.roleCode}</TableCell>
-                  <TableCell className="font-medium">{r.roleName}</TableCell>
-                  <TableCell className="text-right space-x-1">
-                    {/* 权限矩阵按钮已废止（role_permissions 表 DROP，setPermissions endpoint 整体删） */}
-                    <Button variant="ghost" size="sm" data-fn="M00.F04.I02" asChild>
-                      <Link href={`/tenants/${tenantId}/roles/${r.id}/menus`}>菜单授权</Link>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      data-fn="M00.F03.I04"
-                      onClick={() => setEditTarget(r)}
-                    >
-                      编辑
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      data-fn="M00.F03.I05"
-                      className="text-red-600 hover:text-red-700"
-                      onClick={() => setDeleteTarget(r)}
-                    >
-                      删除
-                    </Button>
-                  </TableCell>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Code</TableHead>
+                  <TableHead>名称</TableHead>
+                  <TableHead className="text-right">操作</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {roles.map((r) => (
+                  <TableRow key={r.id} data-testid="role-row">
+                    <TableCell className="font-mono text-xs">{r.roleCode}</TableCell>
+                    <TableCell className="font-medium">{r.roleName}</TableCell>
+                    <TableCell className="text-right space-x-1">
+                      {/* 权限矩阵按钮已废止（role_permissions 表 DROP，setPermissions endpoint 整体删） */}
+                      <Button variant="ghost" size="sm" data-fn="M00.F04.I02" asChild>
+                        <Link href={`/tenants/${tenantId}/roles/${r.id}/menus`}>菜单授权</Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        data-fn="M00.F03.I04"
+                        onClick={() => setEditTarget(r)}
+                      >
+                        编辑
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        data-fn="M00.F03.I05"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => setDeleteTarget(r)}
+                      >
+                        删除
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>

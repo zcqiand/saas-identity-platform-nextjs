@@ -77,10 +77,7 @@ export async function GET(
     const { clientId } = await params;
     const app = await getAppByClientId(clientId);
     if (!app) {
-      return NextResponse.json(
-        { code: "NOT_FOUND", message: "App not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ code: "NOT_FOUND", message: "App not found" }, { status: 404 });
     }
     return NextResponse.json({ ...app, status: statusFromSmallint(app.status) });
   } catch (e) {
@@ -106,13 +103,19 @@ export async function PATCH(
     }
     const existing = await getAppByClientId(clientId);
     if (!existing) {
-      return NextResponse.json(
-        { code: "NOT_FOUND", message: "App not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ code: "NOT_FOUND", message: "App not found" }, { status: 404 });
     }
 
-    const { clientName, redirectUris, scopes, grantTypes, autoApprove, accessTokenValidity, refreshTokenValidity, status } = parsed.data;
+    const {
+      clientName,
+      redirectUris,
+      scopes,
+      grantTypes,
+      autoApprove,
+      accessTokenValidity,
+      refreshTokenValidity,
+      status,
+    } = parsed.data;
     const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
     if (clientName !== undefined) patch.clientName = clientName;
     // string 直传（已是 csv / 单串），不再 join
@@ -156,10 +159,7 @@ export async function DELETE(
     const { clientId } = await params;
     const existing = await getAppByClientId(clientId);
     if (!existing) {
-      return NextResponse.json(
-        { code: "NOT_FOUND", message: "App not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ code: "NOT_FOUND", message: "App not found" }, { status: 404 });
     }
     await db.delete(oauthClient).where(eq(oauthClient.clientId, clientId));
     return new NextResponse(null, { status: 204 });

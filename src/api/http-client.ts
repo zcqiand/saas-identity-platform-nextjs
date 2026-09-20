@@ -49,7 +49,11 @@ export function toApiError(err: unknown): ApiError {
 /** 401 时清本地会话并跳登录页（保留后端切换选择）。 */
 function handleUnauthorized(): void {
   for (const key of ["saas.tenant", "saas.selected.tenant", "saas.selected.app"]) {
-    try { window.localStorage.removeItem(key); } catch { /* ignore */ }
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
   }
   window.location.assign("/login");
 }
@@ -69,21 +73,21 @@ export function installHttpClient(getToken: () => string | null): void {
     return config;
   });
   ejectRequest = () => axios.interceptors.request.eject(requestId);
-    // 401（token 过期/无效）→ 清本地会话并踢回登录页重新登录（用户裁定 2026-09-12）。
-    const responseId = axios.interceptors.response.use(
-      (res) => res,
-      (err) => {
-        if (axios.isAxiosError(err) && err.response?.status === 401) {
-          const url = err.config?.url ?? "";
-          const isAuthFlow = /\/api\/v1\/(auth|oauth)\//.test(url);
-          const onLogin = window.location.pathname.startsWith("/login");
-          if (!isAuthFlow && !onLogin) {
-            handleUnauthorized();
-          }
+  // 401（token 过期/无效）→ 清本地会话并踢回登录页重新登录（用户裁定 2026-09-12）。
+  const responseId = axios.interceptors.response.use(
+    (res) => res,
+    (err) => {
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        const url = err.config?.url ?? "";
+        const isAuthFlow = /\/api\/v1\/(auth|oauth)\//.test(url);
+        const onLogin = window.location.pathname.startsWith("/login");
+        if (!isAuthFlow && !onLogin) {
+          handleUnauthorized();
         }
-        return Promise.reject(err);
-      },
-    );
+      }
+      return Promise.reject(err);
+    },
+  );
   ejectResponse = () => axios.interceptors.response.eject(responseId);
 }
 

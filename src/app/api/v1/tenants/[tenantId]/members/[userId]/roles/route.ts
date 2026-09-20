@@ -27,10 +27,7 @@ export async function PUT(
     await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const parsed = Body.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
-      return NextResponse.json(
-        { code: "BAD_REQUEST", message: "Invalid body" },
-        { status: 400 },
-      );
+      return NextResponse.json({ code: "BAD_REQUEST", message: "Invalid body" }, { status: 400 });
     }
 
     // 找 membership

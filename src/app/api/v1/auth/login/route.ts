@@ -137,9 +137,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     .where(and(eq(tenantMember.userId, user.id), eq(tenantMember.status, 1)));
   // 一租户多订阅会 join 出重复行；按 membership id 去重（不用 selectDistinct ——
   // 测试环境的 db mock 只实现 select 链）
-  const availRows = availJoined.filter(
-    (r, i) => availJoined.findIndex((x) => x.id === r.id) === i,
-  );
+  const availRows = availJoined.filter((r, i) => availJoined.findIndex((x) => x.id === r.id) === i);
   const roleMapByTenant = new Map<string, Map<string, string[]>>();
   for (const r of availRows) {
     if (!roleMapByTenant.has(r.tenantId)) {

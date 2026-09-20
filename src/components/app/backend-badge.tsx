@@ -65,11 +65,7 @@ export function BackendBadge({ variant = "sidebar" }: { variant?: "sidebar" | "p
             {!selected && <Check className="h-4 w-4" />}
           </DropdownMenuItem>
           {SELECTABLE_BACKENDS.map((b) => (
-            <DropdownMenuItem
-              key={b.key}
-              onSelect={() => pick(b.key)}
-              className="cursor-pointer"
-            >
+            <DropdownMenuItem key={b.key} onSelect={() => pick(b.key)} className="cursor-pointer">
               <Server className="mr-2 h-4 w-4 text-slate-500" />
               <div className="flex flex-1 flex-col">
                 <span className="font-medium">{b.key}</span>

@@ -21,7 +21,10 @@ const ROOT = resolve(__dirname, "..");
 // 测试中直接用 pg.Client 是简化路径，避 postgres-js 实例化对环境的隐式依赖
 type PgClient = {
   connect(): Promise<void>;
-  query(sql: string, params?: unknown[]): Promise<{ rows: Record<string, unknown>[]; rowCount: number }>;
+  query(
+    sql: string,
+    params?: unknown[],
+  ): Promise<{ rows: Record<string, unknown>[]; rowCount: number }>;
   end(): Promise<void>;
 };
 

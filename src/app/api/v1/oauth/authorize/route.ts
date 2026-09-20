@@ -56,9 +56,7 @@ function redirectUriAllowed(csv: string, requested: string): boolean {
     .map((u) => u.trim())
     .filter(Boolean)
     .some(
-      (u) =>
-        requested === u ||
-        (requested.startsWith(u) && requested.charAt(u.length) === "?"),
+      (u) => requested === u || (requested.startsWith(u) && requested.charAt(u.length) === "?"),
     );
 }
 
@@ -87,7 +85,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json(
       {
         code: "INVALID_REQUEST",
-        message: "OAuth 2.0 authorize: 缺必填字段或字段非法（clientId/redirectUri/responseType/scope/state）",
+        message:
+          "OAuth 2.0 authorize: 缺必填字段或字段非法（clientId/redirectUri/responseType/scope/state）",
         details: parsed.error.flatten(),
       },
       { status: 400 },

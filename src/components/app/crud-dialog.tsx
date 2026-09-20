@@ -51,7 +51,11 @@ export interface CrudDialogProps {
   loading?: boolean;
   onSubmit: (values: Record<string, FieldValue>) => void | Promise<void>;
   /** 自定义字段渲染，覆盖默认控件。键为 field.name */
-  renderField?: (field: FieldDef, value: FieldValue, onChange: (v: FieldValue) => void) => ReactNode;
+  renderField?: (
+    field: FieldDef,
+    value: FieldValue,
+    onChange: (v: FieldValue) => void,
+  ) => ReactNode;
 }
 
 function defaultRenderField(
@@ -90,11 +94,7 @@ function defaultRenderField(
   if (type === "checkbox") {
     return (
       <div className="flex items-center gap-2">
-        <Checkbox
-          id={id}
-          checked={Boolean(value)}
-          onCheckedChange={(v) => onChange(Boolean(v))}
-        />
+        <Checkbox id={id} checked={Boolean(value)} onCheckedChange={(v) => onChange(Boolean(v))} />
         {field.hint && <span className="text-sm text-slate-600">{field.hint}</span>}
       </div>
     );
@@ -161,7 +161,12 @@ export function CrudDialog({
 
           <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
             {fields.map((f) => (
-              <Field key={f.name} label={f.label} htmlFor={`crud-field-${f.name}`} required={f.required}>
+              <Field
+                key={f.name}
+                label={f.label}
+                htmlFor={`crud-field-${f.name}`}
+                required={f.required}
+              >
                 {renderField
                   ? renderField(f, values[f.name], (v) => setField(f.name, v))
                   : defaultRenderField(f, values[f.name], (v) => setField(f.name, v))}
@@ -170,7 +175,12 @@ export function CrudDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
               {cancelText}
             </Button>
             <Button type="submit" disabled={loading} data-fn="crud.submit">

@@ -27,10 +27,7 @@ export async function POST(
     await verifyPathTenant(tenantId, req.headers.get("authorization"));
     const parsed = Body.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
-      return NextResponse.json(
-        { code: "BAD_REQUEST", message: "Invalid body" },
-        { status: 400 },
-      );
+      return NextResponse.json({ code: "BAD_REQUEST", message: "Invalid body" }, { status: 400 });
     }
     const username = parsed.data.email.split("@")[0]!;
     // 先看 sys_user.email 是否已存在（全局唯一）
@@ -78,15 +75,23 @@ export async function POST(
       .from(tenantMember)
       .where(and(eq(tenantMember.tenantId, tenantId), eq(tenantMember.userId, userRow.id)))
       .limit(1);
-    const memberRow = memberRows[0] ?? (await db.insert(tenantMember).values({
-      tenantId,
-      userId: userRow.id,
-      memberName: userRow.username,
-      isOwner: false,
-      status: 1,
-    }).returning({ id: tenantMember.id, status: tenantMember.status }))[0];
+    const memberRow =
+      memberRows[0] ??
+      (
+        await db
+          .insert(tenantMember)
+          .values({
+            tenantId,
+            userId: userRow.id,
+            memberName: userRow.username,
+            isOwner: false,
+            status: 1,
+          })
+          .returning({ id: tenantMember.id, status: tenantMember.status })
+      )[0];
     // 嵌套 TenantMemberView（SSOT tenant-members.tsp:54）— I42 对齐方案 C
-    const statusStr = userRow.status === 2 ? "invited" : userRow.status === 1 ? "active" : "disabled";
+    const statusStr =
+      userRow.status === 2 ? "invited" : userRow.status === 1 ? "active" : "disabled";
     return NextResponse.json({
       member: {
         id: memberRow.id,

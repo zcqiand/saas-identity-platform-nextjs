@@ -51,10 +51,7 @@ export async function PUT(
     const { clientId: clientIdParam } = await params;
     const clientId = await resolveClientId(clientIdParam);
     if (!clientId) {
-      return NextResponse.json(
-        { code: "NOT_FOUND", message: "App not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ code: "NOT_FOUND", message: "App not found" }, { status: 404 });
     }
     const parsed = ReorderBody.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
@@ -65,10 +62,7 @@ export async function PUT(
     }
     const { orderedMenuIds } = parsed.data;
     for (let i = 0; i < orderedMenuIds.length; i++) {
-      await db
-        .update(sysMenu)
-        .set({ sortOrder: i })
-        .where(eq(sysMenu.id, orderedMenuIds[i]));
+      await db.update(sysMenu).set({ sortOrder: i }).where(eq(sysMenu.id, orderedMenuIds[i]));
     }
     const items = await db
       .select(menuFields)

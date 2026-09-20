@@ -20,7 +20,11 @@ import { z } from "zod";
 import { db } from "@/db";
 import { sysUser, tenantMember } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
-import { getMemberRoleIdsBatch, MEMBER_STATUS_TO_SMALLINT, smallintToMemberStatus } from "@/lib/member-roles";
+import {
+  getMemberRoleIdsBatch,
+  MEMBER_STATUS_TO_SMALLINT,
+  smallintToMemberStatus,
+} from "@/lib/member-roles";
 
 const PAGE_DEFAULT = 20;
 const PAGE_MAX = 100;
@@ -65,8 +69,7 @@ export async function GET(
         );
       }
       memberWhere =
-        and(eq(tenantMember.tenantId, tenantId), eq(tenantMember.status, statusNum)) ??
-        memberWhere;
+        and(eq(tenantMember.tenantId, tenantId), eq(tenantMember.status, statusNum)) ?? memberWhere;
     }
 
     const totalResult = await db
@@ -161,7 +164,10 @@ export async function POST(
       .returning({ id: sysUser.id });
     const id = inserted[0]?.id;
     if (!id) {
-      return NextResponse.json({ code: "INTERNAL", message: "insert returned no id" }, { status: 500 });
+      return NextResponse.json(
+        { code: "INTERNAL", message: "insert returned no id" },
+        { status: 500 },
+      );
     }
     // 同步建 tenantMember（active=1）
     await db.insert(tenantMember).values({

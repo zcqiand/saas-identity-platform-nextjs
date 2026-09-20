@@ -16,10 +16,7 @@ import {
   useTenantMembersUpdateTenantUser,
 } from "@/api/endpoints/tenant-members/tenant-members";
 import { useTenantRolesListSysRoles } from "@/api/endpoints/tenant-roles/tenant-roles";
-import type {
-  CreateSysUserRequest,
-  UpdateSysUserRequest,
-} from "@/api/endpoints.schemas";
+import type { CreateSysUserRequest, UpdateSysUserRequest } from "@/api/endpoints.schemas";
 
 // ADR-0029 待裁决：shared tsp 把 members list 200 定义为嵌套 TenantMemberView
 // {member,user,roles}，但 4 后端 + msw + contract-test（M96.F02.I10 仲裁）实际
@@ -39,7 +36,12 @@ function normalizeMemberRow(raw: unknown): MemberUserRow {
   const r = raw as Record<string, unknown>;
   if (r.member && r.user) {
     const member = r.member as { id: string; tenantId: string; status: MemberUserRow["status"] };
-    const user = r.user as { id: string; username: string; email: string; status?: MemberUserRow["status"] };
+    const user = r.user as {
+      id: string;
+      username: string;
+      email: string;
+      status?: MemberUserRow["status"];
+    };
     return {
       id: user.id ?? member.id,
       tenantId: member.tenantId as string,

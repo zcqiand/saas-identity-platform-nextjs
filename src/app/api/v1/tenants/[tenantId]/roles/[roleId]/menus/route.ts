@@ -75,10 +75,7 @@ export async function PUT(
     }
     const parsed = SetBody.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
-      return NextResponse.json(
-        { code: "BAD_REQUEST", message: "Invalid body" },
-        { status: 400 },
-      );
+      return NextResponse.json({ code: "BAD_REQUEST", message: "Invalid body" }, { status: 400 });
     }
     // 整批替换改为单事务差量写（2026-09-12 并发 500 修复）：
     // 以前 delete 全量 + insert 两条独立 autocommit，四方并发 PUT 同一 role 会撞
@@ -88,7 +85,10 @@ export async function PUT(
         await tx
           .delete(sysRoleMenu)
           .where(
-            and(eq(sysRoleMenu.roleId, roleId), notInArray(sysRoleMenu.menuId, parsed.data.menuIds)),
+            and(
+              eq(sysRoleMenu.roleId, roleId),
+              notInArray(sysRoleMenu.menuId, parsed.data.menuIds),
+            ),
           );
         await tx
           .insert(sysRoleMenu)

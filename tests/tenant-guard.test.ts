@@ -4,11 +4,7 @@
 // 覆盖：缺失 token / 缺失 claim / mismatch / match / null pathTenantId / JwtParseError 透传。
 
 import { describe, it, expect } from "vitest";
-import {
-  verifyPathTenant,
-  tenantGuardErrorToResponse,
-  TenantGuardError,
-} from "@/lib/tenant-guard";
+import { verifyPathTenant, tenantGuardErrorToResponse, TenantGuardError } from "@/lib/tenant-guard";
 import { decodeJwtPayload, extractBearer, signTestToken } from "@/lib/jwt";
 
 // 不验签的 legacy helper：仍用 alg:none 格式测 decodeJwtPayload 自身

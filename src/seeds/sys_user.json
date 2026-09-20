@@ -5,9 +5,7 @@
     "username": "alice",
     "email": "alice@acme.io",
     "status": "active",
-    "roleIds": [
-      "00000000-0000-0000-0000-a00000000001"
-    ],
+    "roleIds": ["00000000-0000-0000-0000-a00000000001"],
     "createdAt": "2026-01-20T08:00:00Z",
     "updatedAt": "2026-08-12T10:00:00Z"
   },
@@ -17,9 +15,7 @@
     "username": "bob",
     "email": "bob@acme.io",
     "status": "active",
-    "roleIds": [
-      "00000000-0000-0000-0000-a00000000002"
-    ],
+    "roleIds": ["00000000-0000-0000-0000-a00000000002"],
     "createdAt": "2026-01-20T08:00:00Z",
     "updatedAt": "2026-08-12T10:00:00Z"
   },
@@ -29,9 +25,7 @@
     "username": "carol",
     "email": "carol@acme.io",
     "status": "invited",
-    "roleIds": [
-      "00000000-0000-0000-0000-a00000000002"
-    ],
+    "roleIds": ["00000000-0000-0000-0000-a00000000002"],
     "createdAt": "2026-01-20T08:00:00Z",
     "updatedAt": "2026-08-12T10:00:00Z"
   },
@@ -41,9 +35,7 @@
     "username": "dave",
     "email": "dave@globex.io",
     "status": "active",
-    "roleIds": [
-      "00000000-0000-0000-0000-a00000000003"
-    ],
+    "roleIds": ["00000000-0000-0000-0000-a00000000003"],
     "createdAt": "2026-02-25T10:00:00Z",
     "updatedAt": "2026-08-10T14:00:00Z"
   },
@@ -53,9 +45,7 @@
     "username": "eve",
     "email": "eve@initech.io",
     "status": "suspended",
-    "roleIds": [
-      "00000000-0000-0000-0000-a00000000004"
-    ],
+    "roleIds": ["00000000-0000-0000-0000-a00000000004"],
     "createdAt": "2026-03-15T10:00:00Z",
     "updatedAt": "2026-08-01T12:00:00Z"
   }
