@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAdminTenantsGetTenant } from "@/api/endpoints/admin-tenants/admin-tenants";
 import {
+  tenantMembersChangeTenantUserStatus,
   useTenantMembersAssignTenantMemberRoles,
   useTenantMembersCreateTenantUser,
   useTenantMembersDeleteTenantUser,
@@ -16,7 +17,11 @@ import {
   useTenantMembersUpdateTenantUser,
 } from "@/api/endpoints/tenant-members/tenant-members";
 import { useTenantRolesListSysRoles } from "@/api/endpoints/tenant-roles/tenant-roles";
-import type { CreateSysUserRequest, UpdateSysUserRequest } from "@/api/endpoints.schemas";
+import type {
+  CreateSysUserRequest,
+  TenantMembersChangeTenantUserStatusBody,
+  UpdateSysUserRequest,
+} from "@/api/endpoints.schemas";
 
 // ADR-0029 待裁决：shared tsp 把 members list 200 定义为嵌套 TenantMemberView
 // {member,user,roles}，但 4 后端 + msw + contract-test（M96.F02.I10 仲裁）实际
@@ -141,14 +146,19 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
   async function onUpdate(values: Record<string, unknown>) {
     if (!editTarget) return;
     try {
+      // 5.13-①（2026-09-20 人裁）：email 走 PATCH（契约 UpdateSysUserRequest 已无 status），
+      // status 走专职 /status 端点（与 react UserListPage 同款双通道）。
       await updateMut.mutateAsync({
         tenantId,
         userId: editTarget.id,
-        data: {
-          email: values.email as string,
-          status: values.status as UpdateSysUserRequest["status"],
-        } as UpdateSysUserRequest,
+        data: { email: values.email as string } as UpdateSysUserRequest,
       });
+      const nextStatus = values.status as MemberUserRow["status"];
+      if (nextStatus && nextStatus !== editTarget.status) {
+        await tenantMembersChangeTenantUserStatus(tenantId, editTarget.id, {
+          status: nextStatus as TenantMembersChangeTenantUserStatusBody["status"],
+        });
+      }
       setEditTarget(null);
       usersQ.refetch();
       toast.success("用户已更新");

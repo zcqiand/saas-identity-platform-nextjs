@@ -15,17 +15,14 @@ import { z } from "zod";
 import { db } from "@/db";
 import { sysUser, tenantMember } from "@/db/schema";
 import { verifyPathTenant, tenantGuardErrorToNextResponse } from "@/lib/tenant-guard";
-import {
-  getMemberRoleIds,
-  MEMBER_STATUS_TO_SMALLINT,
-  smallintToMemberStatus,
-} from "@/lib/member-roles";
+import { getMemberRoleIds, smallintToMemberStatus } from "@/lib/member-roles";
 
 const UpdateUserBody = z.object({
   email: z.string().email().optional(),
   mobile: z.string().optional(),
-  // ADR-0032：TenantMemberStatus 4 值
-  status: z.enum(["active", "invited", "suspended", "disabled"]).optional(),
+  // 5.13-①（2026-09-20 人裁）：契约 UpdateSysUserRequest 已删 status —— 状态变更
+  // 唯一通道 = 专职 /status 端点（同目录 status/route.ts）。body 里的 status 是
+  // 契约外字段，zod object 默认剥离，不落任何一层状态。
 });
 
 async function findMember(tenantId: string, userId: string) {
@@ -103,15 +100,8 @@ export async function PATCH(
     if (parsed.data.email !== undefined) patch.email = parsed.data.email;
     if (parsed.data.mobile !== undefined) patch.mobile = parsed.data.mobile;
     await db.update(sysUser).set(patch).where(eq(sysUser.id, userId));
-    if (parsed.data.status !== undefined) {
-      await db
-        .update(tenantMember)
-        .set({
-          status: MEMBER_STATUS_TO_SMALLINT[parsed.data.status],
-          updatedAt: new Date().toISOString(),
-        })
-        .where(and(eq(tenantMember.tenantId, tenantId), eq(tenantMember.userId, userId)));
-    }
+    // 5.13-①：旧实现把 body.status 落 tenant_member.status（4 值），越出契约
+    // SysUserStatus 3 值域且与 PATCH 语义分叉 —— 随契约删字段一并删除。
     const after = await findMember(tenantId, userId);
     if (!after) {
       return NextResponse.json(

@@ -425,7 +425,6 @@ export interface UpdateSysRoleRequest {
 export interface UpdateSysUserRequest {
   email?: string;
   mobile?: string;
-  status?: SysUserStatus;
 }
 
 export interface UpdateTenantApplicationRequest {
