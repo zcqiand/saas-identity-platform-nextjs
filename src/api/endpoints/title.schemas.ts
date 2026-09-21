@@ -7,7 +7,6 @@
 export type AuthorizeCodeRequestResponseType =
   (typeof AuthorizeCodeRequestResponseType)[keyof typeof AuthorizeCodeRequestResponseType];
 
- 
 export const AuthorizeCodeRequestResponseType = {
   code: "code",
 } as const;
@@ -222,7 +221,6 @@ export interface SysMenu {
 
 export type SysMenuType = (typeof SysMenuType)[keyof typeof SysMenuType];
 
- 
 export const SysMenuType = {
   directory: "directory",
   menu: "menu",
@@ -268,7 +266,6 @@ export interface SysUser {
 
 export type SysUserStatus = (typeof SysUserStatus)[keyof typeof SysUserStatus];
 
- 
 export const SysUserStatus = {
   active: "active",
   invited: "invited",
@@ -314,7 +311,6 @@ export interface TenantMember {
 
 export type TenantMemberStatus = (typeof TenantMemberStatus)[keyof typeof TenantMemberStatus];
 
- 
 export const TenantMemberStatus = {
   active: "active",
   invited: "invited",
@@ -354,7 +350,6 @@ export interface TenantMembership {
 
 export type TenantStatus = (typeof TenantStatus)[keyof typeof TenantStatus];
 
- 
 export const TenantStatus = {
   active: "active",
   suspended: "suspended",
@@ -363,7 +358,6 @@ export const TenantStatus = {
 export type TokenRequestGrantType =
   (typeof TokenRequestGrantType)[keyof typeof TokenRequestGrantType];
 
- 
 export const TokenRequestGrantType = {
   authorization_code: "authorization_code",
   refresh_token: "refresh_token",
