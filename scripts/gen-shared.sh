@@ -21,6 +21,10 @@ echo "[gen-shared] step 1/2 — shared: emit OpenAPI.yaml..."
 
 echo "[gen-shared] step 2/2 — nextjs: orval → src/api/endpoints/..."
 npx orval
+# 5.86: orval 原始产物非 prettier 形态（L1 门按 prettier 收）——内建格式化令 regen 严格 byte-idempotent（5.23 spotless 先例）
+echo "[gen-shared] step 2b — prettier --write src/api/endpoints"
+npx --no -- prettier --write "src/api/endpoints/**/*.ts"
+
 
 echo "[gen-shared] OK"
 echo "[gen-shared]    DB schema 同步请跑: bash scripts/pull-schema.sh"

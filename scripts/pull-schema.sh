@@ -49,6 +49,10 @@ fi
 echo "[pull-schema] step 2/4 — move ${PULL_OUT_DIR}/schema.ts → ${SCHEMA_FILE}"
 mkdir -p "$(dirname "$SCHEMA_FILE")"
 mv "${PULL_OUT_DIR}/schema.ts" "${SCHEMA_FILE}"
+# 5.86: drizzle-kit 原始输出非 prettier 形态（5.73 起 schema.ts 受 L1 门）——内建格式化消 drift 门假红，regen 严格 byte-idempotent
+echo "[pull-schema] prettier --write ${SCHEMA_FILE}"
+npx --no -- prettier --write "${SCHEMA_FILE}"
+
 
 echo "[pull-schema] step 3/4 — cleanup ${PULL_OUT_DIR}/ + relations.ts"
 # relations.ts 是 drizzle-kit 自动生成的辅助文件；本仓不需要
