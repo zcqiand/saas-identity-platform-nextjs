@@ -53,6 +53,14 @@ mv "${PULL_OUT_DIR}/schema.ts" "${SCHEMA_FILE}"
 echo "[pull-schema] prettier --write ${SCHEMA_FILE}"
 npx --no -- prettier --write "${SCHEMA_FILE}"
 
+# 5.91（终审后续 drift 假红根治）：drizzle-kit introspection 的索引列 `.op("<x>_ops")`
+# 标注不可靠——两库 schema 逐字节一致（13 表同名集 + indclass 数组/indexdef 全等，
+# 2026-09-21 实证）却因 OID 布局等库元数据差异产出不同 opclass 标注（uuid_ops/
+# text_ops/int2_ops 错位挂到 varchar 列）。schema.ts 是 DB-First 镜像产物（仅作
+# drift 比对，不参与 db:push），`.op()` 后缀剥离后输出与库无关、确定性成立。
+sed -i -E 's/\.op\("[a-z0-9]+_ops"\)//g' "${SCHEMA_FILE}"
+npx --no -- prettier --write "${SCHEMA_FILE}"
+
 
 echo "[pull-schema] step 3/4 — cleanup ${PULL_OUT_DIR}/ + relations.ts"
 # relations.ts 是 drizzle-kit 自动生成的辅助文件；本仓不需要

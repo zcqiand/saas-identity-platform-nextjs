@@ -48,16 +48,16 @@ export const oauthAccessToken = pgTable(
     return {
       idxAccessTokenExpires: index("idx_access_token_expires").using(
         "btree",
-        table.expiresAt.asc().nullsLast().op("timestamptz_ops"),
+        table.expiresAt.asc().nullsLast(),
       ),
       idxAccessTokenUserTenant: index("idx_access_token_user_tenant").using(
         "btree",
-        table.userId.asc().nullsLast().op("uuid_ops"),
-        table.tenantId.asc().nullsLast().op("uuid_ops"),
+        table.userId.asc().nullsLast(),
+        table.tenantId.asc().nullsLast(),
       ),
       ukAccessTokenId: uniqueIndex("uk_access_token_id").using(
         "btree",
-        table.tokenId.asc().nullsLast().op("text_ops"),
+        table.tokenId.asc().nullsLast(),
       ),
       oauthAccessTokenClientIdOauthClientClientIdFk: foreignKey({
         columns: [table.clientId],
@@ -103,15 +103,15 @@ export const sysUser = pgTable(
     return {
       ukSysUserEmail: uniqueIndex("uk_sys_user_email").using(
         "btree",
-        table.email.asc().nullsLast().op("text_ops"),
+        table.email.asc().nullsLast(),
       ),
       ukSysUserMobile: uniqueIndex("uk_sys_user_mobile").using(
         "btree",
-        table.mobile.asc().nullsLast().op("text_ops"),
+        table.mobile.asc().nullsLast(),
       ),
       ukSysUserUsername: uniqueIndex("uk_sys_user_username").using(
         "btree",
-        table.username.asc().nullsLast().op("text_ops"),
+        table.username.asc().nullsLast(),
       ),
     };
   },
@@ -141,18 +141,15 @@ export const oauthCode = pgTable(
     return {
       idxOauthCodeClientUserTenant: index("idx_oauth_code_client_user_tenant").using(
         "btree",
-        table.clientId.asc().nullsLast().op("uuid_ops"),
-        table.userId.asc().nullsLast().op("text_ops"),
-        table.tenantId.asc().nullsLast().op("uuid_ops"),
+        table.clientId.asc().nullsLast(),
+        table.userId.asc().nullsLast(),
+        table.tenantId.asc().nullsLast(),
       ),
       idxOauthCodeExpires: index("idx_oauth_code_expires").using(
         "btree",
-        table.expiresAt.asc().nullsLast().op("timestamptz_ops"),
+        table.expiresAt.asc().nullsLast(),
       ),
-      ukOauthCode: uniqueIndex("uk_oauth_code").using(
-        "btree",
-        table.code.asc().nullsLast().op("text_ops"),
-      ),
+      ukOauthCode: uniqueIndex("uk_oauth_code").using("btree", table.code.asc().nullsLast()),
       oauthCodeClientIdOauthClientClientIdFk: foreignKey({
         columns: [table.clientId],
         foreignColumns: [oauthClient.clientId],
@@ -194,16 +191,16 @@ export const oauthRefreshToken = pgTable(
     return {
       idxRefreshTokenAccessId: index("idx_refresh_token_access_id").using(
         "btree",
-        table.accessTokenId.asc().nullsLast().op("uuid_ops"),
+        table.accessTokenId.asc().nullsLast(),
       ),
       idxRefreshTokenUserTenant: index("idx_refresh_token_user_tenant").using(
         "btree",
-        table.userId.asc().nullsLast().op("uuid_ops"),
-        table.tenantId.asc().nullsLast().op("uuid_ops"),
+        table.userId.asc().nullsLast(),
+        table.tenantId.asc().nullsLast(),
       ),
       ukRefreshToken: uniqueIndex("uk_refresh_token").using(
         "btree",
-        table.refreshToken.asc().nullsLast().op("text_ops"),
+        table.refreshToken.asc().nullsLast(),
       ),
       oauthRefreshTokenAccessTokenIdOauthAccessTokenIdFk: foreignKey({
         columns: [table.accessTokenId],
@@ -256,13 +253,13 @@ export const sysMenu = pgTable(
     return {
       idxSysMenuClientParent: index("idx_sys_menu_client_parent").using(
         "btree",
-        table.clientId.asc().nullsLast().op("text_ops"),
-        table.parentId.asc().nullsLast().op("text_ops"),
+        table.clientId.asc().nullsLast(),
+        table.parentId.asc().nullsLast(),
       ),
       idxSysMenuClientType: index("idx_sys_menu_client_type").using(
         "btree",
-        table.clientId.asc().nullsLast().op("text_ops"),
-        table.type.asc().nullsLast().op("text_ops"),
+        table.clientId.asc().nullsLast(),
+        table.type.asc().nullsLast(),
       ),
       sysMenuClientIdOauthClientClientIdFk: foreignKey({
         columns: [table.clientId],
@@ -298,14 +295,14 @@ export const sysRole = pgTable(
     return {
       idxSysRoleTenantClient: index("idx_sys_role_tenant_client").using(
         "btree",
-        table.tenantId.asc().nullsLast().op("text_ops"),
-        table.clientId.asc().nullsLast().op("uuid_ops"),
+        table.tenantId.asc().nullsLast(),
+        table.clientId.asc().nullsLast(),
       ),
       ukTenantClientRoleCode: uniqueIndex("uk_tenant_client_role_code").using(
         "btree",
-        table.tenantId.asc().nullsLast().op("uuid_ops"),
-        table.clientId.asc().nullsLast().op("uuid_ops"),
-        table.roleCode.asc().nullsLast().op("uuid_ops"),
+        table.tenantId.asc().nullsLast(),
+        table.clientId.asc().nullsLast(),
+        table.roleCode.asc().nullsLast(),
       ),
       sysRoleTenantIdTenantIdFk: foreignKey({
         columns: [table.tenantId],
@@ -344,16 +341,16 @@ export const tenantMember = pgTable(
     return {
       idxTenantMemberTenantId: index("idx_tenant_member_tenant_id").using(
         "btree",
-        table.tenantId.asc().nullsLast().op("uuid_ops"),
+        table.tenantId.asc().nullsLast(),
       ),
       idxTenantMemberUserId: index("idx_tenant_member_user_id").using(
         "btree",
-        table.userId.asc().nullsLast().op("uuid_ops"),
+        table.userId.asc().nullsLast(),
       ),
       ukTenantUser: uniqueIndex("uk_tenant_user").using(
         "btree",
-        table.tenantId.asc().nullsLast().op("uuid_ops"),
-        table.userId.asc().nullsLast().op("uuid_ops"),
+        table.tenantId.asc().nullsLast(),
+        table.userId.asc().nullsLast(),
       ),
       tenantMemberTenantIdTenantIdFk: foreignKey({
         columns: [table.tenantId],
@@ -388,12 +385,12 @@ export const tenantApplication = pgTable(
     return {
       idxTenantApplicationClientId: index("idx_tenant_application_client_id").using(
         "btree",
-        table.clientId.asc().nullsLast().op("text_ops"),
+        table.clientId.asc().nullsLast(),
       ),
       ukTenantClient: uniqueIndex("uk_tenant_client").using(
         "btree",
-        table.tenantId.asc().nullsLast().op("text_ops"),
-        table.clientId.asc().nullsLast().op("text_ops"),
+        table.tenantId.asc().nullsLast(),
+        table.clientId.asc().nullsLast(),
       ),
       tenantApplicationTenantIdTenantIdFk: foreignKey({
         columns: [table.tenantId],
@@ -459,10 +456,7 @@ export const tenant = pgTable(
   },
   (table) => {
     return {
-      ukTenantKey: uniqueIndex("uk_tenant_key").using(
-        "btree",
-        table.tenantKey.asc().nullsLast().op("text_ops"),
-      ),
+      ukTenantKey: uniqueIndex("uk_tenant_key").using("btree", table.tenantKey.asc().nullsLast()),
     };
   },
 );
@@ -477,7 +471,7 @@ export const sysRoleMenu = pgTable(
     return {
       idxSysRoleMenuMenuId: index("idx_sys_role_menu_menu_id").using(
         "btree",
-        table.menuId.asc().nullsLast().op("uuid_ops"),
+        table.menuId.asc().nullsLast(),
       ),
       sysRoleMenuRoleIdSysRoleIdFk: foreignKey({
         columns: [table.roleId],
@@ -507,7 +501,7 @@ export const tenantMemberRole = pgTable(
     return {
       idxTenantMemberRoleRoleId: index("idx_tenant_member_role_role_id").using(
         "btree",
-        table.roleId.asc().nullsLast().op("uuid_ops"),
+        table.roleId.asc().nullsLast(),
       ),
       tenantMemberRoleMemberIdTenantMemberIdFk: foreignKey({
         columns: [table.memberId],
