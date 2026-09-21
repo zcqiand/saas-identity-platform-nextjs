@@ -1,9 +1,9 @@
 {
   "schema": 2,
   "project": "saas-identity-platform-nextjs",
-  "current_task": "2026-09-19 family-leftovers wave 收口（Task 6）：--all 三轮判读完成，本仓 canonical 绿（R1）；R2/R3 红为环境注入副作用",
-  "last_session_at": "2026-09-19",
-  "last_session_summary": "无代码改动：R1 --all 绿；R2/R3 L4.db.drift 红 = --all 单值 DATABASE_URL=lab_test 误连（pull-schema 拉 lab 表），非本仓代码红，schema.ts 两次误改写均已还原",
+  "current_task": "5.91 闭账：pull-schema 剥 .op(*_ops) 噪音 + schema.ts rebaseline（6435306）+ 5.73② prettier 归位（21bf915）；批尾 unit gate r4 EXIT=0（drift 假红根治）",
+  "last_session_at": "2026-09-21",
+  "last_session_summary": "5.91：drizzle-kit opclass 标注随库 OID 布局漂移（uuid_ops/text_ops 错挂 varchar 列），pull-schema 内建 sed 剥离后双库输出字节一致；saas_test 按 migrate 建序重建（种子 5/4/3+41 menu 回灌）。同款 latent 面 lab-nextjs 已登记",
   "done": [
     "成员域扁平 TenantMemberUserView + src/lib/member-roles.ts 入库",
     "roles 列表 orderBy created_at asc, id asc（此前 DESC 与 oracle 分叉）",
