@@ -1,6 +1,6 @@
 // /api/v1/clients/[code] - M04.F01 公共读侧：按 clientCode 返回应用公开信息
 //
-// TypeSpec: tsp/routes/apps.tsp
+// TypeSpec: tsp/routes/clients.tsp
 //   getApp(@path code): AppPublicInfo
 // 免鉴权（接入方侧边栏/标题要显示应用名，不能强制管理员 JWT）；
 // 只返回展示字段（id/clientId/clientName/status），不暴露 OAuth 字段。

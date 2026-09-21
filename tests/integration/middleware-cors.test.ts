@@ -126,7 +126,7 @@ describe("middleware CORS /api/v1/* (v0.7.40)", () => {
         makeReq({
           method: "GET",
           origin: "https://lab-nextjs.xiangru.uk",
-          path: "/api/v1/apps/lab-management",
+          path: "/api/v1/clients/lab-management",
         }),
       );
       expect(res.headers.get("Access-Control-Allow-Origin")).toBe("https://lab-nextjs.xiangru.uk");
