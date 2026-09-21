@@ -7,7 +7,7 @@
 export type AuthorizeCodeRequestResponseType =
   (typeof AuthorizeCodeRequestResponseType)[keyof typeof AuthorizeCodeRequestResponseType];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
+ 
 export const AuthorizeCodeRequestResponseType = {
   code: "code",
 } as const;
@@ -222,7 +222,7 @@ export interface SysMenu {
 
 export type SysMenuType = (typeof SysMenuType)[keyof typeof SysMenuType];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
+ 
 export const SysMenuType = {
   directory: "directory",
   menu: "menu",
@@ -268,7 +268,7 @@ export interface SysUser {
 
 export type SysUserStatus = (typeof SysUserStatus)[keyof typeof SysUserStatus];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
+ 
 export const SysUserStatus = {
   active: "active",
   invited: "invited",
@@ -314,7 +314,7 @@ export interface TenantMember {
 
 export type TenantMemberStatus = (typeof TenantMemberStatus)[keyof typeof TenantMemberStatus];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
+ 
 export const TenantMemberStatus = {
   active: "active",
   invited: "invited",
@@ -354,7 +354,7 @@ export interface TenantMembership {
 
 export type TenantStatus = (typeof TenantStatus)[keyof typeof TenantStatus];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
+ 
 export const TenantStatus = {
   active: "active",
   suspended: "suspended",
@@ -363,7 +363,7 @@ export const TenantStatus = {
 export type TokenRequestGrantType =
   (typeof TokenRequestGrantType)[keyof typeof TokenRequestGrantType];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
+ 
 export const TokenRequestGrantType = {
   authorization_code: "authorization_code",
   refresh_token: "refresh_token",
