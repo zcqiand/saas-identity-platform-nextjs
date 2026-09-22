@@ -1,5 +1,8 @@
 import {
   pgTable,
+  serial,
+  text,
+  bigint,
   index,
   uniqueIndex,
   foreignKey,
@@ -9,13 +12,17 @@ import {
   boolean,
   smallint,
   integer,
-  serial,
-  text,
-  bigint,
   unique,
   primaryKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+
+export const drizzleMigrations = pgTable("__drizzle_migrations", {
+  id: serial().primaryKey().notNull(),
+  hash: text().notNull(),
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  createdAt: bigint("created_at", { mode: "number" }),
+});
 
 export const oauthRefreshToken = pgTable(
   "oauth_refresh_token",
@@ -118,61 +125,6 @@ export const sysMenu = pgTable(
   },
 );
 
-export const drizzleMigrations = pgTable("__drizzle_migrations", {
-  id: serial().primaryKey().notNull(),
-  hash: text().notNull(),
-  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-  createdAt: bigint("created_at", { mode: "number" }),
-});
-
-export const sysRole = pgTable(
-  "sys_role",
-  {
-    id: uuid()
-      .default(sql`uuid_generate_v4()`)
-      .primaryKey()
-      .notNull(),
-    tenantId: uuid("tenant_id").notNull(),
-    clientId: varchar("client_id", { length: 64 }).notNull(),
-    roleCode: varchar("role_code", { length: 64 }).notNull(),
-    roleName: varchar("role_name", { length: 64 }).notNull(),
-    description: varchar({ length: 255 }),
-    isPreset: boolean("is_preset").default(false).notNull(),
-    status: smallint().default(1).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-  },
-  (table) => {
-    return {
-      idxSysRoleTenantClient: index("idx_sys_role_tenant_client").using(
-        "btree",
-        table.tenantId.asc().nullsLast(),
-        table.clientId.asc().nullsLast(),
-      ),
-      ukTenantClientRoleCode: uniqueIndex("uk_tenant_client_role_code").using(
-        "btree",
-        table.tenantId.asc().nullsLast(),
-        table.clientId.asc().nullsLast(),
-        table.roleCode.asc().nullsLast(),
-      ),
-      sysRoleTenantIdTenantIdFk: foreignKey({
-        columns: [table.tenantId],
-        foreignColumns: [tenant.id],
-        name: "sys_role_tenant_id_tenant_id_fk",
-      }).onDelete("cascade"),
-      sysRoleClientIdOauthClientClientIdFk: foreignKey({
-        columns: [table.clientId],
-        foreignColumns: [oauthClient.clientId],
-        name: "sys_role_client_id_oauth_client_client_id_fk",
-      }).onDelete("cascade"),
-    };
-  },
-);
-
 export const oauthAccessToken = pgTable(
   "oauth_access_token",
   {
@@ -223,6 +175,54 @@ export const oauthAccessToken = pgTable(
         foreignColumns: [tenant.id],
         name: "oauth_access_token_tenant_id_tenant_id_fk",
       }).onDelete("set null"),
+    };
+  },
+);
+
+export const sysRole = pgTable(
+  "sys_role",
+  {
+    id: uuid()
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey()
+      .notNull(),
+    tenantId: uuid("tenant_id").notNull(),
+    clientId: varchar("client_id", { length: 64 }).notNull(),
+    roleCode: varchar("role_code", { length: 64 }).notNull(),
+    roleName: varchar("role_name", { length: 64 }).notNull(),
+    description: varchar({ length: 255 }),
+    isPreset: boolean("is_preset").default(false).notNull(),
+    status: smallint().default(1).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => {
+    return {
+      idxSysRoleTenantClient: index("idx_sys_role_tenant_client").using(
+        "btree",
+        table.tenantId.asc().nullsLast(),
+        table.clientId.asc().nullsLast(),
+      ),
+      ukTenantClientRoleCode: uniqueIndex("uk_tenant_client_role_code").using(
+        "btree",
+        table.tenantId.asc().nullsLast(),
+        table.clientId.asc().nullsLast(),
+        table.roleCode.asc().nullsLast(),
+      ),
+      sysRoleTenantIdTenantIdFk: foreignKey({
+        columns: [table.tenantId],
+        foreignColumns: [tenant.id],
+        name: "sys_role_tenant_id_tenant_id_fk",
+      }).onDelete("cascade"),
+      sysRoleClientIdOauthClientClientIdFk: foreignKey({
+        columns: [table.clientId],
+        foreignColumns: [oauthClient.clientId],
+        name: "sys_role_client_id_oauth_client_client_id_fk",
+      }).onDelete("cascade"),
     };
   },
 );
