@@ -65,7 +65,15 @@ export function installHttpClient(getToken: () => string | null): void {
   ejectRequest?.();
   ejectResponse?.();
   const requestId = axios.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-    config.baseURL = getApiBaseUrl();
+    // 2026-09-23：只在调用方未显式给 baseURL 时回填。此前无条件
+    // config.baseURL = getApiBaseUrl() 把登录页 idpAxios 的同源钉死
+    // （login/page.tsx「拦截器只在 config.baseURL 为空时才覆盖」的注释契约）
+    // 盖成本机切换器/env 值 —— 本机 env 残留 msw 时代 :5100（msw 仓已删），
+    // 全新浏览器登录表单 POST 落死端口预检失败、静默无反应。
+    // null/undefined = 未设置；"" 是显式同源值，原样保留。
+    if (config.baseURL === undefined || config.baseURL === null) {
+      config.baseURL = getApiBaseUrl();
+    }
     const token = getToken();
     if (token) {
       config.headers.set("Authorization", `Bearer ${token}`);
