@@ -1,20 +1,22 @@
 {
   "schema": 1,
   "project": "saas-identity-platform-nextjs",
+  "tier": "full",
+  "excluded_tier": [],
   "passed": true,
   "partial": true,
   "ran": [
-    "L3"
+    "L1"
   ],
-  "checked_at": "2026-09-11T12:39:04+0800",
+  "checked_at": "2026-09-20T21:10:33+0800",
   "gates": [
     {
-      "level": "L3",
-      "name": "类型",
+      "level": "L1",
+      "name": "格式",
       "passed": true,
       "returncode": 0,
-      "duration_s": 2.719,
-      "output": "npm warn Unknown cli config \"--noEmit\". This will stop working in the next major version of npm."
+      "duration_s": 2.125,
+      "output": "Checking formatting...\nAll matched files use Prettier code style!"
     }
   ]
 }

@@ -11,7 +11,9 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
-import { middleware } from "../../middleware";
+// 2026-09-23 middleware 迁 src/（Next 15 dev 存在 src/ 目录时不加载仓根 middleware，
+// dev CORS 全灭而 prod standalone 正常的分裂；镜像 lab-nextjs src/middleware.ts 先例）
+import { middleware } from "../../src/middleware";
 
 const ALLOWLIST = "https://lab-nextjs.xiangru.uk,http://localhost:5101";
 
