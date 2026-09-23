@@ -24,6 +24,143 @@ export const drizzleMigrations = pgTable("__drizzle_migrations", {
   createdAt: bigint("created_at", { mode: "number" }),
 });
 
+export const oauthAccessToken = pgTable(
+  "oauth_access_token",
+  {
+    id: uuid()
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey()
+      .notNull(),
+    tokenId: varchar("token_id", { length: 128 }).notNull(),
+    accessToken: text("access_token").notNull(),
+    clientId: varchar("client_id", { length: 64 }).notNull(),
+    userId: uuid("user_id"),
+    tenantId: uuid("tenant_id"),
+    scope: varchar({ length: 255 }),
+    tokenType: varchar("token_type", { length: 32 }).default("Bearer").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "string" }).notNull(),
+    revoked: boolean().default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => {
+    return {
+      idxAccessTokenExpires: index("idx_access_token_expires").using(
+        "btree",
+        table.expiresAt.asc().nullsLast(),
+      ),
+      idxAccessTokenUserTenant: index("idx_access_token_user_tenant").using(
+        "btree",
+        table.userId.asc().nullsLast(),
+        table.tenantId.asc().nullsLast(),
+      ),
+      ukAccessTokenId: uniqueIndex("uk_access_token_id").using(
+        "btree",
+        table.tokenId.asc().nullsLast(),
+      ),
+      oauthAccessTokenClientIdOauthClientClientIdFk: foreignKey({
+        columns: [table.clientId],
+        foreignColumns: [oauthClient.clientId],
+        name: "oauth_access_token_client_id_oauth_client_client_id_fk",
+      }).onDelete("cascade"),
+      oauthAccessTokenUserIdSysUserIdFk: foreignKey({
+        columns: [table.userId],
+        foreignColumns: [sysUser.id],
+        name: "oauth_access_token_user_id_sys_user_id_fk",
+      }).onDelete("set null"),
+      oauthAccessTokenTenantIdTenantIdFk: foreignKey({
+        columns: [table.tenantId],
+        foreignColumns: [tenant.id],
+        name: "oauth_access_token_tenant_id_tenant_id_fk",
+      }).onDelete("set null"),
+    };
+  },
+);
+
+export const oauthClient = pgTable(
+  "oauth_client",
+  {
+    id: uuid()
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey()
+      .notNull(),
+    clientId: varchar("client_id", { length: 64 }).notNull(),
+    clientSecret: varchar("client_secret", { length: 255 }).notNull(),
+    clientName: varchar("client_name", { length: 128 }).notNull(),
+    grantTypes: varchar("grant_types", { length: 255 }).notNull(),
+    redirectUris: text("redirect_uris").notNull(),
+    scopes: varchar({ length: 255 }),
+    accessTokenValidity: integer("access_token_validity").default(7200).notNull(),
+    refreshTokenValidity: integer("refresh_token_validity").default(2592000).notNull(),
+    autoApprove: boolean("auto_approve").default(false).notNull(),
+    status: smallint().default(1).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => {
+    return {
+      ukOauthClientId: unique("uk_oauth_client_id").on(table.clientId),
+    };
+  },
+);
+
+export const oauthCode = pgTable(
+  "oauth_code",
+  {
+    id: uuid()
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey()
+      .notNull(),
+    code: varchar({ length: 128 }).notNull(),
+    clientId: varchar("client_id", { length: 64 }).notNull(),
+    userId: uuid("user_id").notNull(),
+    tenantId: uuid("tenant_id").notNull(),
+    redirectUri: varchar("redirect_uri", { length: 500 }),
+    scope: varchar({ length: 255 }),
+    codeChallenge: varchar("code_challenge", { length: 128 }),
+    codeChallengeMethod: varchar("code_challenge_method", { length: 16 }),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "string" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => {
+    return {
+      idxOauthCodeClientUserTenant: index("idx_oauth_code_client_user_tenant").using(
+        "btree",
+        table.clientId.asc().nullsLast(),
+        table.userId.asc().nullsLast(),
+        table.tenantId.asc().nullsLast(),
+      ),
+      idxOauthCodeExpires: index("idx_oauth_code_expires").using(
+        "btree",
+        table.expiresAt.asc().nullsLast(),
+      ),
+      ukOauthCode: uniqueIndex("uk_oauth_code").using("btree", table.code.asc().nullsLast()),
+      oauthCodeClientIdOauthClientClientIdFk: foreignKey({
+        columns: [table.clientId],
+        foreignColumns: [oauthClient.clientId],
+        name: "oauth_code_client_id_oauth_client_client_id_fk",
+      }).onDelete("cascade"),
+      oauthCodeUserIdSysUserIdFk: foreignKey({
+        columns: [table.userId],
+        foreignColumns: [sysUser.id],
+        name: "oauth_code_user_id_sys_user_id_fk",
+      }).onDelete("cascade"),
+      oauthCodeTenantIdTenantIdFk: foreignKey({
+        columns: [table.tenantId],
+        foreignColumns: [tenant.id],
+        name: "oauth_code_tenant_id_tenant_id_fk",
+      }).onDelete("cascade"),
+    };
+  },
+);
+
 export const oauthRefreshToken = pgTable(
   "oauth_refresh_token",
   {
@@ -125,60 +262,6 @@ export const sysMenu = pgTable(
   },
 );
 
-export const oauthAccessToken = pgTable(
-  "oauth_access_token",
-  {
-    id: uuid()
-      .default(sql`uuid_generate_v4()`)
-      .primaryKey()
-      .notNull(),
-    tokenId: varchar("token_id", { length: 128 }).notNull(),
-    accessToken: text("access_token").notNull(),
-    clientId: varchar("client_id", { length: 64 }).notNull(),
-    userId: uuid("user_id"),
-    tenantId: uuid("tenant_id"),
-    scope: varchar({ length: 255 }),
-    tokenType: varchar("token_type", { length: 32 }).default("Bearer").notNull(),
-    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "string" }).notNull(),
-    revoked: boolean().default(false).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-  },
-  (table) => {
-    return {
-      idxAccessTokenExpires: index("idx_access_token_expires").using(
-        "btree",
-        table.expiresAt.asc().nullsLast(),
-      ),
-      idxAccessTokenUserTenant: index("idx_access_token_user_tenant").using(
-        "btree",
-        table.userId.asc().nullsLast(),
-        table.tenantId.asc().nullsLast(),
-      ),
-      ukAccessTokenId: uniqueIndex("uk_access_token_id").using(
-        "btree",
-        table.tokenId.asc().nullsLast(),
-      ),
-      oauthAccessTokenClientIdOauthClientClientIdFk: foreignKey({
-        columns: [table.clientId],
-        foreignColumns: [oauthClient.clientId],
-        name: "oauth_access_token_client_id_oauth_client_client_id_fk",
-      }).onDelete("cascade"),
-      oauthAccessTokenUserIdSysUserIdFk: foreignKey({
-        columns: [table.userId],
-        foreignColumns: [sysUser.id],
-        name: "oauth_access_token_user_id_sys_user_id_fk",
-      }).onDelete("set null"),
-      oauthAccessTokenTenantIdTenantIdFk: foreignKey({
-        columns: [table.tenantId],
-        foreignColumns: [tenant.id],
-        name: "oauth_access_token_tenant_id_tenant_id_fk",
-      }).onDelete("set null"),
-    };
-  },
-);
-
 export const sysRole = pgTable(
   "sys_role",
   {
@@ -227,42 +310,32 @@ export const sysRole = pgTable(
   },
 );
 
-export const tenantApplication = pgTable(
-  "tenant_application",
+export const sysRoleMenu = pgTable(
+  "sys_role_menu",
   {
-    id: uuid()
-      .default(sql`uuid_generate_v4()`)
-      .primaryKey()
-      .notNull(),
-    tenantId: uuid("tenant_id").notNull(),
-    clientId: varchar("client_id", { length: 64 }).notNull(),
-    status: smallint().default(1).notNull(),
-    expireTime: timestamp("expire_time", { withTimezone: true, mode: "string" }),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
+    roleId: uuid("role_id").notNull(),
+    menuId: uuid("menu_id").notNull(),
   },
   (table) => {
     return {
-      idxTenantApplicationClientId: index("idx_tenant_application_client_id").using(
+      idxSysRoleMenuMenuId: index("idx_sys_role_menu_menu_id").using(
         "btree",
-        table.clientId.asc().nullsLast(),
+        table.menuId.asc().nullsLast(),
       ),
-      ukTenantClient: uniqueIndex("uk_tenant_client").using(
-        "btree",
-        table.tenantId.asc().nullsLast(),
-        table.clientId.asc().nullsLast(),
-      ),
-      tenantApplicationTenantIdTenantIdFk: foreignKey({
-        columns: [table.tenantId],
-        foreignColumns: [tenant.id],
-        name: "tenant_application_tenant_id_tenant_id_fk",
+      sysRoleMenuRoleIdSysRoleIdFk: foreignKey({
+        columns: [table.roleId],
+        foreignColumns: [sysRole.id],
+        name: "sys_role_menu_role_id_sys_role_id_fk",
       }).onDelete("cascade"),
-      tenantApplicationClientIdOauthClientClientIdFk: foreignKey({
-        columns: [table.clientId],
-        foreignColumns: [oauthClient.clientId],
-        name: "tenant_application_client_id_oauth_client_client_id_fk",
+      sysRoleMenuMenuIdSysMenuIdFk: foreignKey({
+        columns: [table.menuId],
+        foreignColumns: [sysMenu.id],
+        name: "sys_role_menu_menu_id_sys_menu_id_fk",
       }).onDelete("cascade"),
+      sysRoleMenuRoleIdMenuIdPk: primaryKey({
+        columns: [table.roleId, table.menuId],
+        name: "sys_role_menu_role_id_menu_id_pk",
+      }),
     };
   },
 );
@@ -306,74 +379,15 @@ export const sysUser = pgTable(
   },
 );
 
-export const oauthCode = pgTable(
-  "oauth_code",
+export const tenant = pgTable(
+  "tenant",
   {
     id: uuid()
       .default(sql`uuid_generate_v4()`)
       .primaryKey()
       .notNull(),
-    code: varchar({ length: 128 }).notNull(),
-    clientId: varchar("client_id", { length: 64 }).notNull(),
-    userId: uuid("user_id").notNull(),
-    tenantId: uuid("tenant_id").notNull(),
-    redirectUri: varchar("redirect_uri", { length: 500 }),
-    scope: varchar({ length: 255 }),
-    codeChallenge: varchar("code_challenge", { length: 128 }),
-    codeChallengeMethod: varchar("code_challenge_method", { length: 16 }),
-    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "string" }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-  },
-  (table) => {
-    return {
-      idxOauthCodeClientUserTenant: index("idx_oauth_code_client_user_tenant").using(
-        "btree",
-        table.clientId.asc().nullsLast(),
-        table.userId.asc().nullsLast(),
-        table.tenantId.asc().nullsLast(),
-      ),
-      idxOauthCodeExpires: index("idx_oauth_code_expires").using(
-        "btree",
-        table.expiresAt.asc().nullsLast(),
-      ),
-      ukOauthCode: uniqueIndex("uk_oauth_code").using("btree", table.code.asc().nullsLast()),
-      oauthCodeClientIdOauthClientClientIdFk: foreignKey({
-        columns: [table.clientId],
-        foreignColumns: [oauthClient.clientId],
-        name: "oauth_code_client_id_oauth_client_client_id_fk",
-      }).onDelete("cascade"),
-      oauthCodeUserIdSysUserIdFk: foreignKey({
-        columns: [table.userId],
-        foreignColumns: [sysUser.id],
-        name: "oauth_code_user_id_sys_user_id_fk",
-      }).onDelete("cascade"),
-      oauthCodeTenantIdTenantIdFk: foreignKey({
-        columns: [table.tenantId],
-        foreignColumns: [tenant.id],
-        name: "oauth_code_tenant_id_tenant_id_fk",
-      }).onDelete("cascade"),
-    };
-  },
-);
-
-export const oauthClient = pgTable(
-  "oauth_client",
-  {
-    id: uuid()
-      .default(sql`uuid_generate_v4()`)
-      .primaryKey()
-      .notNull(),
-    clientId: varchar("client_id", { length: 64 }).notNull(),
-    clientSecret: varchar("client_secret", { length: 255 }).notNull(),
-    clientName: varchar("client_name", { length: 128 }).notNull(),
-    grantTypes: varchar("grant_types", { length: 255 }).notNull(),
-    redirectUris: text("redirect_uris").notNull(),
-    scopes: varchar({ length: 255 }),
-    accessTokenValidity: integer("access_token_validity").default(7200).notNull(),
-    refreshTokenValidity: integer("refresh_token_validity").default(2592000).notNull(),
-    autoApprove: boolean("auto_approve").default(false).notNull(),
+    tenantKey: varchar("tenant_key", { length: 64 }).notNull(),
+    name: varchar({ length: 128 }).notNull(),
     status: smallint().default(1).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .default(sql`CURRENT_TIMESTAMP`)
@@ -384,7 +398,47 @@ export const oauthClient = pgTable(
   },
   (table) => {
     return {
-      ukOauthClientId: unique("uk_oauth_client_id").on(table.clientId),
+      ukTenantKey: uniqueIndex("uk_tenant_key").using("btree", table.tenantKey.asc().nullsLast()),
+    };
+  },
+);
+
+export const tenantApplication = pgTable(
+  "tenant_application",
+  {
+    id: uuid()
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey()
+      .notNull(),
+    tenantId: uuid("tenant_id").notNull(),
+    clientId: varchar("client_id", { length: 64 }).notNull(),
+    status: smallint().default(1).notNull(),
+    expireTime: timestamp("expire_time", { withTimezone: true, mode: "string" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => {
+    return {
+      idxTenantApplicationClientId: index("idx_tenant_application_client_id").using(
+        "btree",
+        table.clientId.asc().nullsLast(),
+      ),
+      ukTenantClient: uniqueIndex("uk_tenant_client").using(
+        "btree",
+        table.tenantId.asc().nullsLast(),
+        table.clientId.asc().nullsLast(),
+      ),
+      tenantApplicationTenantIdTenantIdFk: foreignKey({
+        columns: [table.tenantId],
+        foreignColumns: [tenant.id],
+        name: "tenant_application_tenant_id_tenant_id_fk",
+      }).onDelete("cascade"),
+      tenantApplicationClientIdOauthClientClientIdFk: foreignKey({
+        columns: [table.clientId],
+        foreignColumns: [oauthClient.clientId],
+        name: "tenant_application_client_id_oauth_client_client_id_fk",
+      }).onDelete("cascade"),
     };
   },
 );
@@ -433,60 +487,6 @@ export const tenantMember = pgTable(
         foreignColumns: [sysUser.id],
         name: "tenant_member_user_id_sys_user_id_fk",
       }).onDelete("cascade"),
-    };
-  },
-);
-
-export const tenant = pgTable(
-  "tenant",
-  {
-    id: uuid()
-      .default(sql`uuid_generate_v4()`)
-      .primaryKey()
-      .notNull(),
-    tenantKey: varchar("tenant_key", { length: 64 }).notNull(),
-    name: varchar({ length: 128 }).notNull(),
-    status: smallint().default(1).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-  },
-  (table) => {
-    return {
-      ukTenantKey: uniqueIndex("uk_tenant_key").using("btree", table.tenantKey.asc().nullsLast()),
-    };
-  },
-);
-
-export const sysRoleMenu = pgTable(
-  "sys_role_menu",
-  {
-    roleId: uuid("role_id").notNull(),
-    menuId: uuid("menu_id").notNull(),
-  },
-  (table) => {
-    return {
-      idxSysRoleMenuMenuId: index("idx_sys_role_menu_menu_id").using(
-        "btree",
-        table.menuId.asc().nullsLast(),
-      ),
-      sysRoleMenuRoleIdSysRoleIdFk: foreignKey({
-        columns: [table.roleId],
-        foreignColumns: [sysRole.id],
-        name: "sys_role_menu_role_id_sys_role_id_fk",
-      }).onDelete("cascade"),
-      sysRoleMenuMenuIdSysMenuIdFk: foreignKey({
-        columns: [table.menuId],
-        foreignColumns: [sysMenu.id],
-        name: "sys_role_menu_menu_id_sys_menu_id_fk",
-      }).onDelete("cascade"),
-      sysRoleMenuRoleIdMenuIdPk: primaryKey({
-        columns: [table.roleId, table.menuId],
-        name: "sys_role_menu_role_id_menu_id_pk",
-      }),
     };
   },
 );

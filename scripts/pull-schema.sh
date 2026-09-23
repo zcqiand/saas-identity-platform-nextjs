@@ -31,6 +31,12 @@ PG_PASSWORD="${PG_PASSWORD:-}"
 PG_DATABASE="${PG_DATABASE:-saas_dev}"
 export PG_HOST PG_PORT PG_USER PG_PASSWORD PG_DATABASE
 
+# 5.98：错库 pull 实证（eea5fae 把 saas_test 序提交进 HEAD）——目标库响亮回显。
+if [ "${PG_DATABASE}" != "saas_dev" ]; then
+  echo "[pull-schema] WARN: 目标库=${PG_DATABASE}（非 saas_dev；镜像真源是 saas_dev）" >&2
+fi
+echo "[pull-schema] target DB: ${PG_DATABASE}@${PG_HOST}"
+
 if [ -z "$PG_PASSWORD" ]; then
   echo "[pull-schema] FATAL: PG_PASSWORD 未设" >&2
   exit 1
@@ -59,6 +65,13 @@ npx --no -- prettier --write "${SCHEMA_FILE}"
 # text_ops/int2_ops 错位挂到 varchar 列）。schema.ts 是 DB-First 镜像产物（仅作
 # drift 比对，不参与 db:push），`.op()` 后缀剥离后输出与库无关、确定性成立。
 sed -i -E 's/\.op\("[a-z0-9]+_ops"\)//g' "${SCHEMA_FILE}"
+# 5.98（drift 假红同族根治）：drizzle-kit pull 的表块顺序随库目录布局漂移——同库内
+# 逐次确定，跨库/重建后翻面（saas_dev 与 saas_test 两种序、内容 multiset 全等；当日
+# eea5fae 即错库 pull 把 saas_test 序提交进 HEAD 的实证）。schema.ts 仅作 drift 比对
+# 块序无语义，按导出标识符字典序 canonical 化，使镜像与「哪个库、何时重建」无关；
+# 错库 pull 不再产生伪漂移，真实 DDL diff 仍照常暴露。
+echo "[pull-schema] canonicalize table block order (5.98)"
+python3 scripts/canonicalize-schema.py "${SCHEMA_FILE}" "${SCHEMA_FILE}"
 npx --no -- prettier --write "${SCHEMA_FILE}"
 
 
