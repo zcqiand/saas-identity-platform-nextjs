@@ -18,6 +18,36 @@ if [ -z "${DATABASE_URL:-}" ]; then
   exit 1
 fi
 
+# drizzle-kit config 强制读 PG_* 五件套（即便 DATABASE_URL 已设 —— 它不解析 URL）
+# 镜像 lab-management-system-nextjs/deploy/docker-entrypoint.sh 同款修法。
+# 家族策略（memory springboot-gate-scaffold-needs-pg-url）= 派生层把单源 DATABASE_URL
+# 裂成 PG_* 给下游 drizzle-kit；已显式注入的 PG_* 保留（CI/dev 不覆盖）。
+case "${DATABASE_URL:-}" in
+  postgresql://*|postgres://*)
+    proto="${DATABASE_URL%%://*}"
+    rest="${DATABASE_URL#*://}"
+    userpass="${rest%%@*}"
+    hostpath="${rest#*@}"
+    hostport="${hostpath%%/*}"
+    database="${hostpath#*/}"
+    database="${database%%\?*}"
+    derived_user="${userpass%%:*}"
+    derived_password="${userpass#*:}"
+    derived_host="${hostport%%:*}"
+    derived_port="${hostport#*:}"
+    [ -z "${PG_HOST:-}" ]       && PG_HOST="$derived_host"
+    [ -z "${PG_PORT:-}" ]       && PG_PORT="${derived_port:-5432}"
+    [ -z "${PG_USER:-}" ]       && PG_USER="$derived_user"
+    [ -z "${PG_PASSWORD:-}" ]   && PG_PASSWORD="$derived_password"
+    [ -z "${PG_DATABASE:-}" ]   && PG_DATABASE="$database"
+    export PG_HOST PG_PORT PG_USER PG_PASSWORD PG_DATABASE
+    ;;
+  *)
+    echo "ERROR: unsupported DATABASE_URL scheme (expect postgresql://)" >&2
+    exit 1
+    ;;
+esac
+
 # 探测是否首启:migrations 表是否空。空 → FIRST=1;非空 → 跳过 seed
 FIRST=0
 ROW_COUNT=$(node -e "
