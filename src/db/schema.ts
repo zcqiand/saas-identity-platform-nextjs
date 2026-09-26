@@ -1,19 +1,18 @@
-// @impl M00.F01.I02 — tenants 表定义，创建租户落库（书源锚）
 import {
   pgTable,
-  serial,
-  text,
-  bigint,
   index,
-  uniqueIndex,
   foreignKey,
   uuid,
   varchar,
-  timestamp,
-  boolean,
   smallint,
   integer,
+  timestamp,
+  uniqueIndex,
+  boolean,
   unique,
+  text,
+  serial,
+  bigint,
   primaryKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
