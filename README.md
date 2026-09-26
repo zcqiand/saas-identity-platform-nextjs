@@ -2,7 +2,9 @@
 
 SaaS 身份平台的 Next.js 全栈应用（App Router）—— 前端 UI + OAuth 2.0 IdP Route Handlers + PostgreSQL。
 
-本仓为《Vue从入门到项目实践》（亚马逊电子书）案例二「SaaS 多租户身份平台」（第 39-42 章）的可运行配套后端工程（真链路 :5101）；书稿正文不挂本仓 source= 锚点，前端代码块的 **source of truth** 为姊妹仓 saas-identity-platform-vue。
+本仓为《Next.js 从入门到项目实战》案例二「SaaS 多租户身份平台」（第 35-40 章，另第 41 章测试策略跨仓取材本仓、第 42 章概念收官）的案例仓，书稿代码块挂本仓 source= 锚点（章节映射见下）。
+
+本仓同时作为《Vue从入门到项目实践》（亚马逊电子书）案例二的可运行配套后端工程（真链路 :5101）——该书正文不挂本仓 source= 锚点，其前端代码块的 **source of truth** 为姊妹仓 saas-identity-platform-vue。
 
 ## 快速开始
 
@@ -40,6 +42,22 @@ npm run build      # 生产构建
 ## 配套书籍及章节映射
 
 > 同一案例仓后续接入其他书籍时，在此节下新增书籍小节。
+
+### 《Next.js 从入门到项目实战》（主绑定）
+
+- 书稿定位：案例二「SaaS 多租户身份平台」，第 35-40 章正文代码块挂本仓 source= 锚点；第 41 章「测试策略」跨仓取材本仓 vitest 体系；第 42 章为概念收官章（无摘码）
+- 锚点基线：正文 source= 锚点文件以本仓工作区现行结构为准，均已核实存在
+
+| 章 | 书稿章节 | 主要取材 |
+| :--- | :--- | :--- |
+| 35 | 案例立项：多租户身份平台的数据建模 | src/db/schema.ts、scripts/pull-schema.sh |
+| 36 | 密码登录与租户守卫 | api/v1/auth/login、login-lockout、tenant-guard、require-auth |
+| 37 | 成员与角色：租户内的身份管理 | tenants/[tenantId]/{members,roles}、tenant-switcher |
+| 38 | 权限矩阵与树形菜单：动态菜单下发 | roles/[roleId]/menus、tree-table、api/v1/me/menus |
+| 39 | OAuth 应用管理：客户端注册与订阅 | admin/clients、tenants/[tenantId]/applications |
+| 40 | SSO 授权码流：令牌签发与动态菜单 | api/v1/oauth/{authorize,token}、oauth-store |
+| 41 | 测试策略（跨仓部分） | vitest.config、tests/integration/oauth-authorize |
+| 42 | 全栈收官（概念章，无摘码） | — |
 
 ### 《Vue从入门到项目实践》（亚马逊电子书）
 
