@@ -1,4 +1,4 @@
-// /api/v1/oauth/authorize — M04.F03.I01
+// /api/v1/oauth/authorize — @impl M04.F03.I01
 //
 // TypeSpec: AuthorizeCodeRequest { clientId, redirectUri, responseType: "code", scope?, state }
 // 响应：{ code, state }（自定义 inline schema；openapi.yaml:778-786）

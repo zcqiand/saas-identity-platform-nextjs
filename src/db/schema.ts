@@ -1,3 +1,4 @@
+// @impl M00.F01.I02 — tenants 表定义，创建租户落库（书源锚）
 import {
   pgTable,
   serial,

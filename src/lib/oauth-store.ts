@@ -1,3 +1,4 @@
+// @impl M04.F03.I02 — 授权码/刷新令牌进程内存储（书源锚）
 // OAuth 2.0 in-memory store — 镜像 saas-identity-platform-msw/src/handlers-extra.ts:41-48
 //
 // 进程内 Map：OAuth code 一次性 + refresh token rotation。

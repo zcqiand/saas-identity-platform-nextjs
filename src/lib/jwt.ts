@@ -1,3 +1,4 @@
+// @impl M04.F03.I02 — 访问令牌签发与验签（书源锚）
 // JWT 签发 + 验签 — Phase 5（HS256 via jose）
 //
 // 与 springboot / aspnetcore 同款语义：
