@@ -15,7 +15,8 @@
       "http://localhost:5200/login",
       "https://lab-nextjs.xiangru.uk/login",
       "https://lab-react.xiangru.uk/login",
-      "https://lab-vue.xiangru.uk/login"
+      "https://lab-vue.xiangru.uk/login",
+      "labman://oauth/callback"
     ],
     "scopes": ["lab.read", "lab.write"],
     "grantTypes": ["client_credentials", "authorization_code"],
