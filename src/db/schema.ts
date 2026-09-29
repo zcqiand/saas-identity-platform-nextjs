@@ -1,8 +1,5 @@
 import {
   pgTable,
-  serial,
-  text,
-  bigint,
   index,
   uniqueIndex,
   foreignKey,
@@ -12,6 +9,9 @@ import {
   boolean,
   smallint,
   integer,
+  serial,
+  text,
+  bigint,
   unique,
   primaryKey,
 } from "drizzle-orm/pg-core";
