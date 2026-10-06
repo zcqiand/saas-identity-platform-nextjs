@@ -158,7 +158,7 @@
         "渲染租户列表，新建按钮挂 data-fn=M00.F01.I02"
       ],
       "entry": [
-        "src\\app\\tenants\\page.tsx"
+        "src/app/tenants/page.tsx"
       ]
     },
     "M00.F01.I03": {
@@ -180,7 +180,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "src\\app\\tenants\\page.tsx"
+        "src/app/tenants/page.tsx"
       ]
     },
     "M00.F01.I05": {
@@ -192,7 +192,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "src\\app\\tenants\\page.tsx"
+        "src/app/tenants/page.tsx"
       ]
     },
     "M00.F02.I01": {
@@ -209,7 +209,7 @@
         "output\\saas-identity-platform-contract-test\\tests\\tenant-members-write.test.ts:987 (path)"
       ],
       "entry": [
-        "src\\app\\tenants\\[tenantId]\\members\\page.tsx"
+        "src/app/tenants/[tenantId]/members/page.tsx"
       ]
     },
     "M00.F02.I02": {
@@ -226,7 +226,7 @@
         "output\\saas-identity-platform-contract-test\\tests\\tenant-members-write.test.ts:987 (path)"
       ],
       "entry": [
-        "src\\app\\tenants\\[tenantId]\\members\\page.tsx"
+        "src/app/tenants/[tenantId]/members/page.tsx"
       ]
     },
     "M00.F02.I03": {
@@ -241,7 +241,7 @@
         "渲染 TenantSwitcher 触发按钮挂 data-fn=M00.F02.I03"
       ],
       "entry": [
-        "src\\components\\tenant-switcher.tsx"
+        "src/components/tenant-switcher.tsx"
       ]
     },
     "M00.F02.I04": {
@@ -255,7 +255,7 @@
         "output\\saas-identity-platform-contract-test\\tests\\tenant-members-read.test.ts:3771 (path)"
       ],
       "entry": [
-        "src\\app\\tenants\\[tenantId]\\members\\page.tsx"
+        "src/app/tenants/[tenantId]/members/page.tsx"
       ]
     },
     "M00.F02.I05": {
@@ -269,7 +269,7 @@
         "output\\saas-identity-platform-contract-test\\tests\\tenant-members-read.test.ts:3771 (path)"
       ],
       "entry": [
-        "src\\app\\tenants\\[tenantId]\\members\\page.tsx"
+        "src/app/tenants/[tenantId]/members/page.tsx"
       ]
     },
     "M00.F02.I06": {
@@ -328,7 +328,7 @@
         "渲染角色列表，新建角色按钮挂 data-fn=M00.F03.I02"
       ],
       "entry": [
-        "src\\app\\tenants\\[tenantId]\\roles\\page.tsx"
+        "src/app/tenants/[tenantId]/roles/page.tsx"
       ]
     },
     "M00.F03.I03": {
@@ -354,7 +354,7 @@
         "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-read.test.ts:2610 (path)"
       ],
       "entry": [
-        "src\\app\\tenants\\[tenantId]\\roles\\page.tsx"
+        "src/app/tenants/[tenantId]/roles/page.tsx"
       ]
     },
     "M00.F03.I05": {
@@ -368,7 +368,7 @@
         "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-read.test.ts:2610 (path)"
       ],
       "entry": [
-        "src\\app\\tenants\\[tenantId]\\roles\\page.tsx"
+        "src/app/tenants/[tenantId]/roles/page.tsx"
       ]
     },
     "M00.F04.I01": {
@@ -394,7 +394,7 @@
         "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-write.test.ts:1193 (path)"
       ],
       "entry": [
-        "src\\app\\tenants\\[tenantId]\\roles\\page.tsx"
+        "src/app/tenants/[tenantId]/roles/page.tsx"
       ]
     },
     "M00.F04.I03": {
@@ -410,7 +410,7 @@
         "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-write.test.ts:1193 (path)"
       ],
       "entry": [
-        "src\\app\\tenants\\[tenantId]\\roles\\[roleId]\\menus\\page.tsx"
+        "src/app/tenants/[tenantId]/roles/[roleId]/menus/page.tsx"
       ]
     },
     "M00.F04.I04": {
@@ -426,7 +426,7 @@
         "output\\saas-identity-platform-contract-test\\tests\\tenant-roles-write.test.ts:1193 (path)"
       ],
       "entry": [
-        "src\\app\\tenants\\[tenantId]\\roles\\[roleId]\\menus\\page.tsx"
+        "src/app/tenants/[tenantId]/roles/[roleId]/menus/page.tsx"
       ]
     },
     "M00.F05.I01": {
@@ -457,7 +457,7 @@
         "渲染订阅应用按钮挂 data-fn=M00.F05.I02"
       ],
       "entry": [
-        "src\\app\\tenants\\[tenantId]\\applications\\page.tsx"
+        "src/app/tenants/[tenantId]/applications/page.tsx"
       ]
     },
     "M00.F05.I03": {
@@ -472,7 +472,7 @@
         "output\\saas-identity-platform-contract-test\\tests\\tenant-applications.test.ts:7746 (annot)"
       ],
       "entry": [
-        "src\\app\\tenants\\[tenantId]\\applications\\page.tsx"
+        "src/app/tenants/[tenantId]/applications/page.tsx"
       ]
     },
     "M00.F05.I04": {
@@ -487,7 +487,7 @@
         "output\\saas-identity-platform-contract-test\\tests\\tenant-applications.test.ts:9931 (annot)"
       ],
       "entry": [
-        "src\\app\\tenants\\[tenantId]\\applications\\page.tsx"
+        "src/app/tenants/[tenantId]/applications/page.tsx"
       ]
     },
     "M01.F01.I01": {
@@ -514,7 +514,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "src\\app\\tenants\\[tenantId]\\members\\page.tsx"
+        "src/app/tenants/[tenantId]/members/page.tsx"
       ]
     },
     "M01.F03.I01": {
@@ -529,7 +529,7 @@
         "output\\saas-identity-platform-contract-test\\tests\\me-tenants.test.ts:579 (path)"
       ],
       "entry": [
-        "src\\components\\tenant-switcher.tsx"
+        "src/components/tenant-switcher.tsx"
       ]
     },
     "M01.F03.I02": {
@@ -587,8 +587,8 @@
         "邀请按钮挂 data-fn=M01.F04.I03"
       ],
       "entry": [
-        "src\\app\\login\\page.tsx",
-        "src\\app\\tenants\\[tenantId]\\members\\page.tsx"
+        "src/app/login/page.tsx",
+        "src/app/tenants/[tenantId]/members/page.tsx"
       ]
     },
     "M01.F04.I04": {
@@ -625,7 +625,7 @@
         "output\\saas-identity-platform-contract-test\\tests\\auth.test.ts:3965 (path)"
       ],
       "entry": [
-        "src\\components\\app\\app-shell.tsx"
+        "src/components/app/app-shell.tsx"
       ]
     },
     "M01.F04.I07": {
@@ -720,7 +720,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "src\\app\\admin\\clients\\page.tsx"
+        "src/app/admin/clients/page.tsx"
       ]
     },
     "M04.F03.I01": {
@@ -813,8 +813,8 @@
         "output\\saas-identity-platform-contract-test\\tests\\client-menus-write.test.ts:1047 (path)"
       ],
       "entry": [
-        "src\\app\\admin\\clients\\[clientId]\\menus\\page.tsx",
-        "src\\app\\admin\\clients\\page.tsx"
+        "src/app/admin/clients/[clientId]/menus/page.tsx",
+        "src/app/admin/clients/page.tsx"
       ]
     },
     "M04.F04.I03": {
@@ -836,8 +836,8 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "src\\app\\admin\\clients\\[clientId]\\menus\\page.tsx",
-        "src\\app\\admin\\clients\\page.tsx"
+        "src/app/admin/clients/[clientId]/menus/page.tsx",
+        "src/app/admin/clients/page.tsx"
       ]
     },
     "M04.F04.I05": {
@@ -849,8 +849,8 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "src\\app\\admin\\clients\\[clientId]\\menus\\page.tsx",
-        "src\\app\\admin\\clients\\page.tsx"
+        "src/app/admin/clients/[clientId]/menus/page.tsx",
+        "src/app/admin/clients/page.tsx"
       ]
     },
     "M04.F04.I06": {
@@ -872,7 +872,7 @@
       "designs": [],
       "tests": [],
       "entry": [
-        "src\\app\\admin\\clients\\[clientId]\\menus\\page.tsx"
+        "src/app/admin/clients/[clientId]/menus/page.tsx"
       ]
     },
     "M04.F04.I08": {
@@ -887,7 +887,7 @@
         "output\\saas-identity-platform-contract-test\\tests\\me.test.ts:2609 (path)"
       ],
       "entry": [
-        "src\\app\\layout.tsx"
+        "src/app/layout.tsx"
       ]
     }
   }
