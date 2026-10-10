@@ -99,7 +99,7 @@ if [ ! -f "$BASE/saas.env" ]; then
       printf 'NEXT_PUBLIC_SAAS_BASE_URL=https://%s\n' "$NGINX_DOMAIN"
       printf 'NEXT_PUBLIC_API_BASE_URL=\n'
       # 2026-08-28 key 对齐:key 集合与 .env.production 由 suite L0.5 check_deploy_parity 锁死
-      printf 'SAAS_CORS_ALLOWED_ORIGINS=https://saas-nextjs.xiangru.uk,https://saas-react.xiangru.uk,https://saas-vue.xiangru.uk\n'
+      printf 'SAAS_CORS_ALLOWED_ORIGINS=https://saas-nextjs.xiangru.uk,https://saas-react.xiangru.uk,https://saas-vue.xiangru.uk,https://saas-flutter.xiangru.uk\n'
       printf 'NEXT_PUBLIC_API_MODE=nextjs\n'
       printf 'LOCKOUT_MAX_FAILS=5\n'
       printf 'LOCKOUT_WINDOW_MIN=15\n'
@@ -240,7 +240,7 @@ if [ -f "$BASE/saas.env" ]; then
     fi
   }
   append_if_missing DATABASE_NAME 'saas_prod'
-  append_if_missing SAAS_CORS_ALLOWED_ORIGINS 'https://saas-nextjs.xiangru.uk,https://saas-react.xiangru.uk,https://saas-vue.xiangru.uk,https://lab-nextjs.xiangru.uk'
+  append_if_missing SAAS_CORS_ALLOWED_ORIGINS 'https://saas-nextjs.xiangru.uk,https://saas-react.xiangru.uk,https://saas-vue.xiangru.uk,https://lab-nextjs.xiangru.uk,https://saas-flutter.xiangru.uk'
   append_if_missing DATABASE_USER 'postgres'
   # DATABASE_PASSWORD 不再 append(2026-09-13 'qiand68+++' 占位清理):nextjs 全链不读,
   # family-env.json 不含;存量 env-file 里已有的行留着无害,不再写新。
@@ -258,10 +258,13 @@ if [ -f "$BASE/saas.env" ]; then
   # 补哪个（origin 级，不整值覆盖，运维手工 origin 保留）。
   # lab-nextjs 也在列：其 prod 客户端 bundle bake 了 NEXT_PUBLIC_SAAS_BASE_URL=
   # https://saas-nextjs.xiangru.uk，浏览器侧边栏 app 查询是跨源 fetch，缺了必被 CORS 拦。
+  # saas-flutter 也在列（2026-10-10 X08 进 deploy 链）：prod bundle 烘焙 API_BASE_URL=
+  # https://saas-nextjs.xiangru.uk，同款跨源 fetch。
   for cors_origin in "https://saas-nextjs.xiangru.uk" \
                      "https://saas-react.xiangru.uk" \
                      "https://saas-vue.xiangru.uk" \
-                     "https://lab-nextjs.xiangru.uk"; do
+                     "https://lab-nextjs.xiangru.uk" \
+                     "https://saas-flutter.xiangru.uk"; do
     if grep -q '^SAAS_CORS_ALLOWED_ORIGINS=' "$BASE/saas.env" && ! grep '^SAAS_CORS_ALLOWED_ORIGINS=' "$BASE/saas.env" | grep -qF "$cors_origin"; then
       sed -i "s#^\(SAAS_CORS_ALLOWED_ORIGINS=.*\)#\1,${cors_origin}#" "$BASE/saas.env"
       echo "→ reconcile SAAS_CORS_ALLOWED_ORIGINS: 追加缺失 origin ${cors_origin}（origin 级，不整值覆盖）"
