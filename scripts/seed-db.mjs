@@ -55,7 +55,7 @@ const pg = require("pg");
 
 const DATABASE_URL =
   process.env.DATABASE_URL ??
-  "postgresql://postgres:qiand68%2B%2B%2B@100.79.128.25:5432/saas_dev";
+  "postgresql://postgres:postgres@127.0.0.1:54321/saas_dev";
 
 const ZERO_UUID = "00000000-0000-0000-0000-000000000000";
 // 家族默认 client（fixture 的租户订阅都指向 lab-management）
