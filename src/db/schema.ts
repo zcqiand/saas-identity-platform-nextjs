@@ -17,6 +17,13 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
+export const arInternalMetadata = pgTable("ar_internal_metadata", {
+  key: varchar().primaryKey().notNull(),
+  value: varchar(),
+  createdAt: timestamp("created_at", { precision: 6, mode: "string" }).notNull(),
+  updatedAt: timestamp("updated_at", { precision: 6, mode: "string" }).notNull(),
+});
+
 export const drizzleMigrations = pgTable("__drizzle_migrations", {
   id: serial().primaryKey().notNull(),
   hash: text().notNull(),
@@ -217,6 +224,10 @@ export const oauthRefreshToken = pgTable(
     };
   },
 );
+
+export const schemaMigrations = pgTable("schema_migrations", {
+  version: varchar().primaryKey().notNull(),
+});
 
 export const sysMenu = pgTable(
   "sys_menu",
