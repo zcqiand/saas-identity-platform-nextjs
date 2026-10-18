@@ -1,6 +1,7 @@
 import {
   bigint,
   boolean,
+  check,
   foreignKey,
   index,
   integer,
@@ -17,19 +18,21 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
-export const arInternalMetadata = pgTable("ar_internal_metadata", {
-  key: varchar().primaryKey().notNull(),
-  value: varchar(),
-  createdAt: timestamp("created_at", { precision: 6, mode: "string" }).notNull(),
-  updatedAt: timestamp("updated_at", { precision: 6, mode: "string" }).notNull(),
-});
-
-export const drizzleMigrations = pgTable("__drizzle_migrations", {
-  id: serial().primaryKey().notNull(),
-  hash: text().notNull(),
-  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-  createdAt: bigint("created_at", { mode: "number" }),
-});
+export const drizzleMigrations = pgTable(
+  "__drizzle_migrations",
+  {
+    id: serial().primaryKey().notNull(),
+    hash: text().notNull(),
+    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+    createdAt: bigint("created_at", { mode: "number" }),
+  },
+  (table) => {
+    return {
+      drizzleMigrationsIdNotNull: check("__drizzle_migrations_id_not_null", sql`NOT NULL id`),
+      drizzleMigrationsHashNotNull: check("__drizzle_migrations_hash_not_null", sql`NOT NULL hash`),
+    };
+  },
+);
 
 export const oauthAccessToken = pgTable(
   "oauth_access_token",
@@ -81,6 +84,35 @@ export const oauthAccessToken = pgTable(
         foreignColumns: [tenant.id],
         name: "oauth_access_token_tenant_id_tenant_id_fk",
       }).onDelete("set null"),
+      oauthAccessTokenIdNotNull: check("oauth_access_token_id_not_null", sql`NOT NULL id`),
+      oauthAccessTokenTokenIdNotNull: check(
+        "oauth_access_token_token_id_not_null",
+        sql`NOT NULL token_id`,
+      ),
+      oauthAccessTokenAccessTokenNotNull: check(
+        "oauth_access_token_access_token_not_null",
+        sql`NOT NULL access_token`,
+      ),
+      oauthAccessTokenClientIdNotNull: check(
+        "oauth_access_token_client_id_not_null",
+        sql`NOT NULL client_id`,
+      ),
+      oauthAccessTokenTokenTypeNotNull: check(
+        "oauth_access_token_token_type_not_null",
+        sql`NOT NULL token_type`,
+      ),
+      oauthAccessTokenExpiresAtNotNull: check(
+        "oauth_access_token_expires_at_not_null",
+        sql`NOT NULL expires_at`,
+      ),
+      oauthAccessTokenRevokedNotNull: check(
+        "oauth_access_token_revoked_not_null",
+        sql`NOT NULL revoked`,
+      ),
+      oauthAccessTokenCreatedAtNotNull: check(
+        "oauth_access_token_created_at_not_null",
+        sql`NOT NULL created_at`,
+      ),
     };
   },
 );
@@ -112,6 +144,45 @@ export const oauthClient = pgTable(
   (table) => {
     return {
       ukOauthClientId: unique("uk_oauth_client_id").on(table.clientId),
+      oauthClientIdNotNull: check("oauth_client_id_not_null", sql`NOT NULL id`),
+      oauthClientClientIdNotNull: check("oauth_client_client_id_not_null", sql`NOT NULL client_id`),
+      oauthClientClientSecretNotNull: check(
+        "oauth_client_client_secret_not_null",
+        sql`NOT NULL client_secret`,
+      ),
+      oauthClientClientNameNotNull: check(
+        "oauth_client_client_name_not_null",
+        sql`NOT NULL client_name`,
+      ),
+      oauthClientGrantTypesNotNull: check(
+        "oauth_client_grant_types_not_null",
+        sql`NOT NULL grant_types`,
+      ),
+      oauthClientRedirectUrisNotNull: check(
+        "oauth_client_redirect_uris_not_null",
+        sql`NOT NULL redirect_uris`,
+      ),
+      oauthClientAccessTokenValidityNotNull: check(
+        "oauth_client_access_token_validity_not_null",
+        sql`NOT NULL access_token_validity`,
+      ),
+      oauthClientRefreshTokenValidityNotNull: check(
+        "oauth_client_refresh_token_validity_not_null",
+        sql`NOT NULL refresh_token_validity`,
+      ),
+      oauthClientAutoApproveNotNull: check(
+        "oauth_client_auto_approve_not_null",
+        sql`NOT NULL auto_approve`,
+      ),
+      oauthClientStatusNotNull: check("oauth_client_status_not_null", sql`NOT NULL status`),
+      oauthClientCreatedAtNotNull: check(
+        "oauth_client_created_at_not_null",
+        sql`NOT NULL created_at`,
+      ),
+      oauthClientUpdatedAtNotNull: check(
+        "oauth_client_updated_at_not_null",
+        sql`NOT NULL updated_at`,
+      ),
     };
   },
 );
@@ -164,6 +235,13 @@ export const oauthCode = pgTable(
         foreignColumns: [tenant.id],
         name: "oauth_code_tenant_id_tenant_id_fk",
       }).onDelete("cascade"),
+      oauthCodeIdNotNull: check("oauth_code_id_not_null", sql`NOT NULL id`),
+      oauthCodeCodeNotNull: check("oauth_code_code_not_null", sql`NOT NULL code`),
+      oauthCodeClientIdNotNull: check("oauth_code_client_id_not_null", sql`NOT NULL client_id`),
+      oauthCodeUserIdNotNull: check("oauth_code_user_id_not_null", sql`NOT NULL user_id`),
+      oauthCodeTenantIdNotNull: check("oauth_code_tenant_id_not_null", sql`NOT NULL tenant_id`),
+      oauthCodeExpiresAtNotNull: check("oauth_code_expires_at_not_null", sql`NOT NULL expires_at`),
+      oauthCodeCreatedAtNotNull: check("oauth_code_created_at_not_null", sql`NOT NULL created_at`),
     };
   },
 );
@@ -221,13 +299,34 @@ export const oauthRefreshToken = pgTable(
         foreignColumns: [tenant.id],
         name: "oauth_refresh_token_tenant_id_tenant_id_fk",
       }).onDelete("set null"),
+      oauthRefreshTokenIdNotNull: check("oauth_refresh_token_id_not_null", sql`NOT NULL id`),
+      oauthRefreshTokenRefreshTokenNotNull: check(
+        "oauth_refresh_token_refresh_token_not_null",
+        sql`NOT NULL refresh_token`,
+      ),
+      oauthRefreshTokenAccessTokenIdNotNull: check(
+        "oauth_refresh_token_access_token_id_not_null",
+        sql`NOT NULL access_token_id`,
+      ),
+      oauthRefreshTokenClientIdNotNull: check(
+        "oauth_refresh_token_client_id_not_null",
+        sql`NOT NULL client_id`,
+      ),
+      oauthRefreshTokenExpiresAtNotNull: check(
+        "oauth_refresh_token_expires_at_not_null",
+        sql`NOT NULL expires_at`,
+      ),
+      oauthRefreshTokenRevokedNotNull: check(
+        "oauth_refresh_token_revoked_not_null",
+        sql`NOT NULL revoked`,
+      ),
+      oauthRefreshTokenCreatedAtNotNull: check(
+        "oauth_refresh_token_created_at_not_null",
+        sql`NOT NULL created_at`,
+      ),
     };
   },
 );
-
-export const schemaMigrations = pgTable("schema_migrations", {
-  version: varchar().primaryKey().notNull(),
-});
 
 export const sysMenu = pgTable(
   "sys_menu",
@@ -269,6 +368,14 @@ export const sysMenu = pgTable(
         foreignColumns: [oauthClient.clientId],
         name: "sys_menu_client_id_oauth_client_client_id_fk",
       }).onDelete("cascade"),
+      sysMenuIdNotNull: check("sys_menu_id_not_null", sql`NOT NULL id`),
+      sysMenuClientIdNotNull: check("sys_menu_client_id_not_null", sql`NOT NULL client_id`),
+      sysMenuParentIdNotNull: check("sys_menu_parent_id_not_null", sql`NOT NULL parent_id`),
+      sysMenuTitleNotNull: check("sys_menu_title_not_null", sql`NOT NULL title`),
+      sysMenuTypeNotNull: check("sys_menu_type_not_null", sql`NOT NULL type`),
+      sysMenuSortOrderNotNull: check("sys_menu_sort_order_not_null", sql`NOT NULL sort_order`),
+      sysMenuStatusNotNull: check("sys_menu_status_not_null", sql`NOT NULL status`),
+      sysMenuCreatedAtNotNull: check("sys_menu_created_at_not_null", sql`NOT NULL created_at`),
     };
   },
 );
@@ -317,6 +424,15 @@ export const sysRole = pgTable(
         foreignColumns: [oauthClient.clientId],
         name: "sys_role_client_id_oauth_client_client_id_fk",
       }).onDelete("cascade"),
+      sysRoleIdNotNull: check("sys_role_id_not_null", sql`NOT NULL id`),
+      sysRoleTenantIdNotNull: check("sys_role_tenant_id_not_null", sql`NOT NULL tenant_id`),
+      sysRoleClientIdNotNull: check("sys_role_client_id_not_null", sql`NOT NULL client_id`),
+      sysRoleRoleCodeNotNull: check("sys_role_role_code_not_null", sql`NOT NULL role_code`),
+      sysRoleRoleNameNotNull: check("sys_role_role_name_not_null", sql`NOT NULL role_name`),
+      sysRoleIsPresetNotNull: check("sys_role_is_preset_not_null", sql`NOT NULL is_preset`),
+      sysRoleStatusNotNull: check("sys_role_status_not_null", sql`NOT NULL status`),
+      sysRoleCreatedAtNotNull: check("sys_role_created_at_not_null", sql`NOT NULL created_at`),
+      sysRoleUpdatedAtNotNull: check("sys_role_updated_at_not_null", sql`NOT NULL updated_at`),
     };
   },
 );
@@ -347,6 +463,8 @@ export const sysRoleMenu = pgTable(
         columns: [table.roleId, table.menuId],
         name: "sys_role_menu_role_id_menu_id_pk",
       }),
+      sysRoleMenuRoleIdNotNull: check("sys_role_menu_role_id_not_null", sql`NOT NULL role_id`),
+      sysRoleMenuMenuIdNotNull: check("sys_role_menu_menu_id_not_null", sql`NOT NULL menu_id`),
     };
   },
 );
@@ -386,6 +504,16 @@ export const sysUser = pgTable(
         "btree",
         table.username.asc().nullsLast(),
       ),
+      sysUserIdNotNull: check("sys_user_id_not_null", sql`NOT NULL id`),
+      sysUserUsernameNotNull: check("sys_user_username_not_null", sql`NOT NULL username`),
+      sysUserPasswordNotNull: check("sys_user_password_not_null", sql`NOT NULL password`),
+      sysUserStatusNotNull: check("sys_user_status_not_null", sql`NOT NULL status`),
+      sysUserCreatedAtNotNull: check("sys_user_created_at_not_null", sql`NOT NULL created_at`),
+      sysUserUpdatedAtNotNull: check("sys_user_updated_at_not_null", sql`NOT NULL updated_at`),
+      sysUserFailedAttemptsNotNull: check(
+        "sys_user_failed_attempts_not_null",
+        sql`NOT NULL failed_attempts`,
+      ),
     };
   },
 );
@@ -410,6 +538,12 @@ export const tenant = pgTable(
   (table) => {
     return {
       ukTenantKey: uniqueIndex("uk_tenant_key").using("btree", table.tenantKey.asc().nullsLast()),
+      tenantIdNotNull: check("tenant_id_not_null", sql`NOT NULL id`),
+      tenantTenantKeyNotNull: check("tenant_tenant_key_not_null", sql`NOT NULL tenant_key`),
+      tenantNameNotNull: check("tenant_name_not_null", sql`NOT NULL name`),
+      tenantStatusNotNull: check("tenant_status_not_null", sql`NOT NULL status`),
+      tenantCreatedAtNotNull: check("tenant_created_at_not_null", sql`NOT NULL created_at`),
+      tenantUpdatedAtNotNull: check("tenant_updated_at_not_null", sql`NOT NULL updated_at`),
     };
   },
 );
@@ -450,6 +584,23 @@ export const tenantApplication = pgTable(
         foreignColumns: [oauthClient.clientId],
         name: "tenant_application_client_id_oauth_client_client_id_fk",
       }).onDelete("cascade"),
+      tenantApplicationIdNotNull: check("tenant_application_id_not_null", sql`NOT NULL id`),
+      tenantApplicationTenantIdNotNull: check(
+        "tenant_application_tenant_id_not_null",
+        sql`NOT NULL tenant_id`,
+      ),
+      tenantApplicationClientIdNotNull: check(
+        "tenant_application_client_id_not_null",
+        sql`NOT NULL client_id`,
+      ),
+      tenantApplicationStatusNotNull: check(
+        "tenant_application_status_not_null",
+        sql`NOT NULL status`,
+      ),
+      tenantApplicationCreatedAtNotNull: check(
+        "tenant_application_created_at_not_null",
+        sql`NOT NULL created_at`,
+      ),
     };
   },
 );
@@ -498,6 +649,22 @@ export const tenantMember = pgTable(
         foreignColumns: [sysUser.id],
         name: "tenant_member_user_id_sys_user_id_fk",
       }).onDelete("cascade"),
+      tenantMemberIdNotNull: check("tenant_member_id_not_null", sql`NOT NULL id`),
+      tenantMemberTenantIdNotNull: check(
+        "tenant_member_tenant_id_not_null",
+        sql`NOT NULL tenant_id`,
+      ),
+      tenantMemberUserIdNotNull: check("tenant_member_user_id_not_null", sql`NOT NULL user_id`),
+      tenantMemberIsOwnerNotNull: check("tenant_member_is_owner_not_null", sql`NOT NULL is_owner`),
+      tenantMemberStatusNotNull: check("tenant_member_status_not_null", sql`NOT NULL status`),
+      tenantMemberCreatedAtNotNull: check(
+        "tenant_member_created_at_not_null",
+        sql`NOT NULL created_at`,
+      ),
+      tenantMemberUpdatedAtNotNull: check(
+        "tenant_member_updated_at_not_null",
+        sql`NOT NULL updated_at`,
+      ),
     };
   },
 );
@@ -525,9 +692,17 @@ export const tenantMemberRole = pgTable(
         name: "tenant_member_role_role_id_sys_role_id_fk",
       }).onDelete("cascade"),
       tenantMemberRoleMemberIdRoleIdPk: primaryKey({
-        columns: [table.memberId, table.roleId],
+        columns: [table.roleId, table.memberId],
         name: "tenant_member_role_member_id_role_id_pk",
       }),
+      tenantMemberRoleMemberIdNotNull: check(
+        "tenant_member_role_member_id_not_null",
+        sql`NOT NULL member_id`,
+      ),
+      tenantMemberRoleRoleIdNotNull: check(
+        "tenant_member_role_role_id_not_null",
+        sql`NOT NULL role_id`,
+      ),
     };
   },
 );
