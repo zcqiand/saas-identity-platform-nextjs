@@ -443,13 +443,21 @@ export interface UpdateTenantRequest {
 }
 
 export type AdminClientsListClientsParams = {
+  /**
+   * 页码，0 基（Spring Data Pageable）：首页 page=0。
+   */
   page?: number;
+  /**
+   * 每页条数。
+   */
   pageSize?: number;
 };
 
 export type AdminClientsListClients200 = {
   items: OAuthClient[];
+  /** 页码，0 基（Spring Data Pageable）：首页 page=0。 */
   page: number;
+  /** 每页条数。 */
   pageSize: number;
   total: number;
 };
@@ -459,13 +467,21 @@ export type AdminClientsSetClientStatusBody = {
 };
 
 export type AdminTenantsListTenantsParams = {
+  /**
+   * 页码，0 基（Spring Data Pageable）：首页 page=0。
+   */
   page?: number;
+  /**
+   * 每页条数。
+   */
   pageSize?: number;
 };
 
 export type AdminTenantsListTenants200 = {
   items: Tenant[];
+  /** 页码，0 基（Spring Data Pageable）：首页 page=0。 */
   page: number;
+  /** 每页条数。 */
   pageSize: number;
   total: number;
 };
@@ -496,26 +512,42 @@ export type OAuthAuthorize200 = {
 };
 
 export type TenantApplicationsListTenantApplicationsParams = {
+  /**
+   * 页码，0 基（Spring Data Pageable）：首页 page=0。
+   */
   page?: number;
+  /**
+   * 每页条数。
+   */
   pageSize?: number;
 };
 
 export type TenantApplicationsListTenantApplications200 = {
   items: TenantApplication[];
+  /** 页码，0 基（Spring Data Pageable）：首页 page=0。 */
   page: number;
+  /** 每页条数。 */
   pageSize: number;
   total: number;
 };
 
 export type TenantMembersListTenantUsersParams = {
+  /**
+   * 页码，0 基（Spring Data Pageable）：首页 page=0。
+   */
   page?: number;
+  /**
+   * 每页条数。
+   */
   pageSize?: number;
   status?: TenantMemberStatus;
 };
 
 export type TenantMembersListTenantUsers200 = {
   items: TenantMemberUserView[];
+  /** 页码，0 基（Spring Data Pageable）：首页 page=0。 */
   page: number;
+  /** 每页条数。 */
   pageSize: number;
   total: number;
 };
@@ -531,13 +563,21 @@ export type TenantMembersChangeTenantUserStatusBody = {
 
 export type TenantRolesListSysRolesParams = {
   clientId?: string;
+  /**
+   * 页码，0 基（Spring Data Pageable）：首页 page=0。
+   */
   page?: number;
+  /**
+   * 每页条数。
+   */
   pageSize?: number;
 };
 
 export type TenantRolesListSysRoles200 = {
   items: SysRole[];
+  /** 页码，0 基（Spring Data Pageable）：首页 page=0。 */
   page: number;
+  /** 每页条数。 */
   pageSize: number;
   total: number;
 };
