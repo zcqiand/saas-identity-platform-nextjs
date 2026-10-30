@@ -25,3 +25,6 @@ tsconfig.tsbuildinfo
 # key 集合由 suite L0.5 门核对(存在时与 .env.example 严格双向比对);真值经 scripts/sync-secrets 进 GitHub Secrets
 .env.production
 .runtime-logs*
+
+# 可再生件（正式区/临时区纪律：过程件进 _work/，_work 整体不入库；2026-10-24 人裁）
+_work/
