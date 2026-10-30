@@ -443,13 +443,7 @@ export interface UpdateTenantRequest {
 }
 
 export type AdminClientsListClientsParams = {
-  /**
-   * 页码，0 基（Spring Data Pageable）：首页 page=0。
-   */
   page?: number;
-  /**
-   * 每页条数。
-   */
   pageSize?: number;
 };
 
@@ -467,13 +461,7 @@ export type AdminClientsSetClientStatusBody = {
 };
 
 export type AdminTenantsListTenantsParams = {
-  /**
-   * 页码，0 基（Spring Data Pageable）：首页 page=0。
-   */
   page?: number;
-  /**
-   * 每页条数。
-   */
   pageSize?: number;
 };
 
@@ -512,13 +500,7 @@ export type OAuthAuthorize200 = {
 };
 
 export type TenantApplicationsListTenantApplicationsParams = {
-  /**
-   * 页码，0 基（Spring Data Pageable）：首页 page=0。
-   */
   page?: number;
-  /**
-   * 每页条数。
-   */
   pageSize?: number;
 };
 
@@ -532,13 +514,7 @@ export type TenantApplicationsListTenantApplications200 = {
 };
 
 export type TenantMembersListTenantUsersParams = {
-  /**
-   * 页码，0 基（Spring Data Pageable）：首页 page=0。
-   */
   page?: number;
-  /**
-   * 每页条数。
-   */
   pageSize?: number;
   status?: TenantMemberStatus;
 };
@@ -563,13 +539,7 @@ export type TenantMembersChangeTenantUserStatusBody = {
 
 export type TenantRolesListSysRolesParams = {
   clientId?: string;
-  /**
-   * 页码，0 基（Spring Data Pageable）：首页 page=0。
-   */
   page?: number;
-  /**
-   * 每页条数。
-   */
   pageSize?: number;
 };
 

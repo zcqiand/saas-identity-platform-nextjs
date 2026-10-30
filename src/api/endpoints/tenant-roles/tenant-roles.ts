@@ -32,6 +32,9 @@ import type {
   UpdateSysRoleRequest,
 } from "../title.schemas";
 
+/**
+ * 分页：page 0 基（Spring Data Pageable），首页 page=0；pageSize 每页条数。
+ */
 export const tenantRolesListSysRoles = (
   tenantId: string,
   params?: TenantRolesListSysRolesParams,
