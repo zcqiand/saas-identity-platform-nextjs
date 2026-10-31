@@ -7,9 +7,9 @@
   "test_dirs": ["tests"],
   "gates": {
     "L1": { "name": "格式", "cmd": ["npx", "--no", "--", "prettier", "--check", "src", "tests"], "fix": "npx prettier --write src tests" },
-    "L2": { "name": "静态检查", "cmd": ["npx", "--no", "eslint", "src", "tests"], "fix": "逐条修复 eslint" },
-    "L3": { "name": "类型", "cmd": ["npx", "--no", "tsc", "--noEmit"], "fix": "补全类型" },
-    "L4": { "name": "测试", "cmd": ["npx", "--no", "vitest", "run"], "fix": "先让测试变绿" },
+    "L2": { "name": "静态检查", "cmd": ["npx", "--no", "--", "eslint", "src", "tests"], "fix": "逐条修复 eslint" },
+    "L3": { "name": "类型", "cmd": ["npx", "--no", "--", "tsc", "--noEmit"], "fix": "补全类型" },
+    "L4": { "name": "测试", "cmd": ["npx", "--no", "--", "vitest", "run"], "fix": "先让测试变绿" },
     "L4.db.drift": {
       "name": "DB schema drift",
       "cmd": ["bash", "scripts/pull-schema.sh"],
@@ -17,6 +17,6 @@
       "skip_env": "CI_DB_DRIFT_SKIP=1"
     }
   },
-  "trace_cmd": ["npx", "--no", "vitest", "run"],
+  "trace_cmd": ["npx", "--no", "--", "vitest", "run"],
   "trace_env": { "TRACE_MAP": "1" }
 }
