@@ -1,4 +1,5 @@
-import type { Reporter } from "vitest/reporters";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 
 interface TraceEntry {
   test: string;
@@ -6,55 +7,92 @@ interface TraceEntry {
   inert: boolean;
 }
 
-const TRACE_FILE = ".state/trace.json";
+/** vitest 3/4 的 Reported Tasks 形状（只取用得到的部分）。 */
+interface ReportedTest {
+  name: string;
+  meta(): { fn?: string[] };
+  result(): { state: string };
+}
+interface ReportedModule {
+  moduleId: string;
+  children: { allTests(): Iterable<ReportedTest> };
+}
 
-export default class FnReporter implements Partial<Reporter> {
-  private entries: TraceEntry[] = [];
+/** vitest 2 的 Task 形状。 */
+interface LegacyTask {
+  type: string;
+  name: string;
+  mode?: string;
+  meta?: { fn?: string[] };
+  result?: { state?: string };
+  tasks?: LegacyTask[];
+}
+interface LegacyFile {
+  filepath: string;
+  tasks: LegacyTask[];
+}
 
-  onCollected(files?: any[]) {
-    if (!files || files.length === 0) return;
-    for (const file of files) {
-      const tasks = file.tasks || [];
-      collectTests(tasks).forEach((t) => this.addEntry(t));
-    }
-  }
+function emit(tests: TraceEntry[]): void {
+  const out = ".state/trace.json";
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(out, JSON.stringify({ schema: 1, tests }, null, 2) + "\n");
+}
 
-  async onFinished() {
+function clean(fns: unknown, inert: boolean): string[] {
+  if (inert || !Array.isArray(fns)) return [];
+  return [...new Set(fns.map(String))].sort();
+}
+
+/**
+ * vitest 适配器：把 fnTest 的标记落成 suite 契约的 .state/trace.json。
+ *
+ * 同时实现 v2 的 onFinished 与 v3+ 的 onTestRunEnd。vitest 只会调用它认识的那个。
+ * 版本耦合是适配器的活，不该泄漏到 suite 或项目里。
+ *
+ * 契约：inert=true 的测试，fns 必须为空数组。
+ * 被 skip 的测试不会执行，meta 永远写不进去 —— 假绿在物理上不可能。
+ */
+export default class FnReporter {
+  /** vitest >= 3 */
+  onTestRunEnd(testModules: readonly ReportedModule[]): void {
     if (process.env.TRACE_MAP !== "1") return;
-    const fs = await import("node:fs");
-    const path = await import("node:path");
-    fs.mkdirSync(".state", { recursive: true });
-    fs.writeFileSync(
-      path.resolve(TRACE_FILE),
-      JSON.stringify({ schema: 1, tests: this.entries }, null, 2) + "\n",
-      "utf-8",
-    );
+    const tests: TraceEntry[] = [];
+    for (const mod of testModules) {
+      for (const t of mod.children.allTests()) {
+        const inert = t.result().state === "skipped";
+        tests.push({
+          test: `${mod.moduleId}::${t.name}`,
+          fns: clean(t.meta().fn, inert),
+          inert,
+        });
+      }
+    }
+    emit(tests);
   }
 
-  private addEntry(t: any) {
-    const name = t.name || "";
-    const fns = extractFns(name);
-    const state = t.result?.state ?? "pass";
-    const isInert = state === "skip" || state === "todo";
-    if (fns.length === 0 && !isInert) return;
-    this.entries.push({ test: name, fns: isInert ? [] : fns.sort(), inert: isInert });
+  /** vitest 2 */
+  onFinished(files: LegacyFile[] = []): void {
+    if (process.env.TRACE_MAP !== "1") return;
+    if (
+      typeof (this as { onTestRunEnd?: unknown }).onTestRunEnd === "function" &&
+      files.length === 0
+    ) {
+      return; // v3+ 已经在 onTestRunEnd 写过了
+    }
+    const tests: TraceEntry[] = [];
+    const walk = (task: LegacyTask, filepath: string): void => {
+      if (task.type === "suite") {
+        for (const child of task.tasks ?? []) walk(child, filepath);
+        return;
+      }
+      const inert = task.mode === "skip" || task.mode === "todo" || task.result?.state === "skip";
+      tests.push({
+        test: `${filepath}::${task.name}`,
+        fns: clean(task.meta?.fn, inert),
+        inert,
+      });
+    };
+    for (const f of files) for (const t of f.tasks) walk(t, f.filepath);
+    emit(tests);
   }
-}
-
-function collectTests(tasks: any[], out: any[] = []): any[] {
-  for (const t of tasks) {
-    if (!t) continue;
-    if (t.type === "test") out.push(t);
-    else if (t.type === "suite" && t.tasks) collectTests(t.tasks, out);
-  }
-  return out;
-}
-
-function extractFns(text: string): string[] {
-  if (!text) return [];
-  const ids: string[] = [];
-  const re = /\bM\d{2}(?:\.F\d{2}(?:\.I\d{2})?)?\b/g;
-  let m;
-  while ((m = re.exec(text)) !== null) if (!ids.includes(m[0])) ids.push(m[0]);
-  return ids;
 }
