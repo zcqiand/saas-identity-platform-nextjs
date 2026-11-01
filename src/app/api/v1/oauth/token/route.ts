@@ -89,19 +89,30 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
     if (new Date(row.expiresAt).getTime() <= Date.now()) {
-      await db.delete(oauthCode).where(eq(oauthCode.id, row.id));
+      await db.delete(oauthCode).where(eq(oauthCode.code, row.code));
       return NextResponse.json({ code: "INVALID_GRANT", message: "code 已过期" }, { status: 400 });
     }
     if (row.redirectUri !== body.redirectUri) {
       // RFC 6749 §4.1.3：redirect_uri 必须与 authorize 时一致；不一致即撤销 code
-      await db.delete(oauthCode).where(eq(oauthCode.id, row.id));
+      await db.delete(oauthCode).where(eq(oauthCode.code, row.code));
       return NextResponse.json(
         { code: "INVALID_GRANT", message: "redirectUri 与 authorize 时不一致" },
         { status: 400 },
       );
     }
-    // 一次性消费：删 code 行（msw/springboot/aspnetcore 同款，重放 → 上方 not found）
-    await db.delete(oauthCode).where(eq(oauthCode.id, row.id));
+    // 一次性消费 claim 原子化（5.123①）：按 code 谓词删并校验影响行数——
+    // 「读到行但删除未生效」（0 行）的并发输家必须 INVALID_GRANT 拒签，
+    // 禁 read-then-delete 裸删（msw/springboot/aspnetcore 同款，重放 → 上方 not found）
+    const claimed = await db
+      .delete(oauthCode)
+      .where(eq(oauthCode.code, row.code))
+      .returning({ id: oauthCode.id });
+    if (claimed.length === 0) {
+      return NextResponse.json(
+        { code: "INVALID_GRANT", message: "code 不存在或已被使用" },
+        { status: 400 },
+      );
+    }
     const accessToken = await signToken({
       sub: row.userId,
       tenant_id: row.tenantId,
@@ -144,11 +155,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 400 },
     );
   }
-  const accessToken = await signToken({
-    sub: entry.userId,
-    tenant_id: entry.tenantId,
-    scope: entry.scope,
-  });
+  // 5.123② 轮换段原子化（内存 store 补偿回滚）：signToken 签发段故障即恢复旧 rt、
+  // 同一 refresh 可重试；修前 rotate 先删旧行，signToken 抛错留「旧废新未落」半态
+  let accessToken: string;
+  try {
+    accessToken = await signToken({
+      sub: entry.userId,
+      tenant_id: entry.tenantId,
+      scope: entry.scope,
+    });
+  } catch {
+    oauthStore.putRefresh(body.refreshToken, entry);
+    return NextResponse.json(
+      { code: "SERVER_ERROR", message: "token signing failed" },
+      { status: 500 },
+    );
+  }
   const newRefresh = generateRefreshToken(entry.userId);
   oauthStore.putRefresh(newRefresh, entry);
 

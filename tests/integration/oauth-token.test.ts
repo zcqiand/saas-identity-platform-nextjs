@@ -13,7 +13,12 @@ const { dbMock } = vi.hoisted(() => ({
   dbMock: {
     select: vi.fn(),
     insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue(undefined) }),
-    delete: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
+    // 5.123① claim 走谓词删 + returning 行数判定（缺省命中 1 行）
+    delete: vi.fn().mockReturnValue({
+      where: vi
+        .fn()
+        .mockReturnValue({ returning: vi.fn().mockResolvedValue([{ id: "code-row-id" }]) }),
+    }),
   },
 }));
 vi.mock("@/db", () => ({ db: dbMock }));
