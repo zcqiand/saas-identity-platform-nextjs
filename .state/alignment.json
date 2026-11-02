@@ -281,7 +281,9 @@
       "flows": [],
       "designs": [],
       "tests": [],
-      "entry": []
+      "entry": [
+        "src/app/tenants/[tenantId]/members/page.tsx"
+      ]
     },
     "M00.F02.I07": {
       "name": "接受邀请",

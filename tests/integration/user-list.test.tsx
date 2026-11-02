@@ -60,6 +60,7 @@ function mutStub() {
 vi.mock("@/api/endpoints/tenant-members/tenant-members", () => ({
   useTenantMembersListTenantUsers: () => queryResult({ data: { items: USERS } }),
   useTenantMembersCreateTenantUser: () => mutStub(),
+  useTenantMembersInviteTenantUser: () => mutStub(),
   useTenantMembersUpdateTenantUser: () => mutStub(),
   useTenantMembersDeleteTenantUser: () => mutStub(),
   useTenantMembersAssignTenantMemberRoles: () => mutStub(),

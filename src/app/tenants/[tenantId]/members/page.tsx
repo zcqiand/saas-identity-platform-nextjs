@@ -2,7 +2,8 @@
 
 // M01.F01 — tenant-scoped 用户列表（CRUD）
 // @entry M00.F02.I01 — 成员列表（本页表格，tenantMembersListTenantUsers）
-// @entry M00.F02.I02 — 创建成员（「邀请用户」弹窗，createTenantUser）
+// @entry M00.F02.I02 — 创建成员（「创建成员」弹窗，createTenantUser）
+// @entry M00.F02.I06 — 邀请成员（「邀请成员」弹窗，tenantMembersInviteTenantUser）
 
 import { use, useState } from "react";
 import Link from "next/link";
@@ -13,6 +14,7 @@ import {
   useTenantMembersAssignTenantMemberRoles,
   useTenantMembersCreateTenantUser,
   useTenantMembersDeleteTenantUser,
+  useTenantMembersInviteTenantUser,
   useTenantMembersListTenantUsers,
   useTenantMembersUpdateTenantUser,
 } from "@/api/endpoints/tenant-members/tenant-members";
@@ -97,6 +99,13 @@ const FIELDS: FieldDef[] = [
 
 const EDIT_FIELDS = FIELDS.filter((f) => f.name !== "username");
 
+// I06 邀请成员：契约 InviteTenantUserBody {email?, mobile?}——后端语义=新建
+// status=invited 的 sys_user、username 取邮箱前缀（react UserListPage 同款）。
+const INVITE_FIELDS: FieldDef[] = [
+  { name: "email", label: "邮箱", required: true, placeholder: "alice@acme.io" },
+  { name: "mobile", label: "手机号", placeholder: "13800000000" },
+];
+
 export default function UserListPage({ params }: { params: Promise<{ tenantId: string }> }) {
   const { tenantId } = use(params);
   const qc = useQueryClient();
@@ -111,11 +120,13 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
   const usersQ = useTenantMembersListTenantUsers(tenantId);
   const rolesQ = useTenantRolesListSysRoles(tenantId, { clientId: "" } as never);
   const createMut = useTenantMembersCreateTenantUser();
+  const inviteMut = useTenantMembersInviteTenantUser();
   const updateMut = useTenantMembersUpdateTenantUser();
   const deleteMut = useTenantMembersDeleteTenantUser();
   const roleAssignMut = useTenantMembersAssignTenantMemberRoles();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<MemberUserRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MemberUserRow | null>(null);
   const [roleTarget, setRoleTarget] = useState<MemberUserRow | null>(null);
@@ -140,6 +151,24 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
       toast.success("用户已创建");
     } catch (err) {
       toast.error(`创建失败：${toApiError(err).message}`);
+    }
+  }
+
+  // I06：后端返邀请记录（新建 invited 用户，username=邮箱前缀），无邀请链接展示面
+  async function onInvite(values: Record<string, unknown>) {
+    try {
+      await inviteMut.mutateAsync({
+        tenantId,
+        data: {
+          email: String(values.email ?? "").trim(),
+          mobile: String(values.mobile ?? "").trim() || undefined,
+        },
+      });
+      setInviteOpen(false);
+      usersQ.refetch();
+      toast.success("邀请已发送");
+    } catch (err) {
+      toast.error(`邀请失败：${toApiError(err).message}`);
     }
   }
 
@@ -202,9 +231,14 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
         title="用户管理"
         description={`${tenantLabel} 的所有用户`}
         actions={
-          <Button data-fn="M01.F04.I03" onClick={() => setCreateOpen(true)}>
-            邀请用户
-          </Button>
+          <>
+            <Button data-fn="M01.F04.I03" onClick={() => setCreateOpen(true)}>
+              创建成员
+            </Button>
+            <Button variant="outline" data-fn="M00.F02.I06" onClick={() => setInviteOpen(true)}>
+              邀请成员
+            </Button>
+          </>
         }
       />
       <Card>
@@ -276,12 +310,23 @@ export default function UserListPage({ params }: { params: Promise<{ tenantId: s
       <CrudDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        title="邀请用户"
+        title="创建成员"
         description="向租户添加一个新用户。"
         fields={FIELDS}
         submitText="创建"
         loading={createMut.isPending}
         onSubmit={onCreate}
+      />
+
+      <CrudDialog
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        title="邀请成员"
+        description="生成 7 天有效邀请并发送邮件（新成员以已邀请状态加入）。"
+        fields={INVITE_FIELDS}
+        submitText="邀请"
+        loading={inviteMut.isPending}
+        onSubmit={onInvite}
       />
 
       <CrudDialog
