@@ -243,34 +243,19 @@ export default function LoginPage() {
 
           <div className="mt-6 pt-4 border-t space-y-4">
             <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-xs space-y-2">
-              <p className="font-medium text-amber-900">🔐 演示账号密码不公开</p>
-              <p className="text-amber-800 leading-relaxed">
-                如需体验，请通过下方任一方式获取最新演示密码：
-              </p>
+              <p className="font-medium text-amber-900">🔐 演示账号</p>
               <ul className="space-y-1 text-amber-800">
                 <li className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-500 text-white text-[10px] font-bold shrink-0">
-                    微
-                  </span>
-                  <span>
-                    关注微信公众号{" "}
-                    <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-amber-200">
-                      南荣相如
-                    </code>
-                    ，回复「演示」
-                  </span>
+                  <span className="shrink-0">账号</span>
+                  <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-amber-200">
+                    alice
+                  </code>
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold shrink-0">
-                    书
-                  </span>
-                  <span>
-                    关注小红书{" "}
-                    <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-amber-200">
-                      @南荣相如
-                    </code>
-                    ，查看置顶笔记
-                  </span>
+                  <span className="shrink-0">密码</span>
+                  <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-amber-200">
+                    dev123456
+                  </code>
                 </li>
               </ul>
             </div>

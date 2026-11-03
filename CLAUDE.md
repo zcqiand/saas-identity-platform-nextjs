@@ -19,7 +19,8 @@ v0.3.0 shadcn-ui → v0.4.0 full-stack → v0.7.x IdP Route Handlers。见 ADR-0
 - 禁止从 shared import TS 客户端 / 加 `@saas/*` alias
 - 禁止运行时切后端 / 恢复 BackendProvider 系（ADR-0014 已废弃）；env 写 `.env.example`
 - 禁止组件内直接 fetch（走 orval 具名函数）；禁止 `vi.mock('axios')`；禁止 axios 升 1.19
-- 禁止给按钮加图标；禁止 demo 密码出现在 UI / 注释 / 断言
+- 禁止给按钮加图标；登录页公开展示演示账号 alice/dev123456
+  （2026-11-03 人裁改版：原「禁止 demo 密码出现在 UI」随公众号/小红书引流文案下线一并废止）
 - 禁止 Server Component 内挂 `data-fn` / 用 TenantProvider / 内联样式 / 手写 `<table>` / `window.confirm`
 - 禁止 MSW handler 走 `app/api/[...msw]/route.ts`（不可用）
 - msw 是**独立 HTTP mock server**（传统 Mock Server 模式，真 TCP :5100）：本仓**零 npm 依赖**；
