@@ -2,7 +2,7 @@
 
 SaaS 身份平台的 Next.js 全栈应用（App Router）—— 前端 UI + OAuth 2.0 IdP Route Handlers + PostgreSQL。
 
-本仓为《Next.js 从入门到项目实战》案例二「SaaS 多租户身份平台」（第 35-40 章，另第 41 章测试策略跨仓取材本仓、第 42 章概念收官）的案例仓，书稿代码块挂本仓 source= 锚点（章节映射见下）。
+本仓为《Next.js 从入门到项目实战》案例二「SaaS 多租户多应用身份平台」（第 35-40 章，另第 41 章测试策略跨仓取材本仓、第 42 章概念收官）的案例仓，书稿代码块挂本仓 source= 锚点（章节映射见下）。
 
 ## 快速开始
 
@@ -43,12 +43,12 @@ npm run build      # 生产构建
 
 ### 书一《Next.js 从入门到项目实战》
 
-- 书稿定位：案例二「SaaS 多租户身份平台」，第 35-40 章正文代码块挂本仓 source= 锚点；第 41 章「测试策略」跨仓取材本仓 vitest 体系；第 42 章为概念收官章（无摘码）
+- 书稿定位：案例二「SaaS 多租户多应用身份平台」，第 35-40 章正文代码块挂本仓 source= 锚点；第 41 章「测试策略」跨仓取材本仓 vitest 体系；第 42 章为概念收官章（无摘码）
 - 书稿绑定 tag：`v0.7.69-20260926`（src/ 与当前 HEAD 一致；正文 source= 锚点文件均在该 tag 内）
 
 | 章 | 书稿章节 | 主要取材 |
 | :--- | :--- | :--- |
-| 35 | 案例立项：多租户身份平台的数据建模 | src/db/schema.ts、scripts/pull-schema.sh |
+| 35 | 案例立项：SaaS 多租户多应用身份平台的数据建模 | src/db/schema.ts、scripts/pull-schema.sh |
 | 36 | 密码登录与租户守卫 | api/v1/auth/login、login-lockout、tenant-guard、require-auth |
 | 37 | 成员与角色：租户内的身份管理 | tenants/[tenantId]/{members,roles}、tenant-switcher |
 | 38 | 权限矩阵与树形菜单：动态菜单下发 | roles/[roleId]/menus、tree-table、api/v1/me/menus |
