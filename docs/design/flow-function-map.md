@@ -1,108 +1,107 @@
-# 流程与功能对齐 — saas-identity-platform-nextjs （已废段镜像豁免，9/7 迁移前快照）
+# Flow × Function 映射 — saas-shared
 
-> 业务流程图与功能清单映射。机器从「### 孤儿功能」段读取白名单（未在任何流程的 已上线 子项）。
+> 用途：跨仓运行时流程 ↔ function-tree 子项 ID 映射。本文件被 L5 alignment 脚本读取：
+> 1. 「已上线但不在任何流程」告警需要本文件列出 flow ↔ ID 关联
+> 2. `### 孤儿功能` 段是孤儿白名单（脚本 `orphan_whitelist()` 解析）
+>
+> **2026-09-07 模块重组**：本文件 §1 流程涉及 ID 全部按新结构更新（迁移表见
+> [function-tree.md §0.x](../functions/function-tree.md#0x-模块重组迁移记录2026-09-07)）。
+> 旧 ID 不再使用；新 ID 与 function-tree.md 一一对应。
 
-## 流程：账号密码登录 → 业务操作 → 登出（M03.F01 + M03.F02 + M03.F03）
+## 1. 主要流程
 
-```
-[用户] 打开 /login
-   ↓
-LoginForm.submit (data-fn=M03.F01.I01)
-   ↓
-POST /api/v1/auth/login  {username, password, [tenantCode]}
-   ↓ loginLockout.isLockedOut(username)
-   ├─ true  → 429 ACCOUNT_LOCKED          (M03.F01.I02)
-   └─ false → 校验 users.passwordHash
-              ├─ 失败 → loginLockout.recordFailure
-              │        + audit_events INSERT login_failed (M03.F01.I01)
-              │        → 401 UNAUTHORIZED
-              └─ 成功 → loginLockout.clearFailures
-                       + audit_events INSERT login_success  (M03.F01.I01)
-                       → 200 LoginResponse {accessToken, refreshToken, …}
+### 1.1 OAuth 登录 + session 建立
 
-[前端] 保存 accessToken + refreshToken (localStorage)
-   ↓ 调后续业务 API 时，axios 拦截器加 Authorization: Bearer <accessToken>
+触发：用户未登录访问业务前端 → 业务前端跳 saas SSO 登录页
 
-[某业务 API] → JWT 验签失败 → 401
-   ↓
-[用户] 点 sidebar 「登出」按钮
-   ↓
-POST /api/v1/auth/logout  (Authorization: Bearer <token>)         (M03.F03.I05)
-   ├─ token 缺失 / 无效 / 解析失败 → 仍 204 (best-effort)
-   └─ token 有效 → 204 (服务端无状态 JWT，不维护 server-side session)
-   ↓
-[前端] 清 localStorage → router.replace('/login')
-```
+| 步骤 | 端点 | 涉及 ID |
+|---|---|---|
+| 用户输密码 | `POST /auth/login` | **M01.F04.I01** |
+| 业务后端 authorize 跳 saas | 302 → saas 登录页带 client_id | (业务仓；saas 仓只列下游)|
+| saas authorize 检查 session | `POST /oauth/authorize` | **M04.F03.I01** |
+| token 交换 + 刷新 | `POST /oauth/token`（双 grant）| **M04.F03.I02** |
+| 业务后端验 JWT → 业务 API | — | (业务仓)|
+| 登出（本地清理）| `POST /auth/logout` | **M01.F04.I06** |
 
-涉及 fnId：
-- M03.F01.I01 — 账号密码登录（api + UI 按钮）
-- M03.F01.I02 — 登录失败锁定（不可见：失败 N 次 → 429）
-- M03.F02.I04 — refresh token 旋转
-- M03.F03.I05 — 登出（本地清理）
+详见 [oauth-architecture.md](oauth-architecture.md) + [REQ-2026-020](../requirements/REQ-2026-020-oauth-session-real-auth.md)。
 
-## 流程：OIDC 回调（dev pseudo-OIDC；M03.F02.I03）
+### 1.2 me/menus 装配
 
-```
-[前端] 调用方（lab-react / lab-vue / lab-nextjs 自己）
-   ├─ window.location 跳 OIDC provider authorize URL（dev 占位：直接构造 code+state）
-   └─ 用户授权 → provider 回跳 redirect_uri?code=…&state=…
+触发：登录后用户进入业务首页，前端调 `GET /me/menus` 渲染侧边栏。
 
-[前端] 后续 refresh 走 /api/v1/oauth/token grantType=refresh_token (M04.F03.I09)
-```
+涉及 ID：**M04.F04.I08**（按新结构合并到一个 I，覆盖 session 校验 + 角色联表 + 父链补全 + client 分组的端到端逻辑）。
 
-涉及 fnId：
-- M03.F02.I03 — OIDC Code 换取（dev pseudo-OIDC）
+详见 [me-menus.md](me-menus.md)。
 
-注：OIDC 回调产出的 refresh_token 进入 oauthStore 后，可走 `/api/v1/oauth/token grantType=refresh_token` 旋转，与 M03.F02.I04 共享同一 in-memory Map。
+### 1.3 用户 / 成员 CRUD + 角色分配
 
-## 流程：OAuth 2.0 授权码 / 令牌（M04.F03）
+触发：tenant admin 在用户管理页操作。
 
-```
-[OAuth client] 想代表用户访问资源
-   ↓
-POST /api/v1/oauth/authorize  {clientId, redirectUri, responseType: "code", scope, state, tenantId}    (M04.F03.I07)
-   ├─ 缺字段 → 400 INVALID_REQUEST
-   ├─ responseType != "code" → 400 UNSUPPORTED_RESPONSE_TYPE
-   ├─ clientId 未注册 → 400 INVALID_CLIENT
-   ├─ redirectUri 不在 apps.redirectUris 白名单 → 400 INVALID_REDIRECT_URI
-   ├─ tenant 下无用户 → 400 NO_USER
-   └─ 成功 → oauthStore.putCode(saas-code-${ts}-${rand}, {appId, userId, tenantId, scope, redirectUri})
-            → 200 {code, state}
+| 操作 | 端点 | 涉及 ID |
+|---|---|---|
+| 列表 | `GET /tenants/{t}/users` | **M00.F02.I01** |
+| 创建（直接落地）| `POST /tenants/{t}/users` | **M00.F02.I02** |
+| 详情 | `GET .../users/{u}` | **M00.F02.I03** |
+| 更新 | `PATCH .../users/{u}` | **M00.F02.I04** |
+| 删除 | `DELETE .../users/{u}` | **M00.F02.I05** |
+| 邀请用户 | `POST /tenants/{t}/invitations` | **M00.F02.I06** |
+| 接受邀请 | `POST /invitations/{token}/accept` | **M00.F02.I07** |
+| 状态切换 | `PATCH .../users/{u}/status` | **M00.F02.I08** |
+| 分配角色 | `PUT .../users/{u}/roles` | **M01.F02.I01** |
 
-[OAuth client] 收到 code 后调 token endpoint
-   ↓
-POST /api/v1/oauth/token  {grantType: "authorization_code", code, redirectUri, clientId, tenantId}    (M04.F03.I08)
-   ├─ code 不存在 / 已用 → 400 INVALID_GRANT
-   ├─ redirectUri 不匹配 → 400 INVALID_GRANT
-   ├─ tenantId 不匹配 → 400 INVALID_GRANT
-   └─ 成功 → oauthStore.consumeCode (一次性)
-            + 签 saas-jwt-${userId}-${nonce} (M04.F03.I08 accessToken)
-            + 签 saas-rt-${userId}-${nonce}-${rand} (refreshToken)
-            + oauthStore.putRefresh(refreshToken, entry)
-            + audit_events INSERT oauth_token_issued
-            → 200 TokenResponse {accessToken, refreshToken, tokenType, expiresIn, scope}
+详见 [user-model.md](user-model.md) + [REQ-2026-024](../requirements/REQ-2026-024-tenant-switch-and-user-invite.md)。
 
-[OAuth client] accessToken 过期后调 refresh
-   ↓
-POST /api/v1/oauth/token  {grantType: "refresh_token", refreshToken, clientId, tenantId}    (M04.F03.I09)
-   ├─ refreshToken 不存在 / 已旋转 → 400 INVALID_GRANT
-   └─ 成功 → oauthStore.rotateRefresh (旧删新发)
-            + 签 saas-jwt-… + saas-rt-…
-            + oauthStore.putRefresh(new)
-            → 200 TokenResponse {accessToken, refreshToken, …}
-```
+### 1.4 API Key 生命周期（已废弃）
 
-涉及 fnId：
-- M04.F03.I07 — 授权码签发（/oauth/authorize）
-- M04.F03.I08 — 令牌交换（/oauth/token grantType=authorization_code）
-- M04.F03.I02 — 令牌交换与刷新（/oauth/token 双 grant；同 oauth-store）
+> **状态：已废弃** — 目标 DDL 不再包含 `api_keys`，保留历史编号供合同测试对齐。
 
-### 孤儿功能
+### 1.5 审计日志查询 + 留存（已废弃）
 
-| 子项 ID | 名称 | 类型 | 已上线原因（不在流程图） |
-|---|---|---|---|
-| M01.F01.I02 | 创建用户（POST /tenants/:t/users，status 固定 active，写 user_created 审计） | 接口 | 跨端契约对齐 oracle（saas-msw）+ 共享 PG 真后端；当前无 UI 表单挂 data-fn（不在「登录 → 操作 → 登出」流程内）；后续若挂 UI 入口再迁入流程 |
-| M05.F01.I05 | 物理删 API Key（DELETE /tenants/:t/api-keys/:k，幂等返 204 / 404，无 audit） | 接口 | 跨端契约对齐 oracle；与 M05.F01.I03 revoke 软删并存；tenant admin 操作用，无前端 UI 入口 |
-| M09.F02.I02 | 设置角色菜单（PUT /tenants/:t/roles/:r/menus，整批替换 role_menu_grants） | 接口 | tenant admin 操作用；前端角色管理页 M09.F02 流程图尚未落地（v0.x 路线图） |
+> **状态：已废弃** — 目标 DDL 不再包含 `audit_events` / `audit_retention_policies`。
 
-（M03.F01.I02 login lockout 已纳入 M03.F01.I01 login 流程内。）
+### 1.6 跨租户切换（当前用户视图）
+
+触发：用户在多租户 UI 切换当前 tenant scope。
+
+| 操作 | 端点 | 涉及 ID |
+|---|---|---|
+| whoami | `GET /me` | **M01.F01.I01** |
+| 列我的租户 | `GET /me/tenants?clientId=...` | **M01.F03.I01** |
+| 切换 | `POST /me/tenants/{tenantId}/switch` | **M01.F03.I02** |
+
+详见 [REQ-2026-024](../requirements/REQ-2026-024-tenant-switch-and-user-invite.md)。
+
+### 1.7 菜单结构维护
+
+触发：app admin 在菜单管理页拖动 / 移动节点。
+
+| 操作 | 端点 | 涉及 ID |
+|---|---|---|
+| 菜单 CRUD | `GET/POST/PATCH/DELETE /admin/clients/{c}/menus[/{m}]` | **M04.F04.I01-I05** |
+| 同级排序 | `PUT /admin/clients/{c}/menus/{m}/reorder` | **M04.F04.I06** |
+| 切父级 | `PATCH /admin/clients/{c}/menus/{m}/parent` | **M04.F04.I07** |
+
+详见 [REQ-2026-025](../requirements/REQ-2026-025-menu-structure-move-reorder.md)。
+
+### 1.8 租户应用订阅（tenant-admin 配置面）
+
+触发：tenant admin 在租户应用页管理本租户订阅了哪些应用。
+
+| 操作 | 端点 | 涉及 ID |
+|---|---|---|
+| 列出订阅 | `GET /tenants/{t}/applications` | **M00.F05.I01** |
+| 订阅应用 | `POST /tenants/{t}/applications` | **M00.F05.I02** |
+| 改订阅状态/到期时间 | `PATCH /tenants/{t}/applications/{clientId}` | **M00.F05.I03** |
+| 取消订阅 | `DELETE /tenants/{t}/applications/{clientId}` | **M00.F05.I04** |
+
+详见 [tenant-applications.md](tenant-applications.md)。
+
+---
+
+## 2. 孤儿功能
+
+> 孤儿 = 已上线但未在上述任何流程里出现。如果某个已上线 ID 不在 §1 任何步骤表里，加到这里给 L5 白名单吃掉。
+
+<!-- 当无孤儿时保留空段：L5 alignment 脚本识别 `### 孤儿功能` 这个段名作为锚点，删除本注释即可 -->
+
+（当前无孤儿功能。所有新结构下已上线 ID 均映射到 §1 流程之一。）

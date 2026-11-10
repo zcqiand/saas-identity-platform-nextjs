@@ -1,6 +1,6 @@
 # SaaS 多租户多应用身份平台 · Next.js 全栈
 
-SaaS 身份平台的 Next.js 全栈应用（App Router）—— 前端 UI + OAuth 2.0 IdP Route Handlers + PostgreSQL。
+SaaS 多租户多应用身份平台的 Next.js 全栈应用（App Router）—— 前端 UI + OAuth 2.0 IdP Route Handlers + PostgreSQL。
 
 本仓为《Next.js 从入门到项目实战》案例二「SaaS 多租户多应用身份平台」（第 35-40 章，另第 41 章测试策略跨仓取材本仓、第 42 章概念收官）的案例仓，书稿代码块挂本仓 source= 锚点（章节映射见下）。
 

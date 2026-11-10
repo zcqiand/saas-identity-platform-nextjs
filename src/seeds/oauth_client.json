@@ -59,7 +59,7 @@
   },
   {
     "id": "11111111-1111-1111-1111-111111111114",
-    "description": "SaaS 身份平台自身控制台（first-party client；登录页 clientId 兜底，ADR-0030 后续 / B 方案 2026-09-11）",
+    "description": "SaaS 多租户多应用身份平台自身控制台（first-party client；登录页 clientId 兜底，ADR-0030 后续 / B 方案 2026-09-11）",
     "icon": "ShieldCheck",
     "sortOrder": 4,
     "status": 1,
